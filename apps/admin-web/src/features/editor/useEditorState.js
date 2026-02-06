@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { parse, serialize } from '@wordpress/blocks';
+import { createBlock, parse, serialize } from '@wordpress/blocks';
 
 function toBlocks(content) {
   if (!content) return [];
@@ -8,6 +8,11 @@ function toBlocks(content) {
   } catch {
     return [];
   }
+}
+
+function withStarterBlock(blocks) {
+  if (Array.isArray(blocks) && blocks.length > 0) return blocks;
+  return [createBlock('core/paragraph')];
 }
 
 function normalizePersistedBlocks(inputBlocks) {
@@ -26,18 +31,19 @@ export function useEditorState(shell) {
     setSelectedId(doc.id);
     setTitle(doc.title || '');
     if (Array.isArray(doc.blocks)) {
-      setBlocks(doc.blocks);
+      setBlocks(withStarterBlock(doc.blocks));
       return;
     }
-    setBlocks(toBlocks(doc.content));
+    setBlocks(withStarterBlock(toBlocks(doc.content)));
   }
 
-  async function saveDocument(selectedId, title) {
+  async function saveDocument(selectedId, title, options = {}) {
     if (!selectedId) return null;
     const persistedBlocks = normalizePersistedBlocks(blocks);
     const content = serialize(persistedBlocks);
     const updated = await shell.updateDocument(selectedId, {
       title,
+      type: options.type,
       blocks: persistedBlocks,
       content
     });

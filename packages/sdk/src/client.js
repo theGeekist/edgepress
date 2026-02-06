@@ -92,13 +92,27 @@ export function createClient({
     return payload;
   }
 
+  function withQuery(path, query = {}) {
+    const params = new URLSearchParams();
+    for (const [key, value] of Object.entries(query || {})) {
+      if (value === undefined || value === null || value === '') continue;
+      params.set(key, String(value));
+    }
+    const q = params.toString();
+    return q ? `${path}?${q}` : path;
+  }
+
   return {
     token: (body) => request('POST', '/v1/auth/token', body, { skipRefresh: true }),
     refresh: (body) => request('POST', '/v1/auth/refresh', body, { skipRefresh: true }),
     logout: (body) => request('POST', '/v1/auth/logout', body, { skipRefresh: true }),
-    listDocuments: () => request('GET', '/v1/documents'),
+    listDocuments: (query) => request('GET', withQuery('/v1/documents', query)),
     createDocument: (body) => request('POST', '/v1/documents', body),
     updateDocument: (id, body) => request('PATCH', `/v1/documents/${id}`, body),
+    deleteDocument: (id, options = {}) => {
+      const permanent = options?.permanent ? '?permanent=1' : '';
+      return request('DELETE', `/v1/documents/${id}${permanent}`);
+    },
     listRevisions: (id) => request('GET', `/v1/documents/${id}/revisions`),
     initMedia: (body) => request('POST', '/v1/media', body),
     finalizeMedia: (id, body) => request('POST', `/v1/media/${id}/finalize`, body),

@@ -3,7 +3,7 @@ import { useState } from 'react';
 export function useAuthState(shell) {
   const [username, setUsername] = useState('admin');
   const [password, setPassword] = useState('admin');
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(shell.session.user || null);
 
   async function login() {
     const account = await shell.login(username, password);

@@ -220,3 +220,60 @@ test('document create/update validates and persists canonical block metadata', a
   assert.equal(updated.json.document.blocksSchemaVersion, 1);
   assert.equal(updated.json.revision.blocksSchemaVersion, 1);
 });
+
+test('document delete route supports soft-trash and permanent delete', async () => {
+  const platform = createInMemoryPlatform();
+  const { handler, accessToken } = await authAsAdmin(platform);
+
+  const created = await requestJson(handler, 'POST', '/v1/documents', {
+    token: accessToken,
+    body: { title: 'Delete target', content: '<p>x</p>' }
+  });
+  const documentId = created.json.document.id;
+
+  const softDelete = await requestJson(handler, 'DELETE', `/v1/documents/${encodeURIComponent(documentId)}`, {
+    token: accessToken
+  });
+  assert.equal(softDelete.res.status, 200);
+  assert.equal(softDelete.json.ok, true);
+  assert.equal(softDelete.json.document.status, 'trash');
+
+  const listedAfterSoftDelete = await requestJson(handler, 'GET', '/v1/documents', { token: accessToken });
+  const trashed = listedAfterSoftDelete.json.items.find((entry) => entry.id === documentId);
+  assert.equal(trashed.status, 'trash');
+
+  const hardDelete = await requestJson(handler, 'DELETE', `/v1/documents/${encodeURIComponent(documentId)}?permanent=1`, {
+    token: accessToken
+  });
+  assert.equal(hardDelete.res.status, 200);
+  assert.equal(hardDelete.json.deleted, true);
+
+  const listedAfterHardDelete = await requestJson(handler, 'GET', '/v1/documents', { token: accessToken });
+  assert.equal(listedAfterHardDelete.json.items.find((entry) => entry.id === documentId), undefined);
+});
+
+test('document type filtering is backed by canonical stored type', async () => {
+  const platform = createInMemoryPlatform();
+  const { handler, accessToken } = await authAsAdmin(platform);
+
+  const pageDoc = await requestJson(handler, 'POST', '/v1/documents', {
+    token: accessToken,
+    body: { title: 'Page Doc', content: '<p>page</p>', type: 'page' }
+  });
+  const postDoc = await requestJson(handler, 'POST', '/v1/documents', {
+    token: accessToken,
+    body: { title: 'Post Doc', content: '<p>post</p>', type: 'post' }
+  });
+  assert.equal(pageDoc.res.status, 201);
+  assert.equal(postDoc.res.status, 201);
+
+  const pagesOnly = await requestJson(handler, 'GET', '/v1/documents?type=page', { token: accessToken });
+  assert.equal(pagesOnly.res.status, 200);
+  assert.ok(pagesOnly.json.items.length >= 1);
+  assert.ok(pagesOnly.json.items.every((doc) => (doc.type || 'page') === 'page'));
+
+  const postsOnly = await requestJson(handler, 'GET', '/v1/documents?type=post', { token: accessToken });
+  assert.equal(postsOnly.res.status, 200);
+  assert.ok(postsOnly.json.items.length >= 1);
+  assert.ok(postsOnly.json.items.every((doc) => (doc.type || 'page') === 'post'));
+});

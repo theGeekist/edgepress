@@ -1,29 +1,37 @@
 import { useEffect, useMemo, useState } from 'react';
 
 const lightPalette = {
-  page: '#edf3f1',
+  page: '#f0f0f1',
   surface: '#ffffff',
   surfaceMuted: '#f7fafc',
-  border: '#d5dbe8',
-  borderSoft: '#e2e8f0',
-  text: '#0f172a',
-  textMuted: '#475569',
-  accent: '#0f172a',
+  border: '#c3c4c7', // WP Border
+  borderSoft: '#dcdcde',
+  text: '#3c434a', // WP Text
+  textMuted: '#646970',
+  accent: '#2271b1', // WP Blue
   onAccent: '#ffffff',
-  error: '#b91c1c'
+  error: '#d63638',
+  sidebar: '#1d2327',
+  sidebarText: '#f0f0f1',
+  topbar: '#1d2327',
+  topbarText: '#f0f0f1'
 };
 
 const darkPalette = {
-  page: '#0b1220',
-  surface: '#111b2f',
-  surfaceMuted: '#18233b',
-  border: '#2a3a58',
-  borderSoft: '#334566',
-  text: '#e2e8f0',
-  textMuted: '#94a3b8',
-  accent: '#22c55e',
-  onAccent: '#04130a',
-  error: '#f87171'
+  page: '#101517', // Darker WP-ish
+  surface: '#1d2327',
+  surfaceMuted: '#2c3338',
+  border: '#454e58',
+  borderSoft: '#50575e',
+  text: '#f0f0f1',
+  textMuted: '#a7aaad',
+  accent: '#72aee6', // WP Blue Dark Mode
+  onAccent: '#101517',
+  error: '#e65054',
+  sidebar: '#141414', // Slightly darker than surface
+  sidebarText: '#f0f0f1',
+  topbar: '#141414',
+  topbarText: '#f0f0f1'
 };
 
 export function useThemeMode() {
