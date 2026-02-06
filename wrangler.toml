@@ -1,0 +1,17 @@
+name = "gcms-api-edge"
+main = "packages/adapters-cloudflare/src/worker.js"
+compatibility_date = "2026-02-06"
+workers_dev = true
+
+[vars]
+TOKEN_KEY = "dev-token-key"
+
+[[kv_namespaces]]
+binding = "KV"
+id = "kv_dev_placeholder"
+preview_id = "kv_preview_placeholder"
+
+[[r2_buckets]]
+binding = "R2_BUCKET"
+bucket_name = "gcms-dev-bucket"
+preview_bucket_name = "gcms-dev-bucket-preview"

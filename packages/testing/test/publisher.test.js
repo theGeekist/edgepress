@@ -35,7 +35,6 @@ test('createRelease writes artifacts via releaseStore.writeArtifact when availab
   const manifest = await createRelease({
     runtime,
     store,
-    blobStore: { async putBlob() {} },
     releaseStore,
     sourceRevisionId: 'rev_1',
     publishedBy: 'u_admin'
@@ -63,7 +62,6 @@ test('createRelease throws when releaseStore.writeArtifact is missing', async ()
       createRelease({
         runtime,
         store,
-        blobStore: { async putBlob() {} },
         releaseStore,
         sourceRevisionId: null,
         publishedBy: 'u_admin'

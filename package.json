@@ -9,6 +9,7 @@
   "scripts": {
     "test": "bun test",
     "start:api": "bun apps/api-edge/src/server.js",
+    "start:api:worker": "wrangler dev",
     "check:boundaries": "bun scripts/check-boundaries.js",
     "test:unit": "bun test packages/testing/test/*.test.js",
     "test:coverage": "bun test --coverage --coverage-reporter text --coverage-reporter lcov --coverage-dir coverage packages/testing/test/*.test.js",
@@ -23,6 +24,7 @@
   },
   "module": "index.ts",
   "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260205.0",
     "@eslint/js": "^9.39.2",
     "@types/bun": "latest",
     "@types/node": "^25.2.1",
@@ -33,7 +35,8 @@
     "sonar-scanner": "^3.1.0",
     "ts-api-utils": "^2.4.0",
     "typescript": "5.9.3",
-    "vite": "^7.3.1"
+    "vite": "^7.3.1",
+    "wrangler": "^4.63.0"
   },
   "peerDependencies": {
     "typescript": "^5.9.3"
