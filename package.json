@@ -12,7 +12,7 @@
     "start:api:worker": "wrangler dev",
     "check:boundaries": "bun scripts/check-boundaries.js",
     "test:unit": "bun test packages/testing/test/*.test.js",
-    "test:coverage": "bun test --coverage --coverage-reporter text --coverage-reporter lcov --coverage-dir coverage packages/testing/test/*.test.js",
+    "test:coverage": "bun test --coverage && bun scripts/check-coverage-thresholds.js",
     "start:admin-demo": "bun apps/admin-web/src/demo-server.js",
     "lint": "bunx eslint . --max-warnings 0 --cache",
     "lint:fix": "bunx eslint . --fix --cache",

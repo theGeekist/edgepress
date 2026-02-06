@@ -20,7 +20,8 @@ Edge-portable standalone Gutenberg CMS skeleton.
 - `npm run start:api`
 - `npm run check:boundaries`
 - `npm run test:wrangler` (local Wrangler smoke: auth -> publish -> private -> preview -> releases)
-- `npm run test:wrangler:deployed` (deployed smoke; requires `GCMS_BASE_URL`)
+- `npm run test:wrangler:deployed` (deployed smoke; requires `GCMS_BASE_URL` and `GCMS_ADMIN_PASS`)
+- `npm run test:coverage:gate` (runs coverage and enforces min thresholds; excludes test helper files from threshold math)
 
 ## Cloudflare Env Hygiene
 
@@ -30,3 +31,5 @@ Edge-portable standalone Gutenberg CMS skeleton.
   - `wrangler secret put TOKEN_KEY`
   - `wrangler secret put PREVIEW_TOKEN_KEY`
   - `wrangler secret put PRIVATE_CACHE_SCOPE_KEY`
+  - `wrangler secret put BOOTSTRAP_ADMIN_PASSWORD`
+- Set `BOOTSTRAP_ADMIN_USERNAME` in `wrangler.toml` (or env) for first-user bootstrap; no default admin is created when bootstrap creds are absent.

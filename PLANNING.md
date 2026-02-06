@@ -55,6 +55,7 @@ This file turns the architectural story from `idea.md` into concrete phases with
   Increment complete: Cloudflare reference adapter now supports D1 for release manifests/active pointer/history (with schema bootstrapping and D1-first precedence when bound), while preserving KV-backed cache and R2 artifacts; adapter tests now cover D1 release-state paths.
   Increment complete: D1 release-state flow hardened for parity: schema init now executes one DDL statement per call, release listing order is based on manifest `createdAt` (with DB timestamp fallback), and D1 batch transactions are used for manifest/history and activation/history writes to reduce split-write risk.
   Increment complete: Wrangler integration now uses real Cloudflare bindings (KV/D1/R2 IDs in `wrangler.toml`) and both local + remote preview smoke flows validate auth + document write against worker runtime.
+  Increment complete: Cloudflare adapter primary mutable application state (users/tokens/documents/revisions/media/publish jobs/forms/previews) now uses D1 when bound; KV remains cache/release-support fallback rather than source-of-truth for core mutable entities.
 - [x] Add preview-release token enforcement + private read caching logic (already exercised by tests; document requirements in this tracker).
   Completed: preview URLs now carry an HMAC signature (`sig`) and `/preview/:token` enforces signature validity (`PREVIEW_TOKEN_INVALID`) plus expiry; private read cache keys are now auth-scope aware (user capability fingerprint) to avoid cross-scope cache leakage.
   Increment complete: cache TTL for private reads is now runtime-configurable via `PRIVATE_CACHE_TTL_SECONDS` with bounded parsing; preview TTL and private cache TTL share bounded parsing behavior.
@@ -64,6 +65,11 @@ This file turns the architectural story from `idea.md` into concrete phases with
   Completed: manifest now includes `sourceRevisionSet`, canonicalized `sourceRevisionId`, `artifactHashes`, and deterministic `releaseHash`; release immutability checks continue to pass with updated schema.
   Increment complete: provenance normalization is now shared in `packages/domain/src/provenance.js` and enforced in both `apps/api-edge/src/app.js` and `packages/publish/src/publisher.js`, preventing divergent `sourceRevisionId`/`sourceRevisionSet` across direct publisher calls and API calls.
   Increment complete: manifest now carries both `releaseHash` (publish-event fingerprint) and `contentHash` (content/provenance fingerprint excluding release id/timestamp) so hash semantics are explicit and testable.
+- [x] Close Phase 2 hardening gaps for Cloudflare parity (runtime secrets + durable state + deploy binding clarity).
+  Completed: Cloudflare adapter HMAC signing now fails closed when required secrets are missing (`TOKEN_KEY`, `PREVIEW_TOKEN_KEY`, `PRIVATE_CACHE_SCOPE_KEY`) rather than silently using static fallback keys.
+  Completed: Cloudflare adapter core CMS store + preview store are now D1-backed when D1 is bound, removing isolate-memory loss and avoiding KV eventual-consistency risks for users/tokens/documents/revisions/media/publish-jobs/forms/previews.
+  Completed: default `wrangler.toml` D1 binding now relies on primary `database_id` only (no accidental `preview_database_id` override in normal deploy flow).
+  Increment complete: added adapter conformance coverage for fail-closed secret behavior, no-default-admin bootstrap posture, and D1-backed cross-instance state persistence.
 
 ## Phase 3 – WP Compatibility Layer
 - [ ] Layer in a WP REST façade and `wp.*` compatibility runtime adapters (separate package until API stable).
@@ -107,6 +113,8 @@ This file turns the architectural story from `idea.md` into concrete phases with
 - Delta (2026-02-06 after D1-backed Cloudflare release-state support): `95.17%` lines, `95.08%` funcs.
 - Delta (2026-02-06 after D1 release-state hardening + atomic batch tests): `95.02%` lines, `95.08%` funcs.
   Note: slight line-coverage dip is expected from newly added D1 migration/fallback branches; function coverage held steady.
+- Delta (2026-02-06 after Phase 2 hardening closure for secrets+durability): `94.44%` lines, `91.49%` funcs.
+- Delta (2026-02-06 after D1 app-store migration + no-default-admin bootstrap): `93.55%` lines, `90.20%` funcs.
 - Priority hotspot 1: `apps/admin-web/src/editor-shell.js` (`89.66%` lines) where document update/preview branches remain.
 - Priority hotspot 2: `apps/api-edge/src/app.js` (`93.28%` lines) for endpoint-level negative branches and rare error guards.
 - Priority hotspot 3: `packages/testing/src/inMemoryPlatform.js` (`97.38%` lines, `96.23%` funcs) with remaining branches tied to deeper revision/list edge paths.

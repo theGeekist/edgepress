@@ -1,178 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execSync } from 'node:child_process';
-import { createCloudflareReferencePlatform, D1_SQL } from '../../adapters-cloudflare/src/index.js';
+import { createCloudflareReferencePlatform } from '../../adapters-cloudflare/src/index.js';
 import { createApiHandler } from '../../../apps/api-edge/src/app.js';
 import { requestJson } from '../src/testUtils.js';
-
-function createFakeKV() {
-  const map = new Map();
-  return {
-    __keys: [],
-    async get(key) {
-      return map.has(key) ? map.get(key) : null;
-    },
-    async put(key, value) {
-      map.set(key, value);
-      if (!this.__keys.includes(key)) this.__keys.push(key);
-    },
-    async delete(key) {
-      map.delete(key);
-      this.__keys = this.__keys.filter((entry) => entry !== key);
-    }
-  };
-}
-
-function createFakeR2() {
-  const map = new Map();
-  return {
-    async put(key, value, options = {}) {
-      map.set(key, { value, options });
-    },
-    async get(key) {
-      const stored = map.get(key);
-      if (!stored) return null;
-      return {
-        async text() {
-          return String(stored.value);
-        },
-        httpMetadata: {
-          contentType: stored.options?.httpMetadata?.contentType
-        }
-      };
-    }
-  };
-}
-
-function createFakeD1() {
-  const manifests = new Map();
-  const state = { activeReleaseId: null };
-  const history = [];
-  const control = {
-    failHistoryInsert: false,
-    execCalls: [],
-    batchCalls: 0
-  };
-
-  function restoreSnapshot(snapshot) {
-    manifests.clear();
-    for (const [key, value] of snapshot.manifests.entries()) {
-      manifests.set(key, value);
-    }
-    state.activeReleaseId = snapshot.activeReleaseId;
-    history.length = 0;
-    history.push(...snapshot.history);
-  }
-
-  function takeSnapshot() {
-    return {
-      manifests: new Map(manifests),
-      activeReleaseId: state.activeReleaseId,
-      history: history.map((entry) => ({ ...entry }))
-    };
-  }
-
-  const is = (sql, expected) => sql.trim() === expected.trim();
-  function createBound(sql, args) {
-    return {
-      async run() {
-        if (is(sql, D1_SQL.insertManifest)) {
-          const [releaseId, manifestJson, manifestCreatedAt, createdAt] = args;
-          if (manifests.has(releaseId)) {
-            const error = new Error('UNIQUE constraint failed: release_manifests.release_id');
-            error.code = 'SQLITE_CONSTRAINT';
-            throw error;
-          }
-          manifests.set(releaseId, { releaseId, manifestJson, manifestCreatedAt, createdAt });
-          return { success: true };
-        }
-        if (is(sql, D1_SQL.insertHistory)) {
-          if (control.failHistoryInsert) {
-            throw new Error('history insert failed');
-          }
-          const [eventJson, createdAt] = args;
-          history.push({ id: history.length + 1, eventJson, createdAt });
-          return { success: true };
-        }
-        if (is(sql, D1_SQL.upsertActiveRelease)) {
-          const [activeReleaseId] = args;
-          state.activeReleaseId = activeReleaseId;
-          return { success: true };
-        }
-        return { success: true };
-      },
-      async first() {
-        if (is(sql, D1_SQL.selectManifestId)) {
-          const [releaseId] = args;
-          const row = manifests.get(releaseId);
-          return row ? { release_id: row.releaseId } : null;
-        }
-        if (is(sql, D1_SQL.selectManifestById)) {
-          const [releaseId] = args;
-          const row = manifests.get(releaseId);
-          return row ? { manifest_json: row.manifestJson } : null;
-        }
-        if (is(sql, D1_SQL.selectActiveRelease)) {
-          return state.activeReleaseId ? { active_release_id: state.activeReleaseId } : null;
-        }
-        return null;
-      },
-      async all() {
-        if (is(sql, D1_SQL.selectAllManifests)) {
-          return {
-            results: Array.from(manifests.values())
-              .sort((a, b) => {
-                const aManifest = String(a.manifestCreatedAt);
-                const bManifest = String(b.manifestCreatedAt);
-                if (aManifest !== bManifest) return aManifest.localeCompare(bManifest);
-                const aCreated = String(a.createdAt);
-                const bCreated = String(b.createdAt);
-                if (aCreated !== bCreated) return aCreated.localeCompare(bCreated);
-                return String(a.releaseId).localeCompare(String(b.releaseId));
-              })
-              .map((entry) => ({ manifest_json: entry.manifestJson }))
-          };
-        }
-        if (is(sql, D1_SQL.selectHistory)) {
-          return {
-            results: history
-              .slice()
-              .sort((a, b) => a.id - b.id)
-              .map((entry) => ({ event_json: entry.eventJson }))
-          };
-        }
-        return { results: [] };
-      }
-    };
-  }
-  return {
-    __control: control,
-    async exec(sql) {
-      control.execCalls.push(sql);
-    },
-    prepare(sql) {
-      return {
-        ...createBound(sql, []),
-        bind(...args) {
-          return createBound(sql, args);
-        }
-      };
-    },
-    async batch(statements) {
-      control.batchCalls += 1;
-      const snapshot = takeSnapshot();
-      try {
-        for (const statement of statements) {
-          await statement.run();
-        }
-      } catch (error) {
-        restoreSnapshot(snapshot);
-        throw error;
-      }
-      return [];
-    }
-  };
-}
+import { createFakeD1, createFakeKV, createFakeR2 } from './helpers/cloudflareFakes.js';
 
 test('boundary check blocks Cloudflare terms outside adapters-cloudflare', async () => {
   const out = execSync('node scripts/check-boundaries.js', { encoding: 'utf8', cwd: process.cwd() });
@@ -485,120 +317,23 @@ test('cloudflare reference adapter paginates KV manifest listing and activateRel
   assert.equal(await activateRelease('one'), 'one');
 });
 
-test('cloudflare reference adapter uses D1 for release state when bound', async () => {
-  const d1 = createFakeD1();
-  const kv = createFakeKV();
+test('cloudflare reference adapter fails closed when token signing secrets are missing', async () => {
+  const platform = createCloudflareReferencePlatform({});
+  await assert.rejects(
+    () => platform.runtime.hmacSign('payload', 'TOKEN_KEY'),
+    /Missing required runtime secret: TOKEN_KEY/
+  );
+});
+
+test('cloudflare reference adapter does not create default admin without bootstrap creds', async () => {
   const platform = createCloudflareReferencePlatform({
     TOKEN_KEY: 'cf-key',
-    D1: d1,
-    KV: kv
+    D1: createFakeD1()
   });
-
-  const releaseA = {
-    releaseId: 'rel_d1_a',
-    schemaVersion: 1,
-    createdAt: new Date().toISOString(),
-    publishedBy: 'u_admin',
-    sourceRevisionId: null,
-    artifacts: []
-  };
-  const releaseB = {
-    releaseId: 'rel_d1_b',
-    schemaVersion: 1,
-    createdAt: new Date().toISOString(),
-    publishedBy: 'u_admin',
-    sourceRevisionId: null,
-    artifacts: []
-  };
-
-  await platform.releaseStore.writeManifest(releaseA.releaseId, releaseA);
-  await platform.releaseStore.writeManifest(releaseB.releaseId, releaseB);
-  await assert.rejects(() => platform.releaseStore.writeManifest(releaseA.releaseId, releaseA), /immutable/);
-  await platform.releaseStore.activateRelease(releaseA.releaseId);
-  await platform.releaseStore.activateRelease(releaseB.releaseId);
-
-  const listed = await platform.releaseStore.listReleases();
-  assert.equal(listed.length, 2);
-  assert.equal((await platform.releaseStore.getManifest(releaseA.releaseId)).releaseId, releaseA.releaseId);
-  assert.equal(await platform.releaseStore.getActiveRelease(), releaseB.releaseId);
-
-  const history = await platform.releaseStore.getReleaseHistory();
-  assert.ok(history.some((entry) => entry.type === 'manifest_written' && entry.releaseId === releaseA.releaseId));
-  assert.ok(history.some((entry) => entry.type === 'activated' && entry.releaseId === releaseB.releaseId));
-
-  await platform.cacheStore.set('still_kv_cache', 'ok', 60);
-  assert.equal(await platform.cacheStore.get('still_kv_cache'), 'ok');
-  assert.equal(d1.__control.execCalls.length, 5);
-  assert.ok(d1.__control.batchCalls >= 2);
-});
-
-test('cloudflare reference D1 release listing orders by manifest createdAt', async () => {
-  const d1 = createFakeD1();
-  const platform = createCloudflareReferencePlatform({ TOKEN_KEY: 'cf-key', D1: d1 });
-
-  platform.runtime.now = () => new Date('2026-02-06T12:00:00.000Z');
-  await platform.releaseStore.writeManifest('rel_later', {
-    releaseId: 'rel_later',
-    schemaVersion: 1,
-    createdAt: '2026-02-06T12:00:10.000Z',
-    publishedBy: 'u_admin',
-    sourceRevisionId: null,
-    artifacts: []
+  const handler = createApiHandler(platform);
+  const auth = await requestJson(handler, 'POST', '/v1/auth/token', {
+    body: { username: 'admin', password: 'admin' }
   });
-
-  platform.runtime.now = () => new Date('2026-02-06T12:00:01.000Z');
-  await platform.releaseStore.writeManifest('rel_earlier', {
-    releaseId: 'rel_earlier',
-    schemaVersion: 1,
-    createdAt: '2026-02-06T12:00:05.000Z',
-    publishedBy: 'u_admin',
-    sourceRevisionId: null,
-    artifacts: []
-  });
-
-  const listed = await platform.releaseStore.listReleases();
-  assert.equal(listed[0].releaseId, 'rel_earlier');
-  assert.equal(listed[1].releaseId, 'rel_later');
-});
-
-test('cloudflare reference D1 batches activation pointer + history atomically', async () => {
-  const d1 = createFakeD1();
-  const platform = createCloudflareReferencePlatform({ TOKEN_KEY: 'cf-key', D1: d1 });
-  await platform.releaseStore.writeManifest('rel_atomic', {
-    releaseId: 'rel_atomic',
-    schemaVersion: 1,
-    createdAt: new Date().toISOString(),
-    publishedBy: 'u_admin',
-    sourceRevisionId: null,
-    artifacts: []
-  });
-
-  d1.__control.failHistoryInsert = true;
-  await assert.rejects(() => platform.releaseStore.activateRelease('rel_atomic'), /history insert failed/);
-  assert.equal(await platform.releaseStore.getActiveRelease(), null);
-  const history = await platform.releaseStore.getReleaseHistory();
-  assert.ok(!history.some((entry) => entry.type === 'activated' && entry.releaseId === 'rel_atomic'));
-});
-
-test('cloudflare reference logs when D1 atomic batch is unavailable', async () => {
-  const d1 = createFakeD1();
-  delete d1.batch;
-  const platform = createCloudflareReferencePlatform({ TOKEN_KEY: 'cf-key', D1: d1 });
-  const events = [];
-  platform.runtime.log = (level, event, meta) => events.push({ level, event, meta });
-
-  await platform.releaseStore.writeManifest('rel_no_batch', {
-    releaseId: 'rel_no_batch',
-    schemaVersion: 1,
-    createdAt: new Date().toISOString(),
-    publishedBy: 'u_admin',
-    sourceRevisionId: null,
-    artifacts: []
-  });
-  await platform.releaseStore.activateRelease('rel_no_batch');
-
-  const fallbackEvents = events.filter((entry) => entry.event === 'd1_non_atomic_fallback');
-  assert.equal(fallbackEvents.length, 2);
-  assert.ok(fallbackEvents.some((entry) => entry.meta?.event === 'write_manifest'));
-  assert.ok(fallbackEvents.some((entry) => entry.meta?.event === 'activate_release'));
+  assert.equal(auth.res.status, 401);
+  assert.equal(auth.json.error.code, 'AUTH_INVALID');
 });
