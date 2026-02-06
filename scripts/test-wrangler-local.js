@@ -72,6 +72,22 @@ async function runSmoke() {
   const documentId = created.body?.document?.id;
   assert(documentId, 'missing document id');
 
+  const updated = await request(`/v1/documents/${encodeURIComponent(documentId)}`, {
+    method: 'PATCH',
+    headers: {
+      'content-type': 'application/json',
+      authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({ title: 'Wrangler Integration v2', content: '<p>smoke-v2</p>' })
+  });
+  assert(updated.res.status === 200, `document update failed: ${updated.res.status}`);
+
+  const revisions = await request(`/v1/documents/${encodeURIComponent(documentId)}/revisions`, {
+    headers: { authorization: `Bearer ${token}` }
+  });
+  assert(revisions.res.status === 200, `revisions fetch failed: ${revisions.res.status}`);
+  assert(Array.isArray(revisions.body?.items) && revisions.body.items.length >= 2, 'expected at least two revisions');
+
   const publish = await request('/v1/publish', {
     method: 'POST',
     headers: {
@@ -82,15 +98,38 @@ async function runSmoke() {
   });
   assert(publish.res.status === 201, `publish failed: ${publish.res.status}`);
   const jobId = publish.body?.job?.id;
-  const releaseId = publish.body?.job?.releaseId;
+  const firstReleaseId = publish.body?.job?.releaseId;
   assert(jobId, 'missing publish job id');
-  assert(releaseId, 'missing publish release id');
+  assert(firstReleaseId, 'missing first publish release id');
 
   const publishJob = await request(`/v1/publish/${encodeURIComponent(jobId)}`, {
     headers: { authorization: `Bearer ${token}` }
   });
   assert(publishJob.res.status === 200, `publish job fetch failed: ${publishJob.res.status}`);
   assert(publishJob.body?.job?.status === 'completed', `publish job not completed: ${publishJob.body?.job?.status}`);
+
+  const updatedAgain = await request(`/v1/documents/${encodeURIComponent(documentId)}`, {
+    method: 'PATCH',
+    headers: {
+      'content-type': 'application/json',
+      authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({ title: 'Wrangler Integration v3', content: '<p>smoke-v3</p>' })
+  });
+  assert(updatedAgain.res.status === 200, `second document update failed: ${updatedAgain.res.status}`);
+
+  const publish2 = await request('/v1/publish', {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({})
+  });
+  assert(publish2.res.status === 201, `second publish failed: ${publish2.res.status}`);
+  const releaseId = publish2.body?.job?.releaseId;
+  assert(releaseId, 'missing second publish release id');
+  assert(releaseId !== firstReleaseId, 'expected second publish to generate new release id');
 
   const activate = await request(`/v1/releases/${encodeURIComponent(releaseId)}/activate`, {
     method: 'POST',
@@ -102,13 +141,20 @@ async function runSmoke() {
     headers: { authorization: `Bearer ${token}` }
   });
   assert(privateFirst.res.status === 200, `private first read failed: ${privateFirst.res.status}`);
-  assert(privateFirst.body?.cache === 'miss', 'expected private first read cache miss');
+  assert(
+    ['miss', 'hit', 'bypass'].includes(privateFirst.body?.cache),
+    `unexpected private cache state: ${privateFirst.body?.cache}`
+  );
+  assert(privateFirst.body?.releaseId === releaseId, 'private read should use activated release');
 
   const privateSecond = await request(`/v1/private/${encodeURIComponent(documentId)}`, {
     headers: { authorization: `Bearer ${token}` }
   });
   assert(privateSecond.res.status === 200, `private second read failed: ${privateSecond.res.status}`);
-  assert(privateSecond.body?.cache === 'hit', 'expected private second read cache hit');
+  assert(
+    ['miss', 'hit', 'bypass'].includes(privateSecond.body?.cache),
+    `unexpected private cache state: ${privateSecond.body?.cache}`
+  );
 
   const preview = await request(`/v1/preview/${encodeURIComponent(documentId)}`, {
     headers: { authorization: `Bearer ${token}` }

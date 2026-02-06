@@ -69,3 +69,44 @@ test('admin shell refresh/logout handle empty session safely', async () => {
   assert.equal(shell.session.refreshToken, null);
   assert.equal(shell.session.user, null);
 });
+
+test('admin shell supports full editor-to-publish loop operations', async () => {
+  const platform = createInMemoryPlatform();
+  const handler = createApiHandler(platform);
+  const shell = createAdminShell({
+    baseUrl: 'http://api.local',
+    fetchImpl: createLocalFetch(handler)
+  });
+
+  await shell.login('admin', 'admin');
+
+  const created = await shell.createDocument({ title: 'Loop', content: '<p>v1</p>' });
+  const docId = created.document.id;
+  await shell.updateDocument(docId, { title: 'Loop v2', content: '<p>v2</p>' });
+
+  const revisions = await shell.listRevisions(docId);
+  assert.ok(Array.isArray(revisions.items));
+  assert.ok(revisions.items.length >= 2);
+
+  const preview = await shell.preview(docId);
+  assert.ok(typeof preview.previewUrl === 'string');
+
+  const firstPublish = await shell.publish({});
+  assert.equal(firstPublish.job.status, 'completed');
+  const firstRelease = firstPublish.job.releaseId;
+
+  await shell.updateDocument(docId, { title: 'Loop v3', content: '<p>v3</p>' });
+  const secondPublish = await shell.publish({});
+  const secondRelease = secondPublish.job.releaseId;
+  assert.notEqual(secondRelease, firstRelease);
+
+  const activated = await shell.activateRelease(secondRelease);
+  assert.equal(activated.activeRelease, secondRelease);
+
+  const releases = await shell.listReleases();
+  assert.equal(releases.activeRelease, secondRelease);
+
+  const privateRead = await shell.verifyPrivate(docId);
+  assert.equal(privateRead.releaseId, secondRelease);
+  assert.equal(typeof privateRead.html, 'string');
+});

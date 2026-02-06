@@ -71,6 +71,24 @@ export function createAdminShell({ baseUrl, fetchImpl = fetch }) {
     },
     async preview(documentId) {
       return store.getPreview(documentId);
+    },
+    async listRevisions(documentId) {
+      return store.listRevisions(documentId);
+    },
+    async publish(input = {}) {
+      return store.publish(input);
+    },
+    async getPublishJob(jobId) {
+      return store.getPublishJob(jobId);
+    },
+    async activateRelease(releaseId) {
+      return store.activateRelease(releaseId);
+    },
+    async listReleases() {
+      return store.listReleases();
+    },
+    async verifyPrivate(routeId) {
+      return store.getPrivateRoute(routeId);
     }
   };
 }
