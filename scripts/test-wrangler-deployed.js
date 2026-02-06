@@ -1,6 +1,6 @@
 const baseUrl = process.env.GCMS_BASE_URL;
 const user = process.env.GCMS_ADMIN_USER || 'admin';
-const pass = process.env.GCMS_ADMIN_PASS || 'admin';
+const pass = process.env.GCMS_ADMIN_PASS;
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -16,6 +16,10 @@ async function request(path, options = {}) {
 
 if (!baseUrl) {
   console.error('GCMS_BASE_URL is required, e.g. https://gcms-api-edge.<subdomain>.workers.dev');
+  process.exit(1);
+}
+if (!pass) {
+  console.error('GCMS_ADMIN_PASS is required for deployed smoke tests.');
   process.exit(1);
 }
 

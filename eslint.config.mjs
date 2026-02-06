@@ -9,7 +9,8 @@ export default [
       '**/coverage/**',
       'gutenberg',
       'gutenberg/**',
-      '**/dist/**'
+      '**/dist/**',
+      '.wrangler/**'
     ]
   },
   js.configs.recommended,
@@ -26,7 +27,8 @@ export default [
     },
     rules: {
       'no-console': 'off',
-      'sonarjs/no-duplicate-string': 'off'
+      'sonarjs/no-duplicate-string': 'off',
+      'max-lines': ['error', { max: 500, skipBlankLines: true, skipComments: true }]
     }
   },
   {
@@ -34,11 +36,14 @@ export default [
     rules: {
       'sonarjs/no-hardcoded-passwords': 'off',
       'sonarjs/no-clear-text-protocols': 'off',
-      'sonarjs/no-nested-functions': 'off'
+      'sonarjs/no-nested-functions': 'off',
+      'sonarjs/no-unused-collection': 'off',
+      'sonarjs/cognitive-complexity': 'off',
+      'sonarjs/no-os-command-from-path': 'off'
     }
   },
   {
-    files: ['scripts/**/*.js', 'packages/testing/test/adapters.boundaries.test.js'],
+    files: ['scripts/**/*.js'],
     rules: {
       'sonarjs/no-os-command-from-path': 'off'
     }

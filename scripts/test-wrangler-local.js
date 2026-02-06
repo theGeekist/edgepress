@@ -1,9 +1,27 @@
 import { spawn } from 'node:child_process';
+import { existsSync, readFileSync } from 'node:fs';
 
 const port = Number(process.env.WRANGLER_SMOKE_PORT || 8788);
 const baseUrl = `http://127.0.0.1:${port}`;
-const user = process.env.GCMS_ADMIN_USER || 'admin';
-const pass = process.env.GCMS_ADMIN_PASS || 'admin';
+
+function loadDevVars() {
+  if (!existsSync('.dev.vars')) return;
+  const lines = readFileSync('.dev.vars', 'utf8').split('\n');
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (!line || line.startsWith('#')) continue;
+    const splitAt = line.indexOf('=');
+    if (splitAt <= 0) continue;
+    const key = line.slice(0, splitAt).trim();
+    const value = line.slice(splitAt + 1).trim();
+    if (!process.env[key]) process.env[key] = value;
+  }
+}
+
+loadDevVars();
+
+const user = process.env.GCMS_ADMIN_USER || process.env.BOOTSTRAP_ADMIN_USERNAME || 'admin';
+const pass = process.env.GCMS_ADMIN_PASS || process.env.BOOTSTRAP_ADMIN_PASSWORD;
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -151,6 +169,7 @@ async function shutdown() {
 }
 
 try {
+  assert(Boolean(pass), 'missing admin password: set GCMS_ADMIN_PASS or BOOTSTRAP_ADMIN_PASSWORD (.dev.vars)');
   await waitForServer();
   await runSmoke();
   await shutdown();
