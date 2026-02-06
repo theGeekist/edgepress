@@ -1,6 +1,1 @@
-export type ApiErrorResponse = {
-  error: {
-    code: string;
-    message: string;
-  };
-};
+export type { ApiErrorResponse } from "./api-error-envelope.ts";

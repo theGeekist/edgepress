@@ -4,7 +4,7 @@ title: Overview
 
 # Architecture Overview
 
-GCMS is an edge-portable CMS core designed around a simple constraint: keep the API surface and domain logic platform-agnostic, and push platform-specific I/O behind ports and adapters.
+EdgePress is an edge-portable CMS core designed around a simple constraint: keep the API surface and domain logic platform-agnostic, and push platform-specific I/O behind ports and adapters.
 
 ## Top-level components
 

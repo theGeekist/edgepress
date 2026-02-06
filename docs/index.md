@@ -1,21 +1,21 @@
 ---
-title: GCMS
+title: EdgePress
 ---
 
-# GCMS
+# EdgePress
 
 Edge-portable standalone Gutenberg CMS skeleton.
 
 ## Start here
 
-- Quickstart: [/guide/getting-started](/guide/getting-started)
-- Key workflows: [/guide/workflows/auth](/guide/workflows/auth)
-- Architecture: [/architecture/overview](/architecture/overview)
-- API reference (stable keys from contracts): [/reference/api/](/reference/api/)
+- Quickstart: [Getting Started](/guide/getting-started)
+- Key workflows: [Auth](/guide/workflows/auth)
+- Architecture: [Architecture Overview](/architecture/overview)
+- API reference (stable keys from contracts): [API Reference](/reference/api/)
 
 ## What you're building
 
-GCMS gives you a CMS core that can run at the edge (Cloudflare is the reference adapter today) while keeping the domain and API surface platform-agnostic.
+EdgePress gives you a CMS core that can run at the edge (Cloudflare is the reference adapter today) while keeping the domain and API surface platform-agnostic.
 
 The implementation currently includes:
 

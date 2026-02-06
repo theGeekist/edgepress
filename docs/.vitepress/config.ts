@@ -2,8 +2,8 @@ import { transformerTwoslash } from "@shikijs/vitepress-twoslash";
 import { defineConfig } from "vitepress";
 
 export default defineConfig({
-  title: "GCMS",
-  description: "Edge-portable standalone Gutenberg CMS skeleton",
+  title: "EdgePress",
+  description: "Edge-portable standalone Gutenberg CMS",
   srcDir: ".",
   cleanUrls: true,
   lastUpdated: true,

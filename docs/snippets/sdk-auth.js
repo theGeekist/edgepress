@@ -7,7 +7,7 @@ const client = createClient({
 const login = await client.token({ username: "admin", password: "admin" });
 
 // Refresh exchanges refreshToken for a new access token.
-await client.refresh({ refreshToken: login.refreshToken });
+const refreshed = await client.refresh({ refreshToken: login.refreshToken });
 
 // Logout revokes the refresh token.
-await client.logout({ refreshToken: login.refreshToken });
+await client.logout({ refreshToken: refreshed.refreshToken });
