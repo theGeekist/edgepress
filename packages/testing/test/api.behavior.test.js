@@ -311,3 +311,52 @@ test('document creation enforces unique slugs and private read supports slug rou
   assert.equal(byLegacyDocId.res.status, 200);
   assert.equal(byLegacyDocId.json.releaseId, publish.json.job.releaseId);
 });
+
+test('route edits are reflected after republish while doc-id private reads stay stable', async () => {
+  const platform = createInMemoryPlatform();
+  const { handler, accessToken } = await authAsAdmin(platform);
+
+  const created = await requestJson(handler, 'POST', '/v1/documents', {
+    token: accessToken,
+    body: { title: 'Route Edit Me', content: '<p>v1</p>' }
+  });
+  assert.equal(created.res.status, 201);
+  const docId = created.json.document.id;
+  const initialSlug = created.json.document.slug;
+  assert.equal(initialSlug, 'route-edit-me');
+
+  const firstPublish = await requestJson(handler, 'POST', '/v1/publish', { token: accessToken, body: {} });
+  assert.equal(firstPublish.res.status, 201);
+  const firstReleaseId = firstPublish.json.job.releaseId;
+
+  const firstBySlug = await requestJson(handler, 'GET', `/v1/private/${encodeURIComponent(initialSlug)}`, { token: accessToken });
+  assert.equal(firstBySlug.res.status, 200);
+  assert.equal(firstBySlug.json.releaseId, firstReleaseId);
+
+  const patched = await requestJson(handler, 'PATCH', `/v1/documents/${encodeURIComponent(docId)}`, {
+    token: accessToken,
+    body: { slug: 'route-edit-me-v2', content: '<p>v2</p>' }
+  });
+  assert.equal(patched.res.status, 200);
+  assert.equal(patched.json.document.slug, 'route-edit-me-v2');
+
+  const secondPublish = await requestJson(handler, 'POST', '/v1/publish', { token: accessToken, body: {} });
+  assert.equal(secondPublish.res.status, 201);
+  const secondReleaseId = secondPublish.json.job.releaseId;
+  const activateSecond = await requestJson(handler, 'POST', `/v1/releases/${encodeURIComponent(secondReleaseId)}/activate`, {
+    token: accessToken,
+    body: {}
+  });
+  assert.equal(activateSecond.res.status, 200);
+
+  const oldSlugRead = await requestJson(handler, 'GET', `/v1/private/${encodeURIComponent(initialSlug)}`, { token: accessToken });
+  assert.equal(oldSlugRead.res.status, 404);
+
+  const newSlugRead = await requestJson(handler, 'GET', '/v1/private/route-edit-me-v2', { token: accessToken });
+  assert.equal(newSlugRead.res.status, 200);
+  assert.equal(newSlugRead.json.releaseId, secondReleaseId);
+
+  const stableByDocId = await requestJson(handler, 'GET', `/v1/private/${encodeURIComponent(docId)}`, { token: accessToken });
+  assert.equal(stableByDocId.res.status, 200);
+  assert.equal(stableByDocId.json.releaseId, secondReleaseId);
+});

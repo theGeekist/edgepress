@@ -19,7 +19,14 @@ export function createPrivateRoutes({ runtime, store, cacheStore, blobStore, rel
         }
 
         const manifest = await releaseStore.getManifest(activeRelease);
-        const artifact = manifest?.artifacts?.find((x) => x.route === routeId);
+        let artifact = manifest?.artifacts?.find((x) => x.route === routeId);
+        if (!artifact) {
+          const matchedDocument = await store.getDocument(routeId);
+          const slugRoute = String(matchedDocument?.slug || '').trim();
+          if (slugRoute) {
+            artifact = manifest?.artifacts?.find((x) => x.route === slugRoute);
+          }
+        }
         if (!artifact) return error('ROUTE_NOT_FOUND', 'Private route not found', 404);
 
         const blob = await blobStore.getBlob(artifact.path);

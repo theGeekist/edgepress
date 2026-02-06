@@ -85,12 +85,13 @@ function withUiMeta(item, meta) {
   const status = normalizeStatus(item);
   const title = item.title || 'Untitled';
   const canonicalSlug = toSlug(item.slug || '');
+  const draftSlug = toSlug(entryMeta.slug || '');
   return {
     ...item,
     ui: {
       type: normalizeType(item, entryMeta),
       status,
-      slug: canonicalSlug || entryMeta.slug || toSlug(title) || 'untitled',
+      slug: draftSlug || canonicalSlug || toSlug(title) || 'untitled',
       excerpt: entryMeta.excerpt || '',
       publishDate: entryMeta.publishDate || '',
       featuredImageUrl: entryMeta.featuredImageUrl || '',
