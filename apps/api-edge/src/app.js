@@ -1,9 +1,16 @@
 import { assertPlatformPorts } from '../../../packages/ports/src/index.js';
 import { createRelease } from '../../../packages/publish/src/publisher.js';
-import { assertPreviewNotExpired, normalizePublishProvenanceInput } from '../../../packages/domain/src/index.js';
+import { BLOCKS_SCHEMA_VERSION, assertPreviewNotExpired } from '../../../packages/domain/src/index.js';
 import { createAccessToken, requireCapability, verifyAccessToken } from './auth.js';
-import { applyEdgepressFilter, doEdgepressAction, EDGEPRESS_HOOK_NAMES, resolveEdgepressHooks } from './hooks.js';
+import { applyFilters, doAction, HOOK_NAMES, resolveHooks } from './hooks.js';
 import { error, getBearerToken, getCorsHeaders, json, matchPath, readJson, withCors } from './http.js';
+import { normalizeBlocksForWrite, normalizePublishProvenance } from './request-validation.js';
+import {
+  buildPrivateCacheScope,
+  parseTtlSeconds,
+  signPreviewToken,
+  verifyPreviewTokenSignature
+} from './runtime-utils.js';
 
 function route(method, path, handler) {
   return { method, path, handler };
@@ -16,39 +23,6 @@ function authzErrorResponse(e) {
   return error('FORBIDDEN', e?.message || 'Forbidden', 403);
 }
 
-function normalizePublishProvenance(body) {
-  try {
-    return normalizePublishProvenanceInput(body);
-  } catch (e) {
-    if (typeof e?.message === 'string' && e.message.startsWith('sourceRevisionSet')) {
-      return { error: error('PUBLISH_INVALID_SOURCE_SET', e.message, 400) };
-    }
-    return { error: error('PUBLISH_INVALID_SOURCE_SET', 'Invalid publish provenance payload', 400) };
-  }
-}
-
-function parseTtlSeconds(value, { fallback, min, max }) {
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed) || parsed < min) {
-    return fallback;
-  }
-  return Math.min(parsed, max);
-}
-
-async function signPreviewToken(runtime, previewToken) {
-  return runtime.hmacSign(previewToken, 'PREVIEW_TOKEN_KEY');
-}
-
-async function verifyPreviewTokenSignature(runtime, previewToken, signature) {
-  if (!signature) return false;
-  return runtime.hmacVerify(previewToken, signature, 'PREVIEW_TOKEN_KEY');
-}
-
-async function buildPrivateCacheScope(runtime, user) {
-  const capabilityScope = Array.isArray(user?.capabilities) ? user.capabilities.slice().sort().join(',') : '';
-  return runtime.hmacSign(`${user?.id || 'unknown'}|${capabilityScope}`, 'PRIVATE_CACHE_SCOPE_KEY');
-}
-
 async function authUserFromRequest(runtime, store, request) {
   const token = getBearerToken(request);
   return verifyAccessToken(runtime, token, store);
@@ -57,7 +31,7 @@ async function authUserFromRequest(runtime, store, request) {
 export function createApiHandler(platform) {
   assertPlatformPorts(platform);
   const { runtime, store, blobStore, cacheStore, releaseStore, previewStore } = platform;
-  const hooks = resolveEdgepressHooks(platform);
+  const hooks = resolveHooks(platform);
 
   const routes = [
     route('POST', '/v1/auth/token', async (request) => {
@@ -118,11 +92,15 @@ export function createApiHandler(platform) {
       try {
         const user = await requireCapability({ runtime, store, request, capability: 'document:write' });
         const body = await readJson(request);
+        const normalizedBlocks = normalizeBlocksForWrite(body.blocks, []);
+        if (normalizedBlocks.error) return normalizedBlocks.error;
         const id = `doc_${runtime.uuid()}`;
         const document = await store.createDocument({
           id,
           title: body.title || 'Untitled',
           content: body.content || '',
+          blocks: normalizedBlocks.blocks,
+          blocksSchemaVersion: normalizedBlocks.blocksSchemaVersion,
           createdBy: user.id,
           status: body.status || 'draft'
         });
@@ -131,16 +109,18 @@ export function createApiHandler(platform) {
           documentId: id,
           title: document.title,
           content: document.content,
+          blocks: document.blocks,
+          blocksSchemaVersion: document.blocksSchemaVersion || BLOCKS_SCHEMA_VERSION,
           sourceRevisionId: null,
           authorId: user.id
         });
-        doEdgepressAction(runtime, hooks, EDGEPRESS_HOOK_NAMES.documentWrittenAction, {
+        doAction(runtime, hooks, HOOK_NAMES.documentWrittenAction, {
           mode: 'create',
           document,
           revision,
           user
         });
-        doEdgepressAction(runtime, hooks, EDGEPRESS_HOOK_NAMES.revisionCreatedAction, {
+        doAction(runtime, hooks, HOOK_NAMES.revisionCreatedAction, {
           mode: 'create',
           document,
           revision,
@@ -158,10 +138,14 @@ export function createApiHandler(platform) {
         const body = await readJson(request);
         const existing = await store.getDocument(params.id);
         if (!existing) return error('DOCUMENT_NOT_FOUND', 'Document not found', 404);
+        const normalizedBlocks = normalizeBlocksForWrite(body.blocks, existing.blocks || []);
+        if (normalizedBlocks.error) return normalizedBlocks.error;
 
         const document = await store.updateDocument(params.id, {
           title: body.title ?? existing.title,
           content: body.content ?? existing.content,
+          blocks: normalizedBlocks.blocks,
+          blocksSchemaVersion: normalizedBlocks.blocksSchemaVersion,
           status: body.status ?? existing.status
         });
         const revisions = await store.listRevisions(params.id);
@@ -171,16 +155,18 @@ export function createApiHandler(platform) {
           documentId: params.id,
           title: document.title,
           content: document.content,
+          blocks: document.blocks,
+          blocksSchemaVersion: document.blocksSchemaVersion || BLOCKS_SCHEMA_VERSION,
           sourceRevisionId: latest?.id || null,
           authorId: user.id
         });
-        doEdgepressAction(runtime, hooks, EDGEPRESS_HOOK_NAMES.documentWrittenAction, {
+        doAction(runtime, hooks, HOOK_NAMES.documentWrittenAction, {
           mode: 'update',
           document,
           revision,
           user
         });
-        doEdgepressAction(runtime, hooks, EDGEPRESS_HOOK_NAMES.revisionCreatedAction, {
+        doAction(runtime, hooks, HOOK_NAMES.revisionCreatedAction, {
           mode: 'update',
           document,
           revision,
@@ -215,10 +201,12 @@ export function createApiHandler(platform) {
           documentId: params.id,
           title: document.title,
           content: document.content,
+          blocks: document.blocks,
+          blocksSchemaVersion: document.blocksSchemaVersion || BLOCKS_SCHEMA_VERSION,
           sourceRevisionId: latest?.id || null,
           authorId: user.id
         });
-        doEdgepressAction(runtime, hooks, EDGEPRESS_HOOK_NAMES.revisionCreatedAction, {
+        doAction(runtime, hooks, HOOK_NAMES.revisionCreatedAction, {
           mode: 'manual',
           document,
           revision,
@@ -293,7 +281,7 @@ export function createApiHandler(platform) {
         const body = await readJson(request);
         const provenance = normalizePublishProvenance(body);
         if (provenance.error) return provenance.error;
-        const filteredPublishPayload = await applyEdgepressFilter(hooks, EDGEPRESS_HOOK_NAMES.publishProvenanceFilter, {
+        const filteredPublishPayload = applyFilters(hooks, HOOK_NAMES.publishProvenanceFilter, {
           runtime,
           request,
           user,
@@ -308,7 +296,7 @@ export function createApiHandler(platform) {
           sourceRevisionId: effectiveProvenance.sourceRevisionId,
           sourceRevisionSet: effectiveProvenance.sourceRevisionSet
         });
-        doEdgepressAction(runtime, hooks, EDGEPRESS_HOOK_NAMES.publishStartedAction, {
+        doAction(runtime, hooks, HOOK_NAMES.publishStartedAction, {
           user,
           job
         });
@@ -326,7 +314,7 @@ export function createApiHandler(platform) {
           if (!(await releaseStore.getActiveRelease())) {
             await releaseStore.activateRelease(manifest.releaseId);
             activatedRelease = manifest.releaseId;
-            doEdgepressAction(runtime, hooks, EDGEPRESS_HOOK_NAMES.releaseActivatedAction, {
+            doAction(runtime, hooks, HOOK_NAMES.releaseActivatedAction, {
               releaseId: manifest.releaseId,
               source: 'publish_auto'
             });
@@ -335,7 +323,7 @@ export function createApiHandler(platform) {
             status: 'completed',
             releaseId: manifest.releaseId
           });
-          doEdgepressAction(runtime, hooks, EDGEPRESS_HOOK_NAMES.publishCompletedAction, {
+          doAction(runtime, hooks, HOOK_NAMES.publishCompletedAction, {
             user,
             job,
             manifest,
@@ -346,7 +334,7 @@ export function createApiHandler(platform) {
             status: 'failed',
             error: publishError.message
           });
-          doEdgepressAction(runtime, hooks, EDGEPRESS_HOOK_NAMES.publishCompletedAction, {
+          doAction(runtime, hooks, HOOK_NAMES.publishCompletedAction, {
             user,
             job,
             error: publishError
@@ -374,7 +362,7 @@ export function createApiHandler(platform) {
       try {
         await requireCapability({ runtime, store, request, capability: 'publish:write' });
         const activeRelease = await releaseStore.activateRelease(params.id);
-        doEdgepressAction(runtime, hooks, EDGEPRESS_HOOK_NAMES.releaseActivatedAction, {
+        doAction(runtime, hooks, HOOK_NAMES.releaseActivatedAction, {
           releaseId: activeRelease,
           source: 'manual'
         });
