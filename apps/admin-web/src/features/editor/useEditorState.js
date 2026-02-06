@@ -16,13 +16,17 @@ export function useEditorState(shell) {
   function openDocument(doc, setSelectedId, setTitle) {
     setSelectedId(doc.id);
     setTitle(doc.title || '');
+    if (Array.isArray(doc.blocks)) {
+      setBlocks(doc.blocks);
+      return;
+    }
     setBlocks(toBlocks(doc.content));
   }
 
   async function saveDocument(selectedId, title) {
     if (!selectedId) return null;
     const content = serialize(blocks);
-    const updated = await shell.updateDocument(selectedId, { title, content });
+    const updated = await shell.updateDocument(selectedId, { title, blocks, content });
     return updated.document;
   }
 

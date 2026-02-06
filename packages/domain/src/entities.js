@@ -14,11 +14,12 @@ export function createUser({ id, username, password, role = 'admin' }) {
   };
 }
 
-export function createDocument({ id, title, content, createdBy, status = 'draft', now }) {
+export function createDocument({ id, title, content, blocks = [], createdBy, status = 'draft', now }) {
   return {
     id,
     title,
     content,
+    blocks: Array.isArray(blocks) ? blocks : [],
     status,
     createdBy,
     createdAt: now,
@@ -26,12 +27,13 @@ export function createDocument({ id, title, content, createdBy, status = 'draft'
   };
 }
 
-export function createRevision({ id, documentId, title, content, sourceRevisionId = null, authorId, now }) {
+export function createRevision({ id, documentId, title, content, blocks = [], sourceRevisionId = null, authorId, now }) {
   return {
     id,
     documentId,
     title,
     content,
+    blocks: Array.isArray(blocks) ? blocks : [],
     sourceRevisionId,
     authorId,
     createdAt: now

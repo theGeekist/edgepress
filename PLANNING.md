@@ -95,11 +95,14 @@ Exit criteria:
 - The loop passes in all three runtime targets with the same pass/fail assertions.
 
 ## Phase 8 – Internal Hooks + API Hardening
-- [ ] Add internal hook interface at domain boundaries (`afterDocumentWrite`, `afterRevisionCreate`, `afterPublishStarted`, `afterPublishCompleted`, `afterReleaseActivated`).
-- [ ] Add `beforePublish` synchronous hook for policy/validation/transforms.
-- [ ] Classify hooks by execution model: synchronous (blocking) vs async (side-effects/notifications).
+- [x] Add WP-compatible internal hook surface at domain boundaries via `@wordpress/hooks` (`addAction`, `doAction`, `addFilter`, `applyFilters`) with namespaced `edgepress.*` lifecycle hooks.
+- [x] Add synchronous `beforePublish` policy/transform hook via `applyFilters('edgepress.publish.provenance', payload)`.
+- [x] Enforce sync-by-contract hook execution semantics (no async/waitUntil action dispatch).
+- [x] Add server-side JS hook bootstrap registration at composition roots (local server + Cloudflare worker) so `addAction`/`addFilter` are available on both client and server runtimes.
 - [ ] Normalize API versioning/envelope/pagination rules and document them as stable contract behavior.
 - [ ] Add webhook delivery surface for publish completed + release activated events.
+- `Increment complete`: replaced bespoke lifecycle hooks with canonical `@wordpress/hooks` semantics (`addAction`, `doAction`, `addFilter`, `applyFilters`) and added server-side JS bootstrap registration in composition roots (`apps/api-edge/src/hooks-bootstrap.js`, `apps/api-edge/src/server.js`, `packages/adapters-cloudflare/src/worker.js`).
+- Note: API runtime now requires a full WP-compatible hook registry surface when `platform.hooks` is supplied; partial custom registries intentionally fall back to shared `@wordpress/hooks`.
 
 Exit criteria:
 - Domain actions can be extended without direct coupling to route handlers.

@@ -1,8 +1,10 @@
 import http from 'node:http';
 import { createInMemoryPlatform } from '../../../packages/testing/src/inMemoryPlatform.js';
 import { createApiHandler } from './app.js';
+import { attachServerHooks } from './hooks-bootstrap.js';
 
 const platform = createInMemoryPlatform();
+attachServerHooks(platform);
 const handleRequest = createApiHandler(platform);
 const port = Number(process.env.PORT || 8787);
 

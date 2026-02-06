@@ -1,5 +1,6 @@
 import { assertReleaseManifestImmutable } from '../../domain/src/invariants.js';
 import { normalizePublishProvenanceInput } from '../../domain/src/provenance.js';
+import { serialize } from '@wordpress/blocks';
 
 // Non-cryptographic hash for deterministic testable fingerprints only.
 function hashString(input) {
@@ -9,6 +10,33 @@ function hashString(input) {
     hash += (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
   }
   return Math.abs(hash >>> 0).toString(16).padStart(8, '0');
+}
+
+function asErrorMessage(error) {
+  if (!error) return 'Unknown serialization error';
+  if (typeof error.message === 'string' && error.message) return error.message;
+  return String(error);
+}
+
+function serializeBlocks(runtime, doc) {
+  if (!Array.isArray(doc.blocks)) return '';
+  try {
+    const serialized = serialize(doc.blocks);
+    if (doc.blocks.length > 0 && !serialized) {
+      runtime.log('warn', 'publish_blocks_empty_serialization', {
+        documentId: doc.id,
+        blockCount: doc.blocks.length
+      });
+    }
+    return serialized;
+  } catch (error) {
+    runtime.log('warn', 'publish_blocks_serialize_failed', {
+      documentId: doc.id,
+      blockCount: doc.blocks.length,
+      message: asErrorMessage(error)
+    });
+    return '';
+  }
 }
 
 export async function createRelease({ runtime, store, releaseStore, sourceRevisionId, sourceRevisionSet, publishedBy }) {
@@ -23,7 +51,9 @@ export async function createRelease({ runtime, store, releaseStore, sourceRevisi
   }
   for (const doc of docs) {
     const route = doc.id;
-    const html = `<html><body><article><h1>${doc.title}</h1>${doc.content}</article></body></html>`;
+    const serializedBlocks = serializeBlocks(runtime, doc);
+    const canonicalContent = serializedBlocks || doc.content || '';
+    const html = `<html><body><article><h1>${doc.title}</h1>${canonicalContent || ''}</article></body></html>`;
     const hash = hashString(html);
     const artifactRef = await releaseStore.writeArtifact(releaseId, route, html, 'text/html');
     artifacts.push({ route, path: artifactRef.path, hash, contentType: artifactRef.contentType });
