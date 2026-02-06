@@ -35,8 +35,16 @@ export function createCloudflareReferencePlatform(env = {}) {
     }
   };
 
+  const releaseStore = {
+    ...base.releaseStore,
+    async writeArtifact(releaseId, route, bytes, contentType = 'text/html') {
+      return base.releaseStore.writeArtifact(releaseId, route, bytes, contentType);
+    }
+  };
+
   return {
     ...base,
-    runtime
+    runtime,
+    releaseStore
   };
 }

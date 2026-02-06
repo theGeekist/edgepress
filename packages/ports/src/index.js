@@ -40,6 +40,7 @@ export function assertPlatformPorts(platform) {
   assertPortMethod(platform.store, 'listRevisions');
   assertPortMethod(platform.blobStore, 'putBlob');
   assertPortMethod(platform.cacheStore, 'get');
+  assertPortMethod(platform.releaseStore, 'writeArtifact');
   assertPortMethod(platform.releaseStore, 'writeManifest');
   assertPortMethod(platform.previewStore, 'createPreview');
 }
