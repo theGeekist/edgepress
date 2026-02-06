@@ -1,5 +1,12 @@
-export function dirname() {
-  return '';
+export function dirname(pathname = '') {
+  if (!pathname) return '';
+  let normalized = String(pathname);
+  while (normalized.endsWith('/')) {
+    normalized = normalized.slice(0, -1);
+  }
+  const lastSlash = normalized.lastIndexOf('/');
+  if (lastSlash <= 0) return '';
+  return normalized.slice(0, lastSlash);
 }
 
 export function join(...parts) {
@@ -11,6 +18,7 @@ export function isAbsolute(pathname = '') {
 }
 
 export function resolve(...parts) {
+  // Intentionally minimal browser shim: this does not emulate Node's absolute resolution semantics.
   return join(...parts);
 }
 

@@ -7,7 +7,6 @@ import { ContentListTable } from './ContentListTable.jsx';
 import { PublishPanel } from './PublishPanel.jsx';
 import { ContentSettingsPanel } from './ContentSettingsPanel.jsx';
 import { ActionButton } from '../../components/ui/ActionButton.jsx';
-import { DropdownButton } from '../../components/ui/DropdownButton.jsx';
 import { FilterTabs } from '../../components/ui/FilterTabs.jsx';
 import { SettingsPage } from '../../components/layout/SettingsPage.jsx';
 import { MetaBox } from '../../components/ui/MetaBox.jsx';
@@ -100,11 +99,8 @@ export function AdminWorkspace({
                 <ContentSettingsPanel
                   palette={palette}
                   hasSelection={hasSelection}
-                  selectedDoc={selectedDoc}
                   meta={selectedMeta}
                   onUpdateMeta={(patch) => docs.updateMeta(docs.selectedId, patch)}
-                  onCreatePage={() => actions.onCreate('page')}
-                  onCreatePost={() => actions.onCreate('post')}
                 />
               </View>
             </View>
@@ -119,7 +115,6 @@ export function AdminWorkspace({
               onTypeFilter={docs.setContentTypeFilter}
               contentStatusFilter={docs.contentStatusFilter}
               onStatusFilter={docs.setContentStatusFilter}
-              onToggleAllVisible={docs.setVisibleSelection}
               onToggleRow={docs.toggleRowSelection}
               onBulkApply={actions.onBulkApply}
               onClearSelected={docs.clearSelectedRows}

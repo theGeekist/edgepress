@@ -1,6 +1,5 @@
-import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
-
+import { useState } from 'react';
 import { ActionButton } from '../../components/ui/ActionButton.jsx';
 import { ThemedTextInput } from '../../components/ui/ThemedTextInput.jsx';
 import { DataTable } from '../../components/ui/DataTable.jsx';
@@ -8,8 +7,13 @@ import { DropdownButton } from '../../components/ui/DropdownButton.jsx';
 import { FilterTabs } from '../../components/ui/FilterTabs.jsx';
 import { layoutStyles } from './styles.js';
 
-function labelCase(value) {
-  return value === 'post' ? 'Post' : value === 'published' ? 'Published' : value === 'trash' ? 'Trash' : 'Draft';
+function labelStatus(value) {
+  const labels = {
+    published: 'Published',
+    trash: 'Trash',
+    draft: 'Draft'
+  };
+  return labels[value] || 'Unknown';
 }
 
 function formatUpdated(value) {
@@ -37,7 +41,6 @@ export function ContentListTable({
   onTypeFilter,
   contentStatusFilter,
   onStatusFilter,
-  onToggleAllVisible,
   onToggleRow,
   onBulkApply,
   onClearSelected,
@@ -52,10 +55,13 @@ export function ContentListTable({
   paginationState,
   onPageChange
 }) {
-  const [showNewMenu, setShowNewMenu] = useState(false);
   const [bulkAction, setBulkAction] = useState('none');
-  const allVisibleIds = docs.map((doc) => doc.id);
-  const allVisibleSelected = docs.length > 0 && docs.every((doc) => selectedRowIds.includes(doc.id));
+  const bulkActionLabels = {
+    none: 'Bulk Actions',
+    trash: 'Move to Trash',
+    published: 'Publish',
+    draft: 'Restore to Draft'
+  };
 
   async function applyBulk() {
     if (bulkAction === 'none') {
@@ -93,6 +99,8 @@ export function ContentListTable({
             <Pressable onPress={() => onEdit(doc)}><Text style={{ fontSize: 12, color: palette.accent }}>Edit</Text></Pressable>
             <Text style={{ fontSize: 12, color: palette.border }}>|</Text>
             <Pressable onPress={() => onRowTrash(doc)}><Text style={{ fontSize: 12, color: palette.error }}>Trash</Text></Pressable>
+            <Text style={{ fontSize: 12, color: palette.border }}>|</Text>
+            <Pressable onPress={() => onRowDelete?.(doc)}><Text style={{ fontSize: 12, color: palette.error }}>Delete</Text></Pressable>
           </View>
         </View>
       )
@@ -102,21 +110,21 @@ export function ContentListTable({
       width: '15%',
       label: 'Type',
       sortable: true,
-      render: (doc) => <Text style={{ color: palette.text, fontSize: 13 }}>{doc.ui.type === 'post' ? 'Post' : 'Page'}</Text>
+      render: (doc) => <Text style={{ color: palette.text, fontSize: 13 }}>{doc?.ui?.type === 'post' ? 'Post' : 'Page'}</Text>
     },
     {
       key: 'status',
       width: '15%',
       label: 'Status',
       sortable: true,
-      render: (doc) => <StatusBadge status={doc.ui.status} palette={palette} />
+      render: (doc) => <StatusBadge status={doc?.ui?.status} palette={palette} />
     },
     {
       key: 'updated',
       width: '20%',
       label: 'Updated',
       sortable: true,
-      render: (doc) => <Text style={{ color: palette.textMuted, fontSize: 13 }}>{formatUpdated(doc.ui.updatedAtLabel)}</Text>
+      render: (doc) => <Text style={{ color: palette.textMuted, fontSize: 13 }}>{formatUpdated(doc?.ui?.updatedAtLabel)}</Text>
     }
   ];
   const pagination = {
@@ -180,7 +188,7 @@ export function ContentListTable({
       <View style={[layoutStyles.card, layoutStyles.contentControlBar, { borderColor: palette.border, backgroundColor: palette.surfaceMuted, zIndex: 10, marginBottom: 0, borderBottomWidth: 0, borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }]}>
         <View style={layoutStyles.contentControlGroup}>
           <DropdownButton
-            label={bulkAction === 'none' ? "Bulk Actions" : (bulkAction === 'trash' ? 'Move to Trash' : (bulkAction === 'published' ? 'Publish' : 'Restore to Draft'))}
+            label={bulkActionLabels[bulkAction] || 'Bulk Actions'}
             palette={palette}
             items={[
               { label: 'Bulk Actions', onPress: () => setBulkAction('none') },
@@ -228,26 +236,8 @@ function CheckboxCell({ palette, checked, onPress, label = '' }) {
 function StatusBadge({ status, palette }) {
   const isPublished = status === 'published';
   const color = isPublished ? '#00a32a' : palette.textMuted; // WP Green for published
-  const label = labelCase(status);
+  const label = labelStatus(status);
   return (
     <Text style={{ color, fontWeight: isPublished ? '600' : '400', fontSize: 13 }}>{label}</Text>
-  );
-}
-
-function FilterLink({ label, active, palette, onPress }) {
-  return (
-    <Pressable onPress={onPress}>
-      <Text
-        style={{
-          color: active ? palette.accent : palette.textMuted, // Active blue, inactive grey
-          textDecorationLine: active ? 'none' : 'none',
-          fontWeight: active ? '700' : '400',
-          marginRight: 4,
-          fontSize: 13
-        }}
-      >
-        {label}
-      </Text>
-    </Pressable>
   );
 }

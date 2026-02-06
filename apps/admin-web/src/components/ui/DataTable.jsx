@@ -4,7 +4,6 @@ export function DataTable({
     columns,
     data,
     keyExtractor,
-    onRowClick,
     palette,
     renderEmpty,
     pagination,

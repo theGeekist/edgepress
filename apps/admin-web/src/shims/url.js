@@ -1,7 +1,9 @@
 export function pathToFileURL(pathname = '') {
+  const href = `file://${pathname}`;
   return {
+    href,
     toString() {
-      return `file://${pathname}`;
+      return href;
     }
   };
 }

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 
 const CONTENT_META_STORAGE_KEY = 'edgepress.admin.content-meta.v1';
 
@@ -113,7 +113,7 @@ export function useDocumentsState(shell) {
   const [pageSize] = useState(20);
   const [pagination, setPagination] = useState({ page: 1, pageSize: 20, totalItems: 0, totalPages: 1 });
 
-  const filteredDocs = useMemo(() => docs, [docs]);
+  const filteredDocs = docs;
 
   function setSelectedId(nextId) {
     setSelectedIdRaw(nextId);
@@ -237,14 +237,29 @@ export function useDocumentsState(shell) {
     if (rows.length === 0) {
       return 0;
     }
-    for (const row of rows) {
-      await shell.updateDocument(row.id, {
+    await Promise.all(rows.map((row) => shell.updateDocument(row.id, {
         title: row.title,
         content: row.content,
         blocks: Array.isArray(row.blocks) ? row.blocks : [],
         status
-      });
+      })));
+    await refresh();
+    return rows.length;
+  }
+
+  async function bulkDeleteSelected({ permanent = false } = {}) {
+    const rows = docs.filter((doc) => selectedRowIds.includes(doc.id));
+    if (rows.length === 0) {
+      return 0;
     }
+    for (const row of rows) {
+      await shell.deleteDocument(row.id, { permanent });
+      if (selectedId === row.id) {
+        setSelectedId(null);
+        setTitle('');
+      }
+    }
+    clearSelectedRows();
     await refresh();
     return rows.length;
   }
@@ -294,6 +309,7 @@ export function useDocumentsState(shell) {
     setVisibleSelection,
     clearSelectedRows,
     bulkSetStatus,
+    bulkDeleteSelected,
     setDocumentStatus,
     deleteDocument,
     contentSearch,
