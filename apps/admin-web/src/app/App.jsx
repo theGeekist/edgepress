@@ -12,6 +12,7 @@ import { useAuthState } from '../features/auth/useAuthState.js';
 import { useDocumentsState } from '../features/documents/useDocumentsState.js';
 import { useEditorState } from '../features/editor/useEditorState.js';
 import { EditorCanvas } from '../features/editor/EditorCanvas.jsx';
+import { useReleaseLoopState } from '../features/releases/useReleaseLoopState.js';
 
 registerCoreBlocks();
 
@@ -24,6 +25,7 @@ export function App() {
   const auth = useAuthState(shell);
   const docs = useDocumentsState(shell);
   const editor = useEditorState(shell);
+  const loop = useReleaseLoopState(shell);
 
   const [status, setStatus] = useState('');
   const [error, setError] = useState('');
@@ -46,7 +48,9 @@ export function App() {
     const items = await docs.refresh();
     if (!docs.selectedId && items[0]) {
       editor.openDocument(items[0], docs.setSelectedId, docs.setTitle);
+      await loop.refreshRevisions(items[0].id);
     }
+    await loop.refreshReleases();
   }
 
   async function onLogin() {
@@ -68,6 +72,7 @@ export function App() {
     try {
       const created = await docs.createDraft();
       editor.openDocument(created, docs.setSelectedId, docs.setTitle);
+      await loop.refreshRevisions(created.id);
       setStatus('Draft created');
     } catch (err) {
       setError(err.message);
@@ -84,6 +89,7 @@ export function App() {
       await docs.refresh();
       if (updated) {
         editor.openDocument(updated, docs.setSelectedId, docs.setTitle);
+        await loop.refreshRevisions(updated.id);
       }
       setStatus('Saved');
     } catch (err) {
@@ -97,8 +103,64 @@ export function App() {
     docs.setSelectedId(null);
     docs.setTitle('');
     editor.setBlocks([]);
+    loop.reset();
     setStatus('Signed out');
     setError('');
+  }
+
+  async function onPreview() {
+    if (!docs.selectedId) return;
+    setError('');
+    setStatus('Generating preview...');
+    try {
+      const payload = await loop.generatePreview(docs.selectedId);
+      setStatus(`Preview ready: ${payload.releaseLikeRef}`);
+    } catch (err) {
+      setError(err.message);
+      setStatus('');
+    }
+  }
+
+  async function onPublish() {
+    if (!docs.selectedId) return;
+    setError('');
+    setStatus('Publishing release...');
+    try {
+      const payload = await loop.publishCurrent();
+      await loop.refreshReleases();
+      setStatus(`Published job ${payload.job.id}`);
+    } catch (err) {
+      setError(err.message);
+      setStatus('');
+    }
+  }
+
+  async function onActivateLatest() {
+    const latest = loop.latestPublishedReleaseId || loop.getLatestReleaseId(loop.releaseItems);
+    if (!latest) return;
+    setError('');
+    setStatus('Activating release...');
+    try {
+      await loop.activate(latest);
+      await loop.refreshReleases();
+      setStatus(`Activated ${latest}`);
+    } catch (err) {
+      setError(err.message);
+      setStatus('');
+    }
+  }
+
+  async function onVerifyPrivate() {
+    if (!docs.selectedId) return;
+    setError('');
+    setStatus('Verifying private read...');
+    try {
+      const payload = await loop.verifyPrivateRead(docs.selectedId);
+      setStatus(`Private read ${payload.cache || 'unknown'} on ${payload.releaseId || 'none'}`);
+    } catch (err) {
+      setError(err.message);
+      setStatus('');
+    }
   }
 
   if (!auth.user) {
@@ -137,6 +199,15 @@ export function App() {
         <View style={styles.topbarActions}>
           <ActionButton label="New Draft" onPress={onCreate} palette={palette} />
           <ActionButton label="Save" onPress={onSave} disabled={!docs.selectedId} palette={palette} />
+          <ActionButton label="Preview" onPress={onPreview} disabled={!docs.selectedId} palette={palette} />
+          <ActionButton label="Publish Release" onPress={onPublish} disabled={!docs.selectedId} palette={palette} />
+          <ActionButton
+            label="Activate Latest"
+            onPress={onActivateLatest}
+            disabled={!loop.latestPublishedReleaseId && loop.releaseItems.length === 0}
+            palette={palette}
+          />
+          <ActionButton label="Verify Private" onPress={onVerifyPrivate} disabled={!docs.selectedId} palette={palette} />
           <ActionButton label={`Theme: ${mode}`} onPress={() => setMode(mode === 'dark' ? 'light' : 'dark')} palette={palette} />
           <ActionButton label="Log Out" onPress={onLogout} palette={palette} />
         </View>
@@ -169,6 +240,15 @@ export function App() {
           />
           <View style={[styles.canvasWrap, { borderColor: palette.border }]}> 
             <EditorCanvas blocks={editor.blocks} setBlocks={editor.setBlocks} />
+          </View>
+          <View style={[styles.loopPanel, { borderColor: palette.borderSoft, backgroundColor: palette.surfaceMuted }]}>
+            <Text style={[styles.loopTitle, { color: palette.text }]}>Editor Loop</Text>
+            <Text style={[styles.loopText, { color: palette.textMuted }]}>Revisions: {loop.revisionCount}</Text>
+            <Text style={[styles.loopText, { color: palette.textMuted }]}>Latest Job: {loop.latestPublishJobId || 'n/a'}</Text>
+            <Text style={[styles.loopText, { color: palette.textMuted }]}>Latest Release: {loop.latestPublishedReleaseId || 'n/a'}</Text>
+            <Text style={[styles.loopText, { color: palette.textMuted }]}>Active Release: {loop.activeRelease || 'n/a'}</Text>
+            <Text style={[styles.loopText, { color: palette.textMuted }]}>Private Read: {loop.privateReadState || 'n/a'}</Text>
+            <Text style={[styles.loopText, { color: palette.textMuted }]}>Preview URL: {loop.previewUrl || 'n/a'}</Text>
           </View>
           {status ? <Text style={[styles.status, { color: palette.textMuted }]}>{status}</Text> : null}
           {error ? <Text style={[styles.error, { color: palette.error }]}>{error}</Text> : null}
@@ -252,6 +332,20 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     overflow: 'hidden',
     minHeight: 560
+  },
+  loopPanel: {
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 10,
+    gap: 2
+  },
+  loopTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    marginBottom: 4
+  },
+  loopText: {
+    fontSize: 12
   },
   status: {
     fontSize: 13
