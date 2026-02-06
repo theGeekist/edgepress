@@ -4,6 +4,8 @@ import { toErrorMessage } from '../../../packages/domain/src/errors.js';
 export const HOOK_NAMES = {
   publishProvenanceFilter: 'edgepress.publish.provenance',
   documentWrittenAction: 'edgepress.document.written',
+  documentTrashedAction: 'edgepress.document.trashed',
+  documentDeletedAction: 'edgepress.document.deleted',
   revisionCreatedAction: 'edgepress.revision.created',
   publishStartedAction: 'edgepress.publish.started',
   publishCompletedAction: 'edgepress.publish.completed',

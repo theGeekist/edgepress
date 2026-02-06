@@ -81,8 +81,21 @@ export function createApiHandler(platform) {
     route('GET', '/v1/documents', async (request) => {
       try {
         await requireCapability({ runtime, store, request, capability: 'document:read' });
-        const items = await store.listDocuments();
-        return json({ items });
+        const url = new URL(request.url);
+        const query = {
+          q: url.searchParams.get('q') || '',
+          type: url.searchParams.get('type') || 'all',
+          status: url.searchParams.get('status') || 'all',
+          sortBy: url.searchParams.get('sortBy') || 'updatedAt',
+          sortDir: url.searchParams.get('sortDir') || 'desc',
+          page: Number(url.searchParams.get('page') || '1'),
+          pageSize: Number(url.searchParams.get('pageSize') || '20')
+        };
+        const payload = await store.listDocuments(query);
+        if (Array.isArray(payload)) {
+          return json({ items: payload });
+        }
+        return json(payload);
       } catch (e) {
         return authzErrorResponse(e);
       }
@@ -99,6 +112,7 @@ export function createApiHandler(platform) {
           id,
           title: body.title || 'Untitled',
           content: body.content || '',
+          type: body.type || 'page',
           blocks: normalizedBlocks.blocks,
           blocksSchemaVersion: normalizedBlocks.blocksSchemaVersion,
           createdBy: user.id,
@@ -144,6 +158,7 @@ export function createApiHandler(platform) {
         const document = await store.updateDocument(params.id, {
           title: body.title ?? existing.title,
           content: body.content ?? existing.content,
+          type: body.type ?? existing.type ?? 'page',
           blocks: normalizedBlocks.blocks,
           blocksSchemaVersion: normalizedBlocks.blocksSchemaVersion,
           status: body.status ?? existing.status
@@ -166,6 +181,13 @@ export function createApiHandler(platform) {
           revision,
           user
         });
+        if (existing.status !== 'trash' && document.status === 'trash') {
+          doAction(runtime, hooks, HOOK_NAMES.documentTrashedAction, {
+            document,
+            previousStatus: existing.status,
+            user
+          });
+        }
         doAction(runtime, hooks, HOOK_NAMES.revisionCreatedAction, {
           mode: 'update',
           document,
@@ -174,6 +196,38 @@ export function createApiHandler(platform) {
         });
 
         return json({ document, revision });
+      } catch (e) {
+        return authzErrorResponse(e);
+      }
+    }),
+
+    route('DELETE', '/v1/documents/:id', async (request, params) => {
+      try {
+        const user = await requireCapability({ runtime, store, request, capability: 'document:write' });
+        const existing = await store.getDocument(params.id);
+        if (!existing) return error('DOCUMENT_NOT_FOUND', 'Document not found', 404);
+        const url = new URL(request.url);
+        const permanent = ['1', 'true', 'yes'].includes((url.searchParams.get('permanent') || '').toLowerCase());
+
+        if (permanent) {
+          const deleted = await store.deleteDocument(params.id, { permanent: true });
+          if (!deleted) return error('DOCUMENT_NOT_FOUND', 'Document not found', 404);
+          doAction(runtime, hooks, HOOK_NAMES.documentDeletedAction, {
+            documentId: params.id,
+            previousStatus: existing.status,
+            user
+          });
+          return json({ ok: true, deleted: true });
+        }
+
+        const trashed = await store.updateDocument(params.id, { status: 'trash' });
+        if (!trashed) return error('DOCUMENT_NOT_FOUND', 'Document not found', 404);
+        doAction(runtime, hooks, HOOK_NAMES.documentTrashedAction, {
+          document: trashed,
+          previousStatus: existing.status,
+          user
+        });
+        return json({ ok: true, document: trashed });
       } catch (e) {
         return authzErrorResponse(e);
       }

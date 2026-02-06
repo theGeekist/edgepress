@@ -99,8 +99,8 @@ Exit criteria:
 - [x] Add synchronous `beforePublish` policy/transform hook via `applyFilters('edgepress.publish.provenance', payload)`.
 - [x] Enforce sync-by-contract hook execution semantics (no async/waitUntil action dispatch).
 - [x] Add server-side JS hook bootstrap registration at composition roots (local server + Cloudflare worker) so `addAction`/`addFilter` are available on both client and server runtimes.
-- [ ] Normalize API versioning/envelope/pagination rules and document them as stable contract behavior.
-- [ ] Add webhook delivery surface for publish completed + release activated events.
+- [ ] Normalize API versioning/envelope/pagination rules and document them as stable contract behavior. (tracked for close in Phase 14)
+- [ ] Add webhook delivery surface for publish completed + release activated events. (tracked for close in Phase 14)
 - `Increment complete`: replaced bespoke lifecycle hooks with canonical `@wordpress/hooks` semantics (`addAction`, `doAction`, `addFilter`, `applyFilters`) and added server-side JS bootstrap registration in composition roots (`apps/api-edge/src/hooks-bootstrap.js`, `apps/api-edge/src/server.js`, `packages/adapters-cloudflare/src/worker.js`).
 - Note: API runtime now requires a full WP-compatible hook registry surface when `platform.hooks` is supplied; partial custom registries intentionally fall back to shared `@wordpress/hooks`.
 - Trust boundary note: published HTML intentionally renders author-provided block/content HTML; sanitization is not performed in the publisher and must be enforced at authoring/import boundaries when untrusted inputs are introduced.
@@ -124,21 +124,68 @@ Exit criteria:
 - Content canonical form is explicit and test-backed.
 - Publish/revision/preview paths use one coherent content model.
 
-## Phase 10 – Foundational Blocks + Admin UX Track
-- [ ] Implement three proving blocks end-to-end: rich text, image+caption, embed.
-- [ ] Wire media workflow and embed validation for these blocks through the canonical API.
-- [ ] Ship Admin UX surfaces for revision history, preview handoff, publish status, and release activation visibility.
-- [ ] Publish block portability policy (`web`/`rn` support metadata + unknown-block safe fallback).
+## Phase Gate Clarification (2026-02-06)
+- Phase 9 is complete by scope: block JSON is the canonical content model and publish/preview/revision paths are aligned to it.
+- Current branch `phase-10-admin-ui-foundations` is correct: we are in Phase 10 work.
+- Open items in Phase 7 and Phase 8 remain valid cross-cutting follow-ups and do not invalidate Phase 9 completion.
+
+## Phase 10 – Admin UX Foundations (complete)
+- [x] Ship Admin IA baseline (Dashboard/Content/Media/Appearance/Settings nav + Content subviews Pages/Posts/Drafts/Published).
+- [x] Keep list/table management separate from authoring workspace (WordPress-style flow: list -> edit/new).
+- [x] Ship editor workspace shell parity (left admin nav, center Gutenberg editor, right publishing/settings metaboxes).
+- [x] Collapse user-facing publish semantics to one primary action (`Publish`) while keeping release activation internal/transparent.
+- [x] Normalize user language and feedback (`Save draft`, `Preview`, `Publish`, `View live`) and hide internal IDs from primary flows.
+- [x] Ship revisions timeline UX with human-readable events.
+- [x] Land WordPress-like admin shell layout strategy and component boundaries (`docs/architecture/admin-ui-strategy.md`).
+- `Increment complete`: admin shell now includes section navigation and a type/status-aware Content rail with search/filters, plus a right-rail Post Settings panel (permalink/excerpt/date/featured-image URL as transitional metadata) wired alongside publishing actions (`apps/admin-web/src/features/layout/*`, `apps/admin-web/src/features/documents/useDocumentsState.js`, `apps/admin-web/src/app/useAdminAppController.js`).
+- `Increment complete`: Content now defaults to a first-class list/table screen with row selection and bulk status actions; `Edit`/`New` transitions into a separate authoring workspace while the left rail remains global admin navigation (`apps/admin-web/src/features/layout/ContentListTable.jsx`, `apps/admin-web/src/features/layout/AdminSidebarNav.jsx`, `apps/admin-web/src/features/layout/AdminWorkspace.jsx`).
 
 Exit criteria:
-- Three blocks survive revision -> preview -> publish -> activation without special-case code.
-- Admin UI makes publish/release state observable without log inspection.
+- Admin experience follows WordPress mental model for list management and authoring flow.
+- Publish workflow is user-simple while preserving internal release guarantees.
+- UI structure follows declared component contract (`app` orchestration + `features/layout` shell + feature modules).
+- `Phase complete (2026-02-06)`: foundational admin IA/editor UX slice closed on branch `phase-10-admin-ui-foundations`; permalink canonicalization, navigation/media, and theme-system work moved to Phases 11-13.
 
-## Phase 11 – Platform Contract, Compatibility, and Ops Confidence
+## Phase 11 – Permalink and Route Substrate (priority next)
+- [ ] Make permalink/slug canonical in stored document model (not local-only UI metadata).
+- [ ] Define unique slug and collision policy by content type/status.
+- [ ] Define canonical URI strategy and publish artifact route mapping.
+- [ ] Wire private/live read resolution by canonical route identity, not implicit document-id assumptions.
+- [ ] Add migration strategy for existing documents and legacy route assumptions.
+- [ ] Add acceptance tests for route edits across draft -> preview -> publish -> live flows.
+
+Exit criteria:
+- Permalinks are first-class persisted data and deterministically map to delivery routes.
+- Preview/private/live behavior remains stable across route changes and republish cycles.
+
+## Phase 12 – Navigation and Media Foundations
+- [ ] Add navigation domain model and API (menus/items/order/target route).
+- [ ] Render navigation into published output using canonical route mappings.
+- [ ] Implement media domain metadata parity (`alt`, `caption`, `description`, featured image linkage).
+- [ ] Implement media upload/browse workflow in admin and wire image block + featured image flows.
+- [ ] Implement foundational block set end-to-end: rich text, image+caption, embed (with embed validation policy).
+
+Exit criteria:
+- Navigation and media are first-class data models connected to publish output and editor UX.
+- Foundational blocks survive revision -> preview -> publish -> live without special cases.
+
+## Phase 13 – Theme System and Design Parity
+- [ ] Introduce `theme.json` as first-class design token source for editor/preview/site.
+- [ ] Define token resolution model and fallback policy (theme defaults vs content overrides).
+- [ ] Add templates/patterns strategy and lifecycle (registration, versioning, migration).
+- [ ] Apply theme parity across admin editing chrome, preview skin, and published output.
+
+Exit criteria:
+- Theme tokens and templates are versioned, testable, and consistently applied across surfaces.
+- Preview reflects the same design contract as live output.
+
+## Phase 14 – Platform Contract, API Compatibility, and Ops Confidence
 - [ ] Publish `createPlatform()` contract doc with required/optional ports and fallback/error semantics.
 - [ ] Replace placeholder `packages/contracts` validator with OpenAPI/JSON Schema and regenerate SDK/client contract checks.
 - [ ] Publish adapter conformance matrix and required parity checks (in-memory vs wrangler-local vs deployed).
 - [ ] Add known degradations register and release-cut checklist.
+- [ ] Normalize API versioning/envelope/pagination rules and publish as stable guarantees.
+- [ ] Add webhook delivery surface for publish completed + release activated events.
 - [ ] Ship WP REST façade + `wp.*` compatibility profile (guaranteed/partial/out-of-scope).
 
 Exit criteria:
@@ -147,7 +194,7 @@ Exit criteria:
 
 ## Dependencies & Notes
 - Ports + Domain must not depend on infrastructure; only `packages/adapters-cloudflare` uses Cloudflare-specific APIs. (`scripts/check-boundaries.js` enforces this.)
-- Canonical API tests currently validate required keys only. Replace `packages/contracts` with full schema before closing Phase 11.
+- Canonical API tests currently validate required keys only. Replace `packages/contracts` with full schema before closing Phase 14.
 - Current docs (`idea.md`) imply Gutenberg usability improvements, but execution tracking now lives in `Phase 10` above for explicit ownership.
 - Concurrency caveat: KV-backed pointer/history updates in the reference Cloudflare adapter are not strongly atomic under concurrent writers; use D1 transaction boundaries or a Durable Object single-writer path when moving from reference to production guarantees.
 - Hash caveat: current publisher hashing is intentionally non-cryptographic (`hashString`) for deterministic fingerprints and testability; do not treat `releaseHash`/`contentHash` as security primitives.

@@ -21,8 +21,10 @@ export function ThemedTextInput({ palette, style, ...props }) {
 const styles = StyleSheet.create({
   input: {
     borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 8
+    borderRadius: 3,
+    paddingHorizontal: 12,
+    height: 32,
+    fontSize: 13,
+    textAlignVertical: 'center' // Android fix
   }
 });

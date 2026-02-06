@@ -118,10 +118,44 @@ export function createAppStores({
         await ensureD1AppSchema();
         await d1.prepare(D1_SQL.deleteRefreshToken).bind(token).run();
       },
-      async listDocuments() {
+      async listDocuments(query) {
         await ensureD1AppSchema();
         const rows = await d1.prepare(D1_SQL.selectDocuments).all();
-        return (rows.results || []).map((entry) => parseJsonSafe(entry.document_json)).filter(Boolean);
+        const all = (rows.results || []).map((entry) => parseJsonSafe(entry.document_json)).filter(Boolean);
+        if (!query) {
+          return all;
+        }
+        const q = String(query.q || '').trim().toLowerCase();
+        const type = query.type || 'all';
+        const status = query.status || 'all';
+        const sortBy = query.sortBy || 'updatedAt';
+        const sortDir = query.sortDir === 'asc' ? 'asc' : 'desc';
+        const page = Math.max(1, Number(query.page) || 1);
+        const pageSize = Math.min(100, Math.max(1, Number(query.pageSize) || 20));
+
+        const filtered = all.filter((doc) => {
+          if (status !== 'all' && doc.status !== status) return false;
+          const docType = doc.type || 'page';
+          if (type !== 'all' && docType !== type) return false;
+          if (q && !String(doc.title || '').toLowerCase().includes(q)) return false;
+          return true;
+        });
+
+        filtered.sort((a, b) => {
+          const av = String(a?.[sortBy] || '');
+          const bv = String(b?.[sortBy] || '');
+          return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+        });
+
+        const totalItems = filtered.length;
+        const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+        const safePage = Math.min(page, totalPages);
+        const start = (safePage - 1) * pageSize;
+        const items = filtered.slice(start, start + pageSize);
+        return {
+          items,
+          pagination: { page: safePage, pageSize, totalItems, totalPages }
+        };
       },
       async getDocument(id) {
         await ensureD1AppSchema();
@@ -146,6 +180,18 @@ export function createAppStores({
         };
         await d1.prepare(D1_SQL.upsertDocument).bind(updated.id, JSON.stringify(updated), updated.updatedAt).run();
         return updated;
+      },
+      async deleteDocument(id, { permanent = false } = {}) {
+        await ensureD1AppSchema();
+        const existing = await this.getDocument(id);
+        if (!existing) return null;
+        if (!permanent) {
+          return this.updateDocument(id, { status: 'trash' });
+        }
+
+        await d1.prepare(D1_SQL.deleteDocumentById).bind(id).run();
+        await d1.prepare(D1_SQL.deleteRevisionsByDocument).bind(id).run();
+        return { id };
       },
       async listRevisions(documentId) {
         await ensureD1AppSchema();
@@ -253,11 +299,45 @@ export function createAppStores({
         await ensureKvSeeded();
         if (kv.delete) await kv.delete(appKey('refresh', token));
       },
-      async listDocuments() {
+      async listDocuments(query) {
         await ensureKvSeeded();
         const ids = (await kvGetJson(appKey('documents'))) || [];
         const docs = await Promise.all(ids.map((id) => kvGetJson(appKey('document', id))));
-        return docs.filter(Boolean);
+        const all = docs.filter(Boolean);
+        if (!query) {
+          return all;
+        }
+        const q = String(query.q || '').trim().toLowerCase();
+        const type = query.type || 'all';
+        const status = query.status || 'all';
+        const sortBy = query.sortBy || 'updatedAt';
+        const sortDir = query.sortDir === 'asc' ? 'asc' : 'desc';
+        const page = Math.max(1, Number(query.page) || 1);
+        const pageSize = Math.min(100, Math.max(1, Number(query.pageSize) || 20));
+
+        const filtered = all.filter((doc) => {
+          if (status !== 'all' && doc.status !== status) return false;
+          const docType = doc.type || 'page';
+          if (type !== 'all' && docType !== type) return false;
+          if (q && !String(doc.title || '').toLowerCase().includes(q)) return false;
+          return true;
+        });
+
+        filtered.sort((a, b) => {
+          const av = String(a?.[sortBy] || '');
+          const bv = String(b?.[sortBy] || '');
+          return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+        });
+
+        const totalItems = filtered.length;
+        const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+        const safePage = Math.min(page, totalPages);
+        const start = (safePage - 1) * pageSize;
+        const items = filtered.slice(start, start + pageSize);
+        return {
+          items,
+          pagination: { page: safePage, pageSize, totalItems, totalPages }
+        };
       },
       async getDocument(id) {
         await ensureKvSeeded();
@@ -282,6 +362,30 @@ export function createAppStores({
         };
         await kvPutJson(appKey('document', id), updated);
         return updated;
+      },
+      async deleteDocument(id, { permanent = false } = {}) {
+        await ensureKvSeeded();
+        const existing = await kvGetJson(appKey('document', id));
+        if (!existing) return null;
+        if (!permanent) {
+          return this.updateDocument(id, { status: 'trash' });
+        }
+        if (kv.delete) {
+          await kv.delete(appKey('document', id));
+        }
+        const docIds = (await kvGetJson(appKey('documents'))) || [];
+        await kvPutJson(appKey('documents'), docIds.filter((entryId) => entryId !== id));
+
+        const revisionIds = (await kvGetJson(appKey('revisions_by_doc', id))) || [];
+        if (kv.delete) {
+          for (const revisionId of revisionIds) {
+            await kv.delete(appKey('revision', revisionId));
+          }
+          await kv.delete(appKey('revisions_by_doc', id));
+        } else {
+          await kvPutJson(appKey('revisions_by_doc', id), []);
+        }
+        return { id };
       },
       async listRevisions(documentId) {
         await ensureKvSeeded();
