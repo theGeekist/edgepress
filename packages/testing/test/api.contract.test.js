@@ -97,6 +97,24 @@ test('canonical API contracts return required response keys', async () => {
   assert.equal(activate.res.status, 200);
   assertResponseShape('POST /v1/releases/:id/activate', activate.json);
 
+  const navMenus = await requestJson(handler, 'GET', '/v1/navigation/menus', { token });
+  assert.equal(navMenus.res.status, 200);
+  assertResponseShape('GET /v1/navigation/menus', navMenus.json);
+
+  const navPrimary = await requestJson(handler, 'GET', '/v1/navigation/menus/primary', { token });
+  assert.equal(navPrimary.res.status, 200);
+  assertResponseShape('GET /v1/navigation/menus/:key', navPrimary.json);
+
+  const navPut = await requestJson(handler, 'PUT', '/v1/navigation/menus/primary', {
+    token,
+    body: {
+      title: 'Primary',
+      items: [{ label: 'Home', kind: 'internal', route: 'home' }]
+    }
+  });
+  assert.equal(navPut.res.status, 200);
+  assertResponseShape('PUT /v1/navigation/menus/:key', navPut.json);
+
   const preview = await requestJson(handler, 'GET', `/v1/preview/${docId}`, { token });
   assert.equal(preview.res.status, 200);
   assertResponseShape('GET /v1/preview/:documentId', preview.json);

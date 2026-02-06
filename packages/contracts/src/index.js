@@ -39,6 +39,9 @@ export const routes = {
   'GET /v1/publish/:jobId': { response: ['job'] },
   'POST /v1/releases/:id/activate': { response: ['activeRelease'] },
   'GET /v1/releases': { response: ['items', 'activeRelease'] },
+  'GET /v1/navigation/menus': { response: ['items'] },
+  'GET /v1/navigation/menus/:key': { response: ['menu'] },
+  'PUT /v1/navigation/menus/:key': { body: ['title', 'items'], response: ['menu'] },
   'GET /v1/preview/:documentId': { response: ['previewUrl', 'expiresAt', 'releaseLikeRef'] },
   'POST /v1/forms/:formId/submit': { body: ['payload'], response: ['submissionId'] },
   'GET /v1/private/:route': { response: ['route', 'html', 'releaseId'] }

@@ -165,3 +165,23 @@ test('sdk listDocuments serializes type and status filters into query', async ()
     'http://api.local/v1/documents?type=post&status=draft&sortBy=updatedAt&sortDir=desc&page=2'
   );
 });
+
+test('sdk navigation menu methods call canonical menu endpoints', async () => {
+  const calls = [];
+  const client = createClient({
+    baseUrl: 'http://api.local',
+    fetchImpl: async (url, init) => {
+      calls.push({ url, init });
+      return jsonResponse(200, { ok: true, items: [], menu: { key: 'primary', title: 'Primary', items: [] } });
+    }
+  });
+
+  await client.listNavigationMenus();
+  await client.getNavigationMenu('primary nav');
+  await client.upsertNavigationMenu('primary nav', { title: 'Primary', items: [] });
+
+  assert.equal(calls[0].url, 'http://api.local/v1/navigation/menus');
+  assert.equal(calls[1].url, 'http://api.local/v1/navigation/menus/primary%20nav');
+  assert.equal(calls[2].url, 'http://api.local/v1/navigation/menus/primary%20nav');
+  assert.equal(calls[2].init.method, 'PUT');
+});

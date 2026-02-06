@@ -1,4 +1,4 @@
-import { createClient } from '../../../packages/sdk/src/client.js';
+import { createClient } from '../../../../../packages/sdk/src/client.js';
 import { createCanonicalSdkStore } from './gutenberg-integration.js';
 
 const SESSION_STORAGE_KEY = 'edgepress.admin.session.v1';
@@ -147,6 +147,15 @@ export function createAdminShell({ baseUrl, fetchImpl = fetch }) {
     },
     async listReleases() {
       return store.listReleases();
+    },
+    async listNavigationMenus() {
+      return store.listNavigationMenus();
+    },
+    async getNavigationMenu(key = 'primary') {
+      return store.getNavigationMenu(key);
+    },
+    async upsertNavigationMenu(key = 'primary', input) {
+      return store.upsertNavigationMenu(key, input);
     },
     async verifyPrivate(routeId) {
       return store.getPrivateRoute(routeId);

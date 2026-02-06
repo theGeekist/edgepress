@@ -5,7 +5,7 @@
  * - Use api-fetch middleware for auth refresh + trace propagation.
  */
 
-import { createClient } from '../../../packages/sdk/src/client.js';
+import { createClient } from '../../../../../packages/sdk/src/client.js';
 
 export function createCanonicalSdkStore(config) {
   const client = createClient(config);
@@ -46,6 +46,15 @@ export function createCanonicalSdkStore(config) {
     },
     async listReleases() {
       return client.listReleases();
+    },
+    async listNavigationMenus() {
+      return client.listNavigationMenus();
+    },
+    async getNavigationMenu(key) {
+      return client.getNavigationMenu(key);
+    },
+    async upsertNavigationMenu(key, input) {
+      return client.upsertNavigationMenu(key, input);
     },
     async getPrivateRoute(routeId) {
       return client.getPrivateRoute(routeId);

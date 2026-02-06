@@ -25,6 +25,7 @@ export function createInMemoryPlatform() {
     cache: new Map(),
     previews: new Map(),
     forms: new Map(),
+    navigationMenus: new Map(),
     rateLimitHits: new Map()
   };
 
@@ -258,6 +259,21 @@ export function createInMemoryPlatform() {
       const submission = createFormSubmission({ ...input, now });
       state.forms.set(submission.id, submission);
       return submission;
+    },
+    async listNavigationMenus() {
+      return Array.from(state.navigationMenus.values());
+    },
+    async getNavigationMenu(key) {
+      return state.navigationMenus.get(key) || null;
+    },
+    async upsertNavigationMenu(menu) {
+      const normalized = {
+        ...menu,
+        key: String(menu?.key || '').trim(),
+        updatedAt: runtime.now().toISOString()
+      };
+      state.navigationMenus.set(normalized.key, normalized);
+      return normalized;
     }
   };
 

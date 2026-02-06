@@ -118,6 +118,9 @@ export function createClient({
     getPublishJob: (jobId) => request('GET', `/v1/publish/${jobId}`),
     activateRelease: (id) => request('POST', `/v1/releases/${id}/activate`),
     listReleases: () => request('GET', '/v1/releases'),
+    listNavigationMenus: () => request('GET', '/v1/navigation/menus'),
+    getNavigationMenu: (key) => request('GET', `/v1/navigation/menus/${encodeURIComponent(key)}`),
+    upsertNavigationMenu: (key, body) => request('PUT', `/v1/navigation/menus/${encodeURIComponent(key)}`, body),
     preview: (documentId) => request('GET', `/v1/preview/${documentId}`),
     getPrivateRoute: (routeId) => request('GET', `/v1/private/${encodeURIComponent(routeId)}`)
   };
