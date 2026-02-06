@@ -106,6 +106,7 @@ export function createClient({
     getPublishJob: (jobId) => request('GET', `/v1/publish/${jobId}`),
     activateRelease: (id) => request('POST', `/v1/releases/${id}/activate`),
     listReleases: () => request('GET', '/v1/releases'),
-    preview: (documentId) => request('GET', `/v1/preview/${documentId}`)
+    preview: (documentId) => request('GET', `/v1/preview/${documentId}`),
+    getPrivateRoute: (routeId) => request('GET', `/v1/private/${encodeURIComponent(routeId)}`)
   };
 }

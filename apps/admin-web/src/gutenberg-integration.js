@@ -28,6 +28,24 @@ export function createCanonicalSdkStore(config) {
     },
     async getPreview(documentId) {
       return client.preview(documentId);
+    },
+    async listRevisions(documentId) {
+      return client.listRevisions(documentId);
+    },
+    async publish(input = {}) {
+      return client.publish(input);
+    },
+    async getPublishJob(jobId) {
+      return client.getPublishJob(jobId);
+    },
+    async activateRelease(releaseId) {
+      return client.activateRelease(releaseId);
+    },
+    async listReleases() {
+      return client.listReleases();
+    },
+    async getPrivateRoute(routeId) {
+      return client.getPrivateRoute(routeId);
     }
   };
 }
