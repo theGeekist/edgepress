@@ -67,9 +67,14 @@ export function ContentListTable({
     if (bulkAction === 'none') {
       return;
     }
-    await onBulkApply(bulkAction);
-    setBulkAction('none');
-    onClearSelected();
+    try {
+      await onBulkApply(bulkAction);
+    } catch (e) {
+      throw e;
+    } finally {
+      setBulkAction('none');
+      onClearSelected();
+    }
   }
 
   // Define Columns

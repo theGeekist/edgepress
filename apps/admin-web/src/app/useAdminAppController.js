@@ -317,7 +317,11 @@ export function useAdminAppController() {
       setStatus('');
     } finally {
       docs.clearSelectedRows();
-      await docs.refresh();
+      try {
+        await docs.refresh();
+      } catch (refreshError) {
+        console.error('docs.refresh failed after bulk apply', refreshError);
+      }
     }
   }
 
@@ -332,7 +336,11 @@ export function useAdminAppController() {
       setStatus('');
     } finally {
       docs.clearSelectedRows();
-      await docs.refresh();
+      try {
+        await docs.refresh();
+      } catch (refreshError) {
+        console.error('docs.refresh failed after bulk apply', refreshError);
+      }
     }
   }
 

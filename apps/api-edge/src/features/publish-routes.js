@@ -115,9 +115,8 @@ export function createPublishRoutes({ runtime, store, releaseStore, hooks, route
         });
         return json({ activeRelease });
       } catch (e) {
-        if (e?.code === 'AUTH_REQUIRED' || e?.code === 'AUTH_FORBIDDEN') {
-          return authzErrorResponse(e);
-        }
+        const authCodes = new Set(['FORBIDDEN', 'AUTH_REQUIRED', 'AUTH_INVALID_TOKEN']);
+        if (authCodes.has(e?.code)) return authzErrorResponse(e);
         if (e?.message === 'Unknown releaseId') {
           return error('RELEASE_NOT_FOUND', e.message, 404);
         }

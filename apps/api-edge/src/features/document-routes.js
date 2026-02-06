@@ -10,6 +10,10 @@ function normalizeDocumentSortBy(input) {
   return ALLOWED_DOCUMENT_SORT_BY.has(input) ? input : 'updatedAt';
 }
 
+function normalizeDocumentSortDir(input) {
+  return input === 'asc' ? 'asc' : 'desc';
+}
+
 function parsePositiveInt(input, fallback) {
   const parsed = Number.parseInt(String(input ?? ''), 10);
   if (!Number.isFinite(parsed) || parsed < 1) {
@@ -42,7 +46,7 @@ export function createDocumentRoutes({ runtime, store, hooks, route, authzErrorR
           type: url.searchParams.get('type') || 'all',
           status: url.searchParams.get('status') || 'all',
           sortBy: normalizeDocumentSortBy(url.searchParams.get('sortBy') || 'updatedAt'),
-          sortDir: url.searchParams.get('sortDir') || 'desc',
+          sortDir: normalizeDocumentSortDir(url.searchParams.get('sortDir') || 'desc'),
           page: parsePositiveInt(url.searchParams.get('page'), 1),
           pageSize: Math.min(100, parsePositiveInt(url.searchParams.get('pageSize'), 20))
         };
@@ -157,11 +161,13 @@ export function createDocumentRoutes({ runtime, store, hooks, route, authzErrorR
         // DELETE soft-trash intentionally avoids revision creation; PATCH keeps the auditable revision path.
         const trashed = await store.updateDocument(params.id, { status: 'trash' });
         if (!trashed) return error('DOCUMENT_NOT_FOUND', 'Document not found', 404);
-        doAction(runtime, hooks, HOOK_NAMES.documentTrashedAction, {
-          document: trashed,
-          previousStatus: existing.status,
-          user
-        });
+        if (existing.status !== 'trash' && trashed.status === 'trash') {
+          doAction(runtime, hooks, HOOK_NAMES.documentTrashedAction, {
+            document: trashed,
+            previousStatus: existing.status,
+            user
+          });
+        }
         return json({ ok: true, document: trashed });
       } catch (e) {
         return authzErrorResponse(e);
