@@ -131,3 +131,37 @@ test('sdk does not call auth-failure callback when no token refresh handler is c
   await assert.rejects(() => client.listDocuments());
   assert.equal(authFailureCalls, 0);
 });
+
+test('sdk deleteDocument appends permanent query when requested', async () => {
+  const calls = [];
+  const client = createClient({
+    baseUrl: 'http://api.local',
+    fetchImpl: async (url) => {
+      calls.push(url);
+      return jsonResponse(200, { ok: true });
+    }
+  });
+
+  await client.deleteDocument('doc_soft');
+  await client.deleteDocument('doc_hard', { permanent: true });
+
+  assert.equal(calls[0], 'http://api.local/v1/documents/doc_soft');
+  assert.equal(calls[1], 'http://api.local/v1/documents/doc_hard?permanent=1');
+});
+
+test('sdk listDocuments serializes type and status filters into query', async () => {
+  const calls = [];
+  const client = createClient({
+    baseUrl: 'http://api.local',
+    fetchImpl: async (url) => {
+      calls.push(url);
+      return jsonResponse(200, { items: [] });
+    }
+  });
+
+  await client.listDocuments({ type: 'post', status: 'draft', sortBy: 'updatedAt', sortDir: 'desc', page: 2 });
+  assert.equal(
+    calls[0],
+    'http://api.local/v1/documents?type=post&status=draft&sortBy=updatedAt&sortDir=desc&page=2'
+  );
+});

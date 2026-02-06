@@ -44,9 +44,11 @@ export const D1_SQL = {
   deleteRefreshToken: 'DELETE FROM app_refresh_tokens WHERE token = ?',
   selectDocuments: 'SELECT document_json FROM app_documents ORDER BY updated_at ASC',
   selectDocumentById: 'SELECT document_json FROM app_documents WHERE id = ?',
+  deleteDocumentById: 'DELETE FROM app_documents WHERE id = ?',
   upsertDocument:
     'INSERT INTO app_documents (id, document_json, updated_at) VALUES (?, ?, ?) ON CONFLICT(id) DO UPDATE SET document_json = excluded.document_json, updated_at = excluded.updated_at',
   selectRevisionsByDocument: 'SELECT revision_json FROM app_revisions WHERE document_id = ? ORDER BY created_at ASC',
+  deleteRevisionsByDocument: 'DELETE FROM app_revisions WHERE document_id = ?',
   selectRevisionById: 'SELECT revision_json FROM app_revisions WHERE id = ?',
   upsertRevision:
     'INSERT INTO app_revisions (id, document_id, revision_json, created_at) VALUES (?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET document_id = excluded.document_id, revision_json = excluded.revision_json, created_at = excluded.created_at',

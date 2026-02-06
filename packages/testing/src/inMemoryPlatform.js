@@ -113,8 +113,55 @@ export function createInMemoryPlatform() {
     async revokeRefreshToken(token) {
       state.refreshTokens.delete(token);
     },
-    async listDocuments() {
-      return Array.from(state.documents.values());
+    async listDocuments(query) {
+      const all = Array.from(state.documents.values());
+      if (!query) {
+        return {
+          items: all,
+          pagination: {
+            page: 1,
+            pageSize: all.length || 1,
+            totalItems: all.length,
+            totalPages: 1
+          }
+        };
+      }
+      const q = String(query.q || '').trim().toLowerCase();
+      const type = query.type || 'all';
+      const status = query.status || 'all';
+      const sortBy = query.sortBy || 'updatedAt';
+      const sortDir = query.sortDir === 'asc' ? 'asc' : 'desc';
+      const page = Math.max(1, Number(query.page) || 1);
+      const pageSize = Math.min(100, Math.max(1, Number(query.pageSize) || 20));
+
+        const filtered = all.filter((doc) => {
+          if (status !== 'all' && doc.status !== status) return false;
+          const docType = doc.type || 'page';
+          if (type !== 'all' && docType !== type) return false;
+          if (q && !String(doc.title || '').toLowerCase().includes(q)) return false;
+          return true;
+        });
+
+      filtered.sort((a, b) => {
+        const av = String(a?.[sortBy] || '');
+        const bv = String(b?.[sortBy] || '');
+        return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+      });
+
+      const totalItems = filtered.length;
+      const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+      const safePage = Math.min(page, totalPages);
+      const start = (safePage - 1) * pageSize;
+      const items = filtered.slice(start, start + pageSize);
+      return {
+        items,
+        pagination: {
+          page: safePage,
+          pageSize,
+          totalItems,
+          totalPages
+        }
+      };
     },
     async getDocument(id) {
       return state.documents.get(id) || null;
@@ -135,6 +182,27 @@ export function createInMemoryPlatform() {
       };
       state.documents.set(id, updated);
       return updated;
+    },
+    async deleteDocument(id, { permanent = false } = {}) {
+      const existing = state.documents.get(id);
+      if (!existing) return null;
+      if (!permanent) {
+        const updated = {
+          ...existing,
+          status: 'trash',
+          updatedAt: runtime.now().toISOString()
+        };
+        state.documents.set(id, updated);
+        return updated;
+      }
+
+      state.documents.delete(id);
+      const revisionIds = state.revisionsByDoc.get(id) || [];
+      for (const revisionId of revisionIds) {
+        state.revisions.delete(revisionId);
+      }
+      state.revisionsByDoc.delete(id);
+      return { id };
     },
     async listRevisions(documentId) {
       const ids = state.revisionsByDoc.get(documentId) || [];

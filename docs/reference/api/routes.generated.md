@@ -14,8 +14,9 @@ It documents required request/response keys (not full schemas).
 | POST | `/v1/auth/refresh` | `refreshToken` | `accessToken`, `refreshToken` |
 | POST | `/v1/auth/token` | `username`, `password` | `accessToken`, `refreshToken`, `user` |
 | GET | `/v1/documents` | - | `items` |
-| POST | `/v1/documents` | `title`, `content` | `document`, `revision` |
-| PATCH | `/v1/documents/:id` | `title`, `content` | `document`, `revision` |
+| POST | `/v1/documents` | `title`, `content`, `type`, `status`, `blocks` | `document`, `revision` |
+| DELETE | `/v1/documents/:id` | - | `ok` |
+| PATCH | `/v1/documents/:id` | `title`, `content`, `type`, `status`, `blocks` | `document`, `revision` |
 | GET | `/v1/documents/:id/revisions` | - | `items` |
 | POST | `/v1/documents/:id/revisions` | - | `revision` |
 | POST | `/v1/forms/:formId/submit` | `payload` | `submissionId` |
