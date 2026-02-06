@@ -1,5 +1,40 @@
 import { useState } from 'react';
 
+function getReleaseIdLike(entry) {
+  if (!entry || typeof entry !== 'object') return '';
+  if (typeof entry.releaseId === 'string') return entry.releaseId;
+  if (typeof entry.id === 'string') return entry.id;
+  if (typeof entry.release?.id === 'string') return entry.release.id;
+  return '';
+}
+
+function getReleaseCreatedAtLike(entry) {
+  if (!entry || typeof entry !== 'object') return '';
+  if (typeof entry.createdAt === 'string') return entry.createdAt;
+  if (typeof entry.publishedAt === 'string') return entry.publishedAt;
+  if (typeof entry.release?.createdAt === 'string') return entry.release.createdAt;
+  return '';
+}
+
+function getLatestReleaseId(items) {
+  if (!Array.isArray(items) || items.length === 0) return '';
+  const withDates = items
+    .map((entry) => ({
+      id: getReleaseIdLike(entry),
+      createdAt: getReleaseCreatedAtLike(entry)
+    }))
+    .filter((entry) => entry.id);
+  if (withDates.length === 0) return '';
+
+  const sortable = withDates.filter((entry) => entry.createdAt);
+  if (sortable.length > 0) {
+    sortable.sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt)));
+    return sortable.at(-1)?.id || '';
+  }
+
+  return withDates.at(-1)?.id || '';
+}
+
 export function useReleaseLoopState(shell) {
   const [previewUrl, setPreviewUrl] = useState('');
   const [releaseItems, setReleaseItems] = useState([]);
@@ -9,62 +44,40 @@ export function useReleaseLoopState(shell) {
   const [revisionCount, setRevisionCount] = useState(0);
   const [privateReadState, setPrivateReadState] = useState('');
 
-  function getReleaseIdLike(entry) {
-    if (!entry || typeof entry !== 'object') return '';
-    if (typeof entry.releaseId === 'string') return entry.releaseId;
-    if (typeof entry.id === 'string') return entry.id;
-    if (typeof entry.release?.id === 'string') return entry.release.id;
-    return '';
-  }
-
-  function getReleaseCreatedAtLike(entry) {
-    if (!entry || typeof entry !== 'object') return '';
-    if (typeof entry.createdAt === 'string') return entry.createdAt;
-    if (typeof entry.publishedAt === 'string') return entry.publishedAt;
-    if (typeof entry.release?.createdAt === 'string') return entry.release.createdAt;
-    return '';
-  }
-
-  function getLatestReleaseId(items) {
-    if (!Array.isArray(items) || items.length === 0) return '';
-    const withDates = items
-      .map((entry) => ({
-        id: getReleaseIdLike(entry),
-        createdAt: getReleaseCreatedAtLike(entry)
-      }))
-      .filter((entry) => entry.id);
-    if (withDates.length === 0) return '';
-
-    const sortable = withDates.filter((entry) => entry.createdAt);
-    if (sortable.length > 0) {
-      sortable.sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt)));
-      return sortable.at(-1)?.id || '';
-    }
-
-    return withDates.at(-1)?.id || '';
-  }
-
   async function refreshRevisions(documentId) {
     if (!documentId) {
       setRevisionCount(0);
       return 0;
     }
-    const payload = await shell.listRevisions(documentId);
-    const items = payload.items || [];
-    setRevisionCount(items.length);
-    return items.length;
+    try {
+      const payload = await shell.listRevisions(documentId);
+      const items = payload.items || [];
+      setRevisionCount(items.length);
+      return items.length;
+    } catch (error) {
+      console.error('refreshRevisions failed', { documentId, error });
+      setRevisionCount(0);
+      return 0;
+    }
   }
 
   async function refreshReleases() {
-    const payload = await shell.listReleases();
-    const rawItems = payload.items || [];
-    const items = rawItems.map((entry) => ({
-      ...entry,
-      __releaseId: getReleaseIdLike(entry)
-    }));
-    setReleaseItems(items);
-    setActiveRelease(payload.activeRelease || '');
-    return payload;
+    try {
+      const payload = await shell.listReleases();
+      const rawItems = payload.items || [];
+      const items = rawItems.map((entry) => ({
+        ...entry,
+        __releaseId: getReleaseIdLike(entry)
+      }));
+      setReleaseItems(items);
+      setActiveRelease(payload.activeRelease || '');
+      return payload;
+    } catch (error) {
+      console.error('refreshReleases failed', { error });
+      setReleaseItems([]);
+      setActiveRelease('');
+      return { items: [], activeRelease: '' };
+    }
   }
 
   async function generatePreview(documentId) {
@@ -74,15 +87,26 @@ export function useReleaseLoopState(shell) {
   }
 
   async function publishCurrent() {
-    const payload = await shell.publish({});
-    setLatestPublishJobId(payload.job?.id || '');
-    setLatestPublishedReleaseId(payload.job?.releaseId || '');
-    return payload;
+    try {
+      const payload = await shell.publish({});
+      setLatestPublishJobId(payload.job?.id || '');
+      setLatestPublishedReleaseId(payload.job?.releaseId || '');
+      return payload;
+    } catch (error) {
+      console.error('publishCurrent failed', { error });
+      setLatestPublishJobId('');
+      setLatestPublishedReleaseId('');
+      throw error;
+    }
   }
 
   async function activate(releaseId) {
     const payload = await shell.activateRelease(releaseId);
-    setActiveRelease(payload.activeRelease || releaseId);
+    if (!payload?.activeRelease) {
+      console.error('activate returned missing activeRelease', { releaseId, payload });
+      throw new Error('Activation response missing activeRelease');
+    }
+    setActiveRelease(payload.activeRelease);
     return payload;
   }
 

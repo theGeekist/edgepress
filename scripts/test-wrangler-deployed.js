@@ -100,9 +100,20 @@ try {
     body: JSON.stringify({})
   });
   assert(publish2.res.status === 201, `second publish failed: ${publish2.res.status}`);
+  const secondJobId = publish2.body?.job?.id;
   const releaseId = publish2.body?.job?.releaseId;
+  assert(secondJobId, 'missing second publish job id');
   assert(releaseId, 'missing second publish release id');
   assert(releaseId !== firstReleaseId, 'expected second publish to generate new release id');
+
+  const secondPublishJob = await request(`/v1/publish/${encodeURIComponent(secondJobId)}`, {
+    headers: { authorization: `Bearer ${token}` }
+  });
+  assert(secondPublishJob.res.status === 200, `second publish job fetch failed: ${secondPublishJob.res.status}`);
+  assert(
+    secondPublishJob.body?.job?.status === 'completed',
+    `second publish job not completed: ${secondPublishJob.body?.job?.status}`
+  );
 
   const activate = await request(`/v1/releases/${encodeURIComponent(releaseId)}/activate`, {
     method: 'POST',
@@ -132,7 +143,7 @@ try {
     headers: { authorization: `Bearer ${token}` }
   });
   assert(releases.res.status === 200, `releases fetch failed: ${releases.res.status}`);
-  assert(typeof releases.body?.activeRelease === 'string' && releases.body.activeRelease.length > 0, 'missing activeRelease');
+  assert(releases.body?.activeRelease === releaseId, `expected activeRelease=${releaseId}, got ${releases.body?.activeRelease}`);
 
   console.log(
     JSON.stringify(
