@@ -1,0 +1,23 @@
+{
+  "name": "gcms",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "test": "bun test packages/testing/test/*.test.js",
+    "start:api": "bun apps/api-edge/src/server.js",
+    "check:boundaries": "bun scripts/check-boundaries.js"
+  },
+  "module": "index.ts",
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/node": "^25.2.1",
+    "typescript": "5.9.3"
+  },
+  "peerDependencies": {
+    "typescript": "^5.9.3"
+  }
+}
