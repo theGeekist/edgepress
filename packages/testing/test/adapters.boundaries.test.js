@@ -26,3 +26,29 @@ test('cloudflare reference adapter conforms to core auth + document flow', async
   });
   assert.equal(created.res.status, 201);
 });
+
+test('cloudflare reference runtime requestContext and base64 helpers are wired', async () => {
+  const platform = createCloudflareReferencePlatform({ TOKEN_KEY: 'cf-key' });
+
+  const withHeaders = platform.runtime.requestContext(new Request('http://x.local/path', {
+    headers: {
+      'cf-ray': 'ray_test',
+      'cf-connecting-ip': 'ip_test',
+      'x-trace-id': 'trace_test',
+      'user-agent': 'ua_test'
+    }
+  }));
+  assert.equal(withHeaders.traceId, 'trace_test');
+  assert.equal(withHeaders.ipHash, 'ip_test');
+  assert.equal(withHeaders.userAgentHash, 'ua_test');
+  assert.equal(withHeaders.requestId, 'ray_test');
+
+  const withoutHeaders = platform.runtime.requestContext(new Request('http://x.local/path'));
+  assert.ok(withoutHeaders.traceId.startsWith('ray_'));
+  assert.equal(withoutHeaders.ipHash, 'cf_ip_unknown');
+  assert.equal(withoutHeaders.userAgentHash, 'cf_ua_unknown');
+
+  const encoded = platform.runtime.base64urlEncode('hello');
+  const decoded = platform.runtime.base64urlDecode(encoded);
+  assert.equal(decoded, 'hello');
+});

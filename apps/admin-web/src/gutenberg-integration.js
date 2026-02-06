@@ -71,15 +71,14 @@ export function configureApiFetch(apiFetch, { getAccessToken, refresh, apiRoot }
   const middlewares = createApiFetchMiddlewares({ getAccessToken, refresh });
 
   const root = normalizeApiRoot(apiRoot);
+  // apiFetch.use prepends middleware, so register refresh last to keep it outermost.
+  apiFetch.use(middlewares.authMiddleware);
+  apiFetch.use(middlewares.traceMiddleware);
   if (root) {
     const rootMiddleware = apiFetch.createRootURLMiddleware(root);
     apiFetch.use(rootMiddleware);
   }
-
-  // Register refresh first so it wraps downstream middleware and retries cleanly.
   apiFetch.use(middlewares.refreshMiddleware);
-  apiFetch.use(middlewares.authMiddleware);
-  apiFetch.use(middlewares.traceMiddleware);
 
   return middlewares;
 }
