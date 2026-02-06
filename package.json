@@ -11,6 +11,11 @@
     "start:api": "bun apps/api-edge/src/server.js",
     "start:api:worker": "wrangler dev",
     "check:boundaries": "bun scripts/check-boundaries.js",
+    "docs:dev": "vitepress dev docs",
+    "docs:gen": "bun scripts/docs/generate-api-reference.js",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs",
+    "docs:check": "bunx tsc -p docs/snippets/tsconfig.json --noEmit",
     "test:unit": "bun test packages/testing/test/*.test.js",
     "test:coverage": "bun test --coverage && bun scripts/check-coverage-thresholds.js",
     "start:admin-demo": "bun apps/admin-web/src/demo-server.js",
@@ -28,6 +33,7 @@
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260205.0",
     "@eslint/js": "^9.39.2",
+    "@shikijs/vitepress-twoslash": "2.5.0",
     "@types/bun": "latest",
     "@types/node": "^25.2.1",
     "@vitejs/plugin-react": "^5.1.3",
@@ -38,6 +44,7 @@
     "ts-api-utils": "^2.4.0",
     "typescript": "5.9.3",
     "vite": "^7.3.1",
+    "vitepress": "^1.6.4",
     "wrangler": "^4.63.0"
   },
   "peerDependencies": {
