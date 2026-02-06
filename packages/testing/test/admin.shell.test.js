@@ -52,3 +52,20 @@ test('admin shell auto-refreshes on expired access token', async () => {
   assert.notEqual(shell.session.accessToken, 'bad.token');
   assert.notEqual(shell.session.accessToken, previous);
 });
+
+test('admin shell refresh/logout handle empty session safely', async () => {
+  const platform = createInMemoryPlatform();
+  const handler = createApiHandler(platform);
+  const shell = createAdminShell({
+    baseUrl: 'http://api.local',
+    fetchImpl: createLocalFetch(handler)
+  });
+
+  const refreshed = await shell.refreshSession();
+  assert.equal(refreshed, false);
+
+  await shell.logout();
+  assert.equal(shell.session.accessToken, null);
+  assert.equal(shell.session.refreshToken, null);
+  assert.equal(shell.session.user, null);
+});
