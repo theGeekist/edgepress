@@ -149,3 +149,26 @@ test('publish canonicalizes sourceRevisionId from sourceRevisionSet when omitted
   assert.equal(publish.json.job.sourceRevisionId, 'rev_derived');
   assert.deepEqual(publish.json.job.sourceRevisionSet, ['rev_derived']);
 });
+
+test('private cache TTL parsing falls back and clamps from runtime env', async () => {
+  const platform = createInMemoryPlatform();
+  const { handler, accessToken } = await authAsAdmin(platform);
+
+  const created = await requestJson(handler, 'POST', '/v1/documents', {
+    token: accessToken,
+    body: { title: 'TTL doc', content: '<p>ttl</p>' }
+  });
+  const docId = created.json.document.id;
+  await requestJson(handler, 'POST', '/v1/publish', { token: accessToken, body: {} });
+
+  platform.runtime.envOverrides.PRIVATE_CACHE_TTL_SECONDS = 'NaN';
+  await requestJson(handler, 'GET', `/v1/private/${encodeURIComponent(docId)}`, { token: accessToken });
+  const fallbackEntry = Array.from(platform.state.cache.values()).at(-1);
+  assert.ok(fallbackEntry.expiresAt - Date.now() > 115 * 1000);
+
+  platform.state.cache.clear();
+  platform.runtime.envOverrides.PRIVATE_CACHE_TTL_SECONDS = String(24 * 60 * 60);
+  await requestJson(handler, 'GET', `/v1/private/${encodeURIComponent(docId)}`, { token: accessToken });
+  const clampedEntry = Array.from(platform.state.cache.values()).at(-1);
+  assert.ok(clampedEntry.expiresAt - Date.now() <= 3600 * 1000 + 5000);
+});

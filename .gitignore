@@ -3,6 +3,7 @@ node_modules/
 dist/
 .env
 .env.*
+.dev.vars
 *.log
 .DS_Store
 gutenberg/
@@ -11,3 +12,4 @@ CLAUDE.md
 coverage/
 .eslintcache
 **/.eslintcache
+.wrangler/

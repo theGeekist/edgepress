@@ -1,17 +1,21 @@
 name = "gcms-api-edge"
 main = "packages/adapters-cloudflare/src/worker.js"
 compatibility_date = "2026-02-06"
+compatibility_flags = ["nodejs_compat"]
 workers_dev = true
-
-[vars]
-TOKEN_KEY = "dev-token-key"
 
 [[kv_namespaces]]
 binding = "KV"
-id = "kv_dev_placeholder"
-preview_id = "kv_preview_placeholder"
+id = "2eee6977a9684ae6a8da3f9c98716169"
+preview_id = "da8da54b409a472fa460fc7a51bfc207"
 
 [[r2_buckets]]
 binding = "R2_BUCKET"
 bucket_name = "gcms-dev-bucket"
 preview_bucket_name = "gcms-dev-bucket-preview"
+
+[[d1_databases]]
+binding = "D1"
+database_name = "gcms-dev"
+database_id = "73c9b8b9-df5e-4053-bfbf-50a1223e05c0"
+preview_database_id = "317447d3-1988-4ff9-a3dc-e95654c8120f"

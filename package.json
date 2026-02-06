@@ -20,7 +20,9 @@
     "sonar:scan": "bunx sonar-scanner",
     "context:gutenberg": "bun scripts/check-gutenberg-context.js",
     "dev:admin": "bunx vite --config apps/admin-web/vite.config.js",
-    "build:admin": "bunx vite build --config apps/admin-web/vite.config.js"
+    "build:admin": "bunx vite build --config apps/admin-web/vite.config.js",
+    "test:wrangler": "bun scripts/test-wrangler-local.js",
+    "test:wrangler:deployed": "bun scripts/test-wrangler-deployed.js"
   },
   "module": "index.ts",
   "devDependencies": {

@@ -45,14 +45,19 @@ This file turns the architectural story from `idea.md` into concrete phases with
 ## Phase 2 – Publishing + Delivery
 - [x] Implement release activation history + pointer logic (currently tracked in `packages/testing/src/inMemoryPlatform.js`).  
   Completed (reference-adapter scope): release history is append-only with explicit `manifest_written` and `activated` events; active release switching records `previousReleaseId`; activating the already active release is idempotent (no duplicate event); covered by `packages/testing/test/release.preview.private.test.js`.
-- [ ] Build real artifact generation + release manifest storage (adapt `packages/adapters-cloudflare` to D1/R2/KV).
+- [x] Build real artifact generation + release manifest storage (adapt `packages/adapters-cloudflare` to D1/R2/KV).
   Increment complete: publish now writes artifacts through mandatory `ReleaseStorePort.writeArtifact` (fallback removed to keep contract strict), and tests verify artifact events + persisted blob refs (`packages/testing/test/release.preview.private.test.js`, `packages/testing/test/publisher.test.js`).
   Increment complete: Cloudflare reference adapter now explicitly implements `releaseStore.writeArtifact` and has dedicated adapter conformance coverage (`packages/adapters-cloudflare/src/index.js`, `packages/testing/test/adapters.boundaries.test.js`).
   Increment complete: Cloudflare reference adapter now owns release-state behavior (manifest storage, active pointer switching, release history events) rather than delegating release state to in-memory internals; covered in adapter conformance tests.
   Increment complete: Cloudflare reference adapter is now binding-aware for `R2_BUCKET` and `KV` paths (artifacts/blob reads, cache get/set/del, release manifests/pointer/history), with explicit tests for both binding-backed and fallback-local behavior.
   Increment complete: installed Cloudflare tooling/types (`wrangler`, `@cloudflare/workers-types`), added `wrangler.toml`, and moved Worker entrypoint to `packages/adapters-cloudflare/src/worker.js` to preserve boundary rules while enabling real Workers wiring.
   Increment complete: hardened Cloudflare adapter correctness details: removed Node `Buffer` dependency in blob decoding, added KV manifest pagination cursor handling, and removed `this` coupling in `activateRelease`; adapter conformance tests now cover these paths.
-- [ ] Add preview-release token enforcement + private read caching logic (already exercised by tests; document requirements in this tracker).
+  Increment complete: Cloudflare reference adapter now supports D1 for release manifests/active pointer/history (with schema bootstrapping and D1-first precedence when bound), while preserving KV-backed cache and R2 artifacts; adapter tests now cover D1 release-state paths.
+  Increment complete: D1 release-state flow hardened for parity: schema init now executes one DDL statement per call, release listing order is based on manifest `createdAt` (with DB timestamp fallback), and D1 batch transactions are used for manifest/history and activation/history writes to reduce split-write risk.
+  Increment complete: Wrangler integration now uses real Cloudflare bindings (KV/D1/R2 IDs in `wrangler.toml`) and both local + remote preview smoke flows validate auth + document write against worker runtime.
+- [x] Add preview-release token enforcement + private read caching logic (already exercised by tests; document requirements in this tracker).
+  Completed: preview URLs now carry an HMAC signature (`sig`) and `/preview/:token` enforces signature validity (`PREVIEW_TOKEN_INVALID`) plus expiry; private read cache keys are now auth-scope aware (user capability fingerprint) to avoid cross-scope cache leakage.
+  Increment complete: cache TTL for private reads is now runtime-configurable via `PRIVATE_CACHE_TTL_SECONDS` with bounded parsing; preview TTL and private cache TTL share bounded parsing behavior.
 - [x] Expand `packages/publish` to emit provenance data (`sourceRevisionId`, `publishedBy`, `schemaVersion`, hash list).  
   Completed: publish now normalizes provenance input (`sourceRevisionId` + `sourceRevisionSet`), persists provenance into `PublishJob`, and emits manifest `schemaVersion: 2` with `artifactHashes` and `releaseHash`; covered by publish unit + API behavior tests.
 - [x] Add release manifest hash set and artifact provenance wiring (`createdAt`, `sourceRevisionId`/revision set, `publishedBy`) with immutability tests.  
@@ -98,7 +103,11 @@ This file turns the architectural story from `idea.md` into concrete phases with
 - Delta (2026-02-06 after adapter hardening fixes): `94.48%` lines, `94.41%` funcs.
 - Delta (2026-02-06 after provenance/hash increment): `94.52%` lines, `94.41%` funcs.
 - Delta (2026-02-06 after shared provenance normalization + contentHash): `95.11%` lines, `95.06%` funcs.
+- Delta (2026-02-06 after signed preview tokens + scoped private cache TTL): `95.14%` lines, `95.06%` funcs.
+- Delta (2026-02-06 after D1-backed Cloudflare release-state support): `95.17%` lines, `95.08%` funcs.
+- Delta (2026-02-06 after D1 release-state hardening + atomic batch tests): `95.02%` lines, `95.08%` funcs.
+  Note: slight line-coverage dip is expected from newly added D1 migration/fallback branches; function coverage held steady.
 - Priority hotspot 1: `apps/admin-web/src/editor-shell.js` (`89.66%` lines) where document update/preview branches remain.
-- Priority hotspot 2: `apps/api-edge/src/app.js` (`93.18%` lines) for endpoint-level negative branches and rare error guards.
+- Priority hotspot 2: `apps/api-edge/src/app.js` (`93.28%` lines) for endpoint-level negative branches and rare error guards.
 - Priority hotspot 3: `packages/testing/src/inMemoryPlatform.js` (`97.38%` lines, `96.23%` funcs) with remaining branches tied to deeper revision/list edge paths.
 - Process: run `bun run test:coverage` at the end of each phase slice and append a one-line delta note here.
