@@ -29,9 +29,13 @@ export function createInMemoryPlatform() {
   };
 
   const runtime = {
+    envOverrides: {},
     env(key) {
       if (key === 'TOKEN_KEY') return 'dev-token-key';
-      return undefined;
+      if (Object.prototype.hasOwnProperty.call(this.envOverrides, key)) {
+        return this.envOverrides[key];
+      }
+      return process.env[key];
     },
     now() {
       return new Date();
@@ -74,6 +78,13 @@ export function createInMemoryPlatform() {
       filtered.push(now);
       state.rateLimitHits.set(key, filtered);
       return { allowed: true };
+    },
+    base64urlEncode(value) {
+      const payload = typeof value === 'string' ? value : JSON.stringify(value);
+      return Buffer.from(payload, 'utf8').toString('base64url');
+    },
+    base64urlDecode(value) {
+      return Buffer.from(value, 'base64url').toString('utf8');
     }
   };
 

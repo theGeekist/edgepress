@@ -294,8 +294,15 @@ export function createApiHandler(platform) {
         const doc = await store.getDocument(params.documentId);
         if (!doc) return error('DOCUMENT_NOT_FOUND', 'Document not found', 404);
 
+        const DEFAULT_TTL = 15 * 60;
+        const MIN_TTL = 30;
+        const MAX_TTL = 24 * 60 * 60;
+        const rawTtl = runtime.env('PREVIEW_TTL_SECONDS');
+        const parsedTtl = Number(rawTtl);
+        const previewTtlSeconds =
+          Number.isFinite(parsedTtl) && parsedTtl >= MIN_TTL ? Math.min(parsedTtl, MAX_TTL) : DEFAULT_TTL;
         const previewToken = `prv_${runtime.uuid()}`;
-        const expiresAt = new Date(runtime.now().getTime() + 15 * 60 * 1000).toISOString();
+        const expiresAt = new Date(runtime.now().getTime() + previewTtlSeconds * 1000).toISOString();
         const releaseLikeRef = `preview_${runtime.uuid()}`;
 
         await previewStore.createPreview({
@@ -319,11 +326,13 @@ export function createApiHandler(platform) {
 
     route('GET', '/preview/:token', async (request, params) => {
       const preview = await previewStore.getPreview(params.token);
-      if (!preview) return new Response('not found', { status: 404 });
+      if (!preview) {
+        return error('PREVIEW_NOT_FOUND', 'Preview not found', 404);
+      }
       try {
         assertPreviewNotExpired(preview, runtime.now().toISOString());
       } catch (e) {
-        return new Response(e.message, { status: 410 });
+        return error('PREVIEW_EXPIRED', e.message, 410);
       }
       return new Response(preview.html, { status: 200, headers: { 'content-type': 'text/html' } });
     }),

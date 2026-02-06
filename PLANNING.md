@@ -13,7 +13,8 @@ This file turns the architectural story from `idea.md` into concrete phases with
 ## Phase 1 – Content + Admin Integration (in progress/outstanding)
 - [ ] Harden canonical SDK client (`packages/sdk/src/client.js`) and connect to `apps/admin-web/src/gutenberg-integration.js`.
 - [ ] Wire Gutenberg UI (`apps/admin-web`) to use `@wordpress/block-editor` with `@wordpress/api-fetch` middlewares and canonical stores.
-- [ ] Ensure `apps/api-edge` implements auth, docs, media, publish routes plus preview/tokenized URL behavior (`apps/api-edge/src/app.js`).
+- [ ] Ensure `apps/api-edge` implements auth, docs, media, publish routes plus preview/tokenized URL behavior (`apps/api-edge/src/app.js`).  
+  Added preview TTL runtime controls, canonical error envelope handling, preview expiry responses, and base64url helpers behind the runtime port.
 - [ ] Add targeted tests for document/media/publish flows (already in `packages/testing/test`).
 - [ ] Document open work: mention `packages/contracts` is a key validator until replaced with OpenAPI.
 

@@ -23,7 +23,9 @@ export function assertRuntimePort(runtime) {
     'requestContext',
     'waitUntil',
     'hmacSign',
-    'hmacVerify'
+    'hmacVerify',
+    'base64urlEncode',
+    'base64urlDecode'
   ];
   for (const method of required) assertPortMethod(runtime, method);
 }

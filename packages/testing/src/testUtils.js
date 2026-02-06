@@ -28,5 +28,10 @@ export async function authAsAdmin(platform) {
   if (res.status !== 200) {
     throw new Error('Failed to authenticate admin in test setup');
   }
-  return { handler, accessToken: json.accessToken, refreshToken: json.refreshToken };
+  return {
+    handler,
+    accessToken: json.accessToken,
+    refreshToken: json.refreshToken,
+    platform
+  };
 }

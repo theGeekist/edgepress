@@ -4,6 +4,15 @@ import { routes, assertKeys } from '../../contracts/src/index.js';
 import { createInMemoryPlatform } from '../src/inMemoryPlatform.js';
 import { authAsAdmin, requestJson } from '../src/testUtils.js';
 
+async function createSampleDocument(handler, token, { title = 'Sample', content = '<p>body</p>' } = {}) {
+  const created = await requestJson(handler, 'POST', '/v1/documents', {
+    token,
+    body: { title, content }
+  });
+  assert.equal(created.res.status, 201);
+  return created.json.document;
+}
+
 function assertResponseShape(routeName, payload) {
   const route = routes[routeName];
   assert.ok(route, `Unknown route in contract test: ${routeName}`);
@@ -109,4 +118,37 @@ test('canonical API contracts return required response keys', async () => {
   assertResponseShape('POST /v1/auth/refresh', refresh.json);
 
   assert.ok(accessToken);
+});
+
+test('error envelope covers auth failures and contract stays stable', async () => {
+  const platform = createInMemoryPlatform();
+  const { handler } = await authAsAdmin(platform);
+
+  const unauthorized = await requestJson(handler, 'GET', '/v1/documents');
+  assert.equal(unauthorized.res.status, 403);
+  assert.deepStrictEqual(Object.keys(unauthorized.json), ['error']);
+  assert.equal(unauthorized.json.error.code, 'FORBIDDEN');
+  assert.ok(unauthorized.json.error.message.includes('Missing capability'));
+});
+
+test('preview tokens expire and invalid tokens return envelope', async () => {
+  const platform = createInMemoryPlatform();
+  const { handler, accessToken } = await authAsAdmin(platform);
+  const document = await createSampleDocument(handler, accessToken);
+
+  const preview = await requestJson(handler, 'GET', `/v1/preview/${document.id}`, { token: accessToken });
+  assert.equal(preview.res.status, 200);
+  const previewToken = preview.json.previewUrl.replace('/preview/', '');
+
+  const previewEntry = platform.state.previews.get(previewToken);
+  previewEntry.expiresAt = new Date(Date.now() - 1000).toISOString();
+
+  const expired = await requestJson(handler, 'GET', `/preview/${previewToken}`);
+  assert.equal(expired.res.status, 410);
+  assert.equal(expired.json.error.code, 'PREVIEW_EXPIRED');
+  assert.ok(expired.json.error.message.includes('expired'));
+
+  const missing = await requestJson(handler, 'GET', '/preview/not-a-token');
+  assert.equal(missing.res.status, 404);
+  assert.equal(missing.json.error.code, 'PREVIEW_NOT_FOUND');
 });

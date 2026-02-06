@@ -27,6 +27,13 @@ export function createCloudflareReferencePlatform(env = {}) {
         requestId: cfRay
       };
     }
+,
+    base64urlEncode(value) {
+      return base.runtime.base64urlEncode(value);
+    },
+    base64urlDecode(value) {
+      return base.runtime.base64urlDecode(value);
+    }
   };
 
   return {
