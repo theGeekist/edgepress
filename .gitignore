@@ -9,3 +9,5 @@ gutenberg/
 gutenberg
 CLAUDE.md
 coverage/
+.eslintcache
+**/.eslintcache

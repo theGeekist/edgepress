@@ -32,6 +32,11 @@ export function createCanonicalSdkStore(config) {
   };
 }
 
+function normalizeApiRoot(apiRoot) {
+  if (!apiRoot) return null;
+  return apiRoot.endsWith('/') ? apiRoot : `${apiRoot}/`;
+}
+
 export function createApiFetchMiddlewares({ getAccessToken, refresh }) {
   return {
     authMiddleware(options, next) {
@@ -44,9 +49,12 @@ export function createApiFetchMiddlewares({ getAccessToken, refresh }) {
       try {
         return await next(options);
       } catch (error) {
-        if (error?.status === 401 && refresh) {
-          await refresh();
-          return next(options);
+        const status = error?.status || error?.data?.status;
+        if (status === 401 && refresh) {
+          const refreshed = await refresh();
+          if (refreshed) {
+            return next(options);
+          }
         }
         throw error;
       }
@@ -57,4 +65,21 @@ export function createApiFetchMiddlewares({ getAccessToken, refresh }) {
       return next({ ...options, headers });
     }
   };
+}
+
+export function configureApiFetch(apiFetch, { getAccessToken, refresh, apiRoot }) {
+  const middlewares = createApiFetchMiddlewares({ getAccessToken, refresh });
+
+  const root = normalizeApiRoot(apiRoot);
+  if (root) {
+    const rootMiddleware = apiFetch.createRootURLMiddleware(root);
+    apiFetch.use(rootMiddleware);
+  }
+
+  // Register refresh first so it wraps downstream middleware and retries cleanly.
+  apiFetch.use(middlewares.refreshMiddleware);
+  apiFetch.use(middlewares.authMiddleware);
+  apiFetch.use(middlewares.traceMiddleware);
+
+  return middlewares;
 }
