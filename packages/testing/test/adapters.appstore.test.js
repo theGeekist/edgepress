@@ -93,7 +93,7 @@ test('app-store KV mode covers bootstrap + CRUD paths', async () => {
   const updatedDoc = await store.updateDocument(createdDoc.id, { title: 'Doc 1b' });
   assert.equal(updatedDoc.title, 'Doc 1b');
   assert.equal(await store.updateDocument('missing', { title: 'x' }), null);
-  assert.equal((await store.listDocuments()).length, 1);
+  assert.equal((await store.listDocuments()).items.length, 1);
   assert.equal((await store.getDocument(createdDoc.id)).id, createdDoc.id);
 
   const revision = await store.createRevision({
@@ -198,7 +198,7 @@ test('app-store D1 mode covers schema setup + CRUD paths', async () => {
 
   const doc = await store.createDocument({ title: 'Doc', content: '<p>x</p>' });
   assert.equal((await store.getDocument(doc.id)).id, doc.id);
-  assert.equal((await store.listDocuments()).length, 1);
+  assert.equal((await store.listDocuments()).items.length, 1);
   assert.equal((await store.updateDocument(doc.id, { title: 'Doc2' })).title, 'Doc2');
   assert.equal(await store.updateDocument('missing', { title: 'x' }), null);
 
@@ -237,4 +237,91 @@ test('app-store D1 mode covers schema setup + CRUD paths', async () => {
     expiresAt: '2999-01-01T00:00:00.000Z'
   });
   assert.equal((await previewStore.getPreview('pv_d1')).releaseId, 'r1');
+});
+
+test('app-store D1 permanent delete is atomic when batch fails', async () => {
+  const d1 = createFakeD1();
+  const runtime = createInMemoryPlatform().runtime;
+  const { store } = createAppStores({
+    d1,
+    kv: null,
+    runtime,
+    baseStore: {},
+    basePreviewStore: {},
+    D1_SQL,
+    parseJsonSafe,
+    kvGetJson: async () => null,
+    kvPutJson: async () => {},
+    kvGetString: async () => null,
+    kvPutString: async () => {},
+    bootstrapAdmin: null
+  });
+
+  const doc = await store.createDocument({ title: 'Delete me', content: '<p>x</p>' });
+  await store.createRevision({
+    documentId: doc.id,
+    content: '<p>rev</p>',
+    authorId: 'u2'
+  });
+
+  const originalBatch = d1.batch.bind(d1);
+  d1.batch = async () => {
+    throw new Error('batch failed');
+  };
+  await assert.rejects(() => store.deleteDocument(doc.id, { permanent: true }));
+  d1.batch = originalBatch;
+
+  assert.equal((await store.getDocument(doc.id)).id, doc.id);
+  assert.equal((await store.listRevisions(doc.id)).length, 1);
+});
+
+test('app-store listDocuments query branch covers filtering and pagination for D1 and KV', async () => {
+  const runtime = createInMemoryPlatform().runtime;
+
+  const d1Stores = createAppStores({
+    d1: createFakeD1(),
+    kv: null,
+    runtime,
+    baseStore: {},
+    basePreviewStore: {},
+    D1_SQL,
+    parseJsonSafe,
+    kvGetJson: async () => null,
+    kvPutJson: async () => {},
+    kvGetString: async () => null,
+    kvPutString: async () => {},
+    bootstrapAdmin: null
+  });
+  const kv = createFakeKV();
+  const kvHelpers = makeKvHelpers(kv);
+  const kvStores = createAppStores({
+    d1: null,
+    kv,
+    runtime,
+    baseStore: {},
+    basePreviewStore: {},
+    D1_SQL,
+    parseJsonSafe,
+    ...kvHelpers,
+    bootstrapAdmin: null
+  });
+
+  for (const store of [d1Stores.store, kvStores.store]) {
+    await store.createDocument({ id: 'doc_1', title: 'Alpha Page', type: 'page', status: 'draft', content: '<p>a</p>' });
+    await store.createDocument({ id: 'doc_2', title: 'Beta Post', type: 'post', status: 'published', content: '<p>b</p>' });
+    await store.createDocument({ id: 'doc_3', title: 'Gamma Post', type: 'post', status: 'draft', content: '<p>c</p>' });
+
+    const filtered = await store.listDocuments({
+      q: 'post',
+      type: 'post',
+      status: 'draft',
+      sortBy: 'updatedAt',
+      sortDir: 'desc',
+      page: 1,
+      pageSize: 1
+    });
+    assert.equal(filtered.pagination.totalItems, 1);
+    assert.equal(filtered.items.length, 1);
+    assert.equal(filtered.items[0].title, 'Gamma Post');
+  }
 });

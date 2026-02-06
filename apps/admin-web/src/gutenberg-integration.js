@@ -11,14 +11,17 @@ export function createCanonicalSdkStore(config) {
   const client = createClient(config);
 
   return {
-    async listDocuments() {
-      return client.listDocuments();
+    async listDocuments(query) {
+      return client.listDocuments(query);
     },
     async createDocument(input) {
       return client.createDocument(input);
     },
     async updateDocument(id, input) {
       return client.updateDocument(id, input);
+    },
+    async deleteDocument(id, options) {
+      return client.deleteDocument(id, options);
     },
     async initMedia(input) {
       return client.initMedia(input);
