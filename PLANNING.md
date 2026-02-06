@@ -10,86 +10,137 @@ This file turns the architectural story from `idea.md` into concrete phases with
 - Release invariants target: immutable manifest, active-release pointer switching, release history retained.
 - Explicitly deferred: collaborative editing/presence, server-side runtime block rendering, broad plugin compatibility, multi-tenant isolation.
 
-## Phase 0 – Contracts & Platform Skeleton (complete)
-- [x] Define ports (`packages/ports/src/index.js`) and domain invariants (`packages/domain/src`).
-- [x] Build canonical API scaffolding with edge runtime helpers (`apps/api-edge/src/{http,auth,app}.js`).
-- [x] In-memory platform + boundary tests (`packages/testing/src`).
-- [x] Contract validator (`packages/contracts/src/index.js`) covering required response keys (Phase 0 placeholder).
-- [x] Reference Cloudflare adapter stub (`packages/adapters-cloudflare/src/index.js`).
-- [x] Publish + release invariants (`packages/publish/src/publisher.js`).
+## DI / Adapter Milestone Status
+- [x] Composition root exists: `packages/adapters-cloudflare/src/worker.js` builds platform and injects it into `createApiHandler`.
+- [x] Stable port seams are in use (`runtime`, `store`, `releaseStore`, `blobStore`, `cacheStore`, `previewStore`).
+- [x] Boundary enforcement exists (`scripts/check-boundaries.js`) to prevent infra leakage outside adapters.
+- [x] Durable Cloudflare store adapter landed for core mutable state (D1-backed users/tokens/documents/revisions/media/publish jobs/forms/previews).
+- [ ] Explicit `createPlatform()` contract document is missing (required/optional ports + invariants + error semantics).
+- [ ] Adapter conformance matrix doc is missing (in-memory vs Cloudflare parity table and expected degradations).
 
-## Phase 1 – Content + Admin Integration (complete)
-- [x] Harden canonical SDK client (`packages/sdk/src/client.js`) and connect to `apps/admin-web/src/gutenberg-integration.js`.  
-  Completed: structured `ApiRequestError`, single-flight refresh retry, auth-failure callback, and SDK/admin-shell integration tests for token rotation/error propagation.
-- [x] Wire Gutenberg UI (`apps/admin-web`) to use `@wordpress/block-editor` with `@wordpress/api-fetch` middlewares and canonical stores.  
-  Completed: Vite+React host with RN-web primitives, modular `components/ui` + `features/*` state organization, canonical SDK session shell, and `api-fetch` auth/refresh/trace middlewares wired to the same refresh path; no `@wordpress/core-data` CRUD in MVP flow. Added deterministic registration-order coverage plus real `@wordpress/api-fetch` chain tests to verify refresh-retry uses updated bearer token under WP middleware semantics.
-- [x] Ensure `apps/api-edge` implements auth, docs, media, publish routes plus preview/tokenized URL behavior (`apps/api-edge/src/app.js`).  
-  Added preview TTL runtime controls, canonical error envelope handling, preview expiry responses, and base64url helpers behind the runtime port.
-- [x] Add targeted tests for document/media/publish flows (already in `packages/testing/test`).  
-  Includes negative-path checks for auth refresh/logout, media finalize token/not-found, release activation/publish job errors, preview TTL parsing clamp/fallback, and forms rate limiting (`packages/testing/test/api.behavior.test.js`).
-- [x] Document open work: mention `packages/contracts` is a key validator until replaced with OpenAPI.
+## Phase 0 – Tooling & Guardrails (complete)
+- [x] Bun workspace baseline and lockfile consistency (`package.json`, `bun.lock`, `bunfig.toml`).
+- [x] Lint/static-analysis baseline and boundary guard (`eslint.config.mjs`, `scripts/check-boundaries.js`).
+- [x] Coverage gating wired into `test:coverage` with helper exclusions.
 
-## Cross-Cutting Foundation (complete)
-- [x] Bun-first workspace baseline + lockfile consistency (`package.json`, `bun.lock`, `bunfig.toml`).
-- [x] Lint and static-analysis baseline with Sonar rules (`eslint.config.mjs`, `sonar-project.properties`).
-- [x] Gutenberg context guard script for upstream-awareness before integration changes (`scripts/check-gutenberg-context.js`).
-- [x] Test/lint scope hygiene to avoid vendor noise and cache churn (`.gitignore`, ESLint ignore patterns).
-- [x] Real `@wordpress/api-fetch` middleware semantics verified in tests (`packages/testing/test/admin.apifetch.test.js`).
+Exit criteria:
+- `bun run lint` and `bun run test:coverage` are green on main branch.
+- Boundary script prevents Cloudflare API leakage outside `packages/adapters-cloudflare`.
 
-## Completion Log
-- [x] `6c197c8`/`d31c584`: runtime-port base64url and preview TTL hardening (edge portability and safer TTL parsing).
-- [x] `47ba245`: coverage/test planning baseline and Bun test scoping.
-- [x] `805eac4`: SDK hardening + lint/Sonar + admin shell validation tests.
-- [x] `479eed7` (+ current working tree): admin-web modular shell, apiFetch root/proxy posture, CORS dev path, and real middleware-chain retry verification.
+## Phase 1 – Core Contracts & In-Memory Platform (complete)
+- [x] Ports and domain invariants (`packages/ports`, `packages/domain`).
+- [x] Canonical edge API skeleton (`apps/api-edge/src/{http,auth,app}.js`).
+- [x] In-memory platform for deterministic behaviour tests (`packages/testing/src/inMemoryPlatform.js`).
+- [x] Publish/release invariants in core publisher (`packages/publish/src/publisher.js`).
 
-## Phase 2 – Publishing + Delivery
-- [x] Implement release activation history + pointer logic (currently tracked in `packages/testing/src/inMemoryPlatform.js`).  
-  Completed (reference-adapter scope): release history is append-only with explicit `manifest_written` and `activated` events; active release switching records `previousReleaseId`; activating the already active release is idempotent (no duplicate event); covered by `packages/testing/test/release.preview.private.test.js`.
-- [x] Build real artifact generation + release manifest storage (adapt `packages/adapters-cloudflare` to D1/R2/KV).
-  Increment complete: publish now writes artifacts through mandatory `ReleaseStorePort.writeArtifact` (fallback removed to keep contract strict), and tests verify artifact events + persisted blob refs (`packages/testing/test/release.preview.private.test.js`, `packages/testing/test/publisher.test.js`).
-  Increment complete: Cloudflare reference adapter now explicitly implements `releaseStore.writeArtifact` and has dedicated adapter conformance coverage (`packages/adapters-cloudflare/src/index.js`, `packages/testing/test/adapters.boundaries.test.js`).
-  Increment complete: Cloudflare reference adapter now owns release-state behavior (manifest storage, active pointer switching, release history events) rather than delegating release state to in-memory internals; covered in adapter conformance tests.
-  Increment complete: Cloudflare reference adapter is now binding-aware for `R2_BUCKET` and `KV` paths (artifacts/blob reads, cache get/set/del, release manifests/pointer/history), with explicit tests for both binding-backed and fallback-local behavior.
-  Increment complete: installed Cloudflare tooling/types (`wrangler`, `@cloudflare/workers-types`), added `wrangler.toml`, and moved Worker entrypoint to `packages/adapters-cloudflare/src/worker.js` to preserve boundary rules while enabling real Workers wiring.
-  Increment complete: hardened Cloudflare adapter correctness details: removed Node `Buffer` dependency in blob decoding, added KV manifest pagination cursor handling, and removed `this` coupling in `activateRelease`; adapter conformance tests now cover these paths.
-  Increment complete: Cloudflare reference adapter now supports D1 for release manifests/active pointer/history (with schema bootstrapping and D1-first precedence when bound), while preserving KV-backed cache and R2 artifacts; adapter tests now cover D1 release-state paths.
-  Increment complete: D1 release-state flow hardened for parity: schema init now executes one DDL statement per call, release listing order is based on manifest `createdAt` (with DB timestamp fallback), and D1 batch transactions are used for manifest/history and activation/history writes to reduce split-write risk.
-  Increment complete: Wrangler integration now uses real Cloudflare bindings (KV/D1/R2 IDs in `wrangler.toml`) and both local + remote preview smoke flows validate auth + document write against worker runtime.
-  Increment complete: Cloudflare adapter primary mutable application state (users/tokens/documents/revisions/media/publish jobs/forms/previews) now uses D1 when bound; KV remains cache/release-support fallback rather than source-of-truth for core mutable entities.
-- [x] Add preview-release token enforcement + private read caching logic (already exercised by tests; document requirements in this tracker).
-  Completed: preview URLs now carry an HMAC signature (`sig`) and `/preview/:token` enforces signature validity (`PREVIEW_TOKEN_INVALID`) plus expiry; private read cache keys are now auth-scope aware (user capability fingerprint) to avoid cross-scope cache leakage.
-  Increment complete: cache TTL for private reads is now runtime-configurable via `PRIVATE_CACHE_TTL_SECONDS` with bounded parsing; preview TTL and private cache TTL share bounded parsing behavior.
-- [x] Expand `packages/publish` to emit provenance data (`sourceRevisionId`, `publishedBy`, `schemaVersion`, hash list).  
-  Completed: publish now normalizes provenance input (`sourceRevisionId` + `sourceRevisionSet`), persists provenance into `PublishJob`, and emits manifest `schemaVersion: 2` with `artifactHashes` and `releaseHash`; covered by publish unit + API behavior tests.
-- [x] Add release manifest hash set and artifact provenance wiring (`createdAt`, `sourceRevisionId`/revision set, `publishedBy`) with immutability tests.  
-  Completed: manifest now includes `sourceRevisionSet`, canonicalized `sourceRevisionId`, `artifactHashes`, and deterministic `releaseHash`; release immutability checks continue to pass with updated schema.
-  Increment complete: provenance normalization is now shared in `packages/domain/src/provenance.js` and enforced in both `apps/api-edge/src/app.js` and `packages/publish/src/publisher.js`, preventing divergent `sourceRevisionId`/`sourceRevisionSet` across direct publisher calls and API calls.
-  Increment complete: manifest now carries both `releaseHash` (publish-event fingerprint) and `contentHash` (content/provenance fingerprint excluding release id/timestamp) so hash semantics are explicit and testable.
-- [x] Close Phase 2 hardening gaps for Cloudflare parity (runtime secrets + durable state + deploy binding clarity).
-  Completed: Cloudflare adapter HMAC signing now fails closed when required secrets are missing (`TOKEN_KEY`, `PREVIEW_TOKEN_KEY`, `PRIVATE_CACHE_SCOPE_KEY`) rather than silently using static fallback keys.
-  Completed: Cloudflare adapter core CMS store + preview store are now D1-backed when D1 is bound, removing isolate-memory loss and avoiding KV eventual-consistency risks for users/tokens/documents/revisions/media/publish-jobs/forms/previews.
-  Completed: default `wrangler.toml` D1 binding now relies on primary `database_id` only (no accidental `preview_database_id` override in normal deploy flow).
-  Increment complete: added adapter conformance coverage for fail-closed secret behavior, no-default-admin bootstrap posture, and D1-backed cross-instance state persistence.
+Exit criteria:
+- Canonical API works end-to-end entirely against in-memory platform.
+- Contract tests validate key envelope and route invariants.
 
-## Phase 3 – WP Compatibility Layer
-- [ ] Layer in a WP REST façade and `wp.*` compatibility runtime adapters (separate package until API stable).
-- [ ] Add compatibility stores hooking into `@wordpress/core-data` only where a screen demands it.
-- [ ] Swap the placeholder contracts file for true OpenAPI/JSON Schema definitions and regenerate the SDK.
+## Phase 2 – Admin Client Integration (complete)
+- [x] Canonical SDK hardening (`packages/sdk/src/client.js`).
+- [x] Gutenberg admin shell integration with `@wordpress/api-fetch` middlewares (`apps/admin-web`).
+- [x] Admin auth/refresh and middleware-order tests (`packages/testing/test/admin.*.test.js`).
 
-## Phase 3b – Builder UX + Agnostic Block Baseline
-- [ ] Define a portability policy for blocks: each supported block declares `web` and `rn` support; unknown blocks must round-trip and render safe placeholders.
-- [ ] Ship an agnostic layout kit as first-class blocks (`Section`, `Container`, `Stack`, `Row/Grid`) to reduce `Group`/`Columns` nesting friction.
-- [ ] Standardize responsive attributes (`responsive.display`, `responsive.spacing`, `responsive.typography`, `responsive.layout`) and host inspector controls.
-- [ ] Add token-first design-system surface (typography, spacing, colors, radii) mapped to deterministic CSS variables/style tokens.
-- [ ] Make patterns/templates the default authoring path: curated section packs, page wizard, save-as-pattern with versioned shared library.
-- [ ] Add site-structure layer above documents: page tree, slug/redirect management, template assignment, navigation manifest output.
-- [ ] Evolve media UX beyond upload endpoint parity: collections/tags/alt-text workflow, dedupe hooks, stable asset URLs across releases.
-- [ ] Keep preview “real” to publish shell: tokenized preview routes rendered through the same template/style pipeline as publish.
+Exit criteria:
+- Admin shell runs without direct dependency on WordPress server APIs.
+- Token refresh and error propagation are deterministic in tests.
+
+## Phase 3 – Release Model & Private Delivery Semantics (complete)
+- [x] Immutable manifests + active release pointer + append-only release history.
+- [x] Artifact writing through `releaseStore.writeArtifact`.
+- [x] Preview signature enforcement and private cache scope isolation.
+- [x] Provenance and hash model (`sourceRevisionSet`, `releaseHash`, `contentHash`).
+
+Exit criteria:
+- Publish output is release-addressable and rollback-safe.
+- Preview/private semantics are enforced by tests (signature, expiry, scoped cache keys).
+
+## Phase 4 – Cloudflare Adapter Baseline (complete)
+- [x] Worker composition root in adapter package (`packages/adapters-cloudflare/src/worker.js`).
+- [x] Binding-aware KV/R2 adapter behavior with local fallbacks.
+- [x] Wrangler local/deployed smoke scripts for the core API path.
+
+Exit criteria:
+- Same API handler runs with in-memory and Cloudflare-composed platforms.
+- Local and deployed smoke runs cover auth -> docs -> publish -> private -> preview -> releases.
+
+## Phase 5 – Durable Cloudflare Data Plane (complete)
+- [x] D1-backed release state (manifests, pointer, history) with schema bootstrapping.
+- [x] D1-backed core app state (users/tokens/documents/revisions/media/jobs/forms/previews).
+- [x] D1 release write hardening (ordering semantics + atomic batch path + migration/backfill safeguards).
+
+Exit criteria:
+- Cloudflare adapter does not depend on isolate memory for core mutable state.
+- Cross-instance behavior remains consistent for auth/docs/publish/preview flows.
+
+## Phase 6 – Security & Env Hygiene (complete)
+- [x] Fail-closed HMAC behavior when required keys are missing.
+- [x] No default admin auto-seeding without explicit bootstrap env.
+- [x] Wrangler binding hygiene documented and wired for local/deployed usage.
+
+Exit criteria:
+- Secrets are required by runtime behavior, not optional fallbacks.
+- Fresh deployment is not accessible with predictable default credentials.
+
+## Phase 7 – Editor-to-Publish Loop Lock
+- [ ] Deliver one clean end-to-end authoring loop in Admin UI: edit -> autosave revision -> signed preview -> publish -> activate -> private delivery read.
+- [ ] Add explicit acceptance tests for this loop in in-memory + wrangler-local + deployed smoke contexts.
+- [ ] Remove any remaining manual/implicit steps required to activate and verify a release.
+
+Exit criteria:
+- A single operator path exists for authoring-to-delivery with no side scripts.
+- The loop passes in all three runtime targets with the same pass/fail assertions.
+
+## Phase 8 – Internal Hooks + API Hardening
+- [ ] Add internal hook interface at domain boundaries (`afterDocumentWrite`, `afterRevisionCreate`, `afterPublishStarted`, `afterPublishCompleted`, `afterReleaseActivated`).
+- [ ] Add `beforePublish` synchronous hook for policy/validation/transforms.
+- [ ] Classify hooks by execution model: synchronous (blocking) vs async (side-effects/notifications).
+- [ ] Normalize API versioning/envelope/pagination rules and document them as stable contract behavior.
+- [ ] Add webhook delivery surface for publish completed + release activated events.
+
+Exit criteria:
+- Domain actions can be extended without direct coupling to route handlers.
+- API behaviour is explicitly versioned and consistent across all endpoints.
+
+## Phase 9 – Block Content Model Decision + Contract
+- [x] Decide and document source-of-truth strategy: **Option A** (block JSON canonical, publish renders HTML).
+- [ ] Add canonical fields to document/revision model for block JSON (`blocks`) and keep derived HTML as publish artifact output only.
+- [ ] Update editor write/autosave flows to persist validated block JSON, not HTML strings as source-of-truth.
+- [ ] Update publish pipeline to render HTML deterministically from stored block JSON and include block-hash provenance in manifest metadata.
+- [ ] Define block JSON validation and serialization invariants (schema versioning, unknown block retention, deterministic ordering).
+- [ ] Add migration notes and compatibility behavior for legacy HTML-first revisions (import/parse fallback rules).
+- [ ] Add regression coverage for round-trip: block JSON -> preview/publish HTML -> release artifact -> re-edit from JSON.
+
+Exit criteria:
+- Content canonical form is explicit and test-backed.
+- Publish/revision/preview paths use one coherent content model.
+
+## Phase 10 – Foundational Blocks + Admin UX Track
+- [ ] Implement three proving blocks end-to-end: rich text, image+caption, embed.
+- [ ] Wire media workflow and embed validation for these blocks through the canonical API.
+- [ ] Ship Admin UX surfaces for revision history, preview handoff, publish status, and release activation visibility.
+- [ ] Publish block portability policy (`web`/`rn` support metadata + unknown-block safe fallback).
+
+Exit criteria:
+- Three blocks survive revision -> preview -> publish -> activation without special-case code.
+- Admin UI makes publish/release state observable without log inspection.
+
+## Phase 11 – Platform Contract, Compatibility, and Ops Confidence
+- [ ] Publish `createPlatform()` contract doc with required/optional ports and fallback/error semantics.
+- [ ] Replace placeholder `packages/contracts` validator with OpenAPI/JSON Schema and regenerate SDK/client contract checks.
+- [ ] Publish adapter conformance matrix and required parity checks (in-memory vs wrangler-local vs deployed).
+- [ ] Add known degradations register and release-cut checklist.
+- [ ] Ship WP REST façade + `wp.*` compatibility profile (guaranteed/partial/out-of-scope).
+
+Exit criteria:
+- Platform assembly, API schema, runtime parity, and compatibility guarantees are all versioned artifacts.
+- No phase handoff requires piggyback completion from prior undocumented work.
 
 ## Dependencies & Notes
 - Ports + Domain must not depend on infrastructure; only `packages/adapters-cloudflare` uses Cloudflare-specific APIs. (`scripts/check-boundaries.js` enforces this.)
-- Canonical API tests currently validate required keys only. Replace `packages/contracts` with full schema before releasing Phase 3.
-- Current docs (`idea.md`) imply Gutenberg usability improvements, but execution tracking now lives in `Phase 3b` above for explicit ownership.
+- Canonical API tests currently validate required keys only. Replace `packages/contracts` with full schema before closing Phase 11.
+- Current docs (`idea.md`) imply Gutenberg usability improvements, but execution tracking now lives in `Phase 10` above for explicit ownership.
 - Concurrency caveat: KV-backed pointer/history updates in the reference Cloudflare adapter are not strongly atomic under concurrent writers; use D1 transaction boundaries or a Durable Object single-writer path when moving from reference to production guarantees.
 - Hash caveat: current publisher hashing is intentionally non-cryptographic (`hashString`) for deterministic fingerprints and testability; do not treat `releaseHash`/`contentHash` as security primitives.
 - Bun tooling now drives installs/tests; `bun.lock` (Bun’s lockfile) keeps dependencies consistent across workspaces.
@@ -115,7 +166,8 @@ This file turns the architectural story from `idea.md` into concrete phases with
   Note: slight line-coverage dip is expected from newly added D1 migration/fallback branches; function coverage held steady.
 - Delta (2026-02-06 after Phase 2 hardening closure for secrets+durability): `94.44%` lines, `91.49%` funcs.
 - Delta (2026-02-06 after D1 app-store migration + no-default-admin bootstrap): `93.55%` lines, `90.20%` funcs.
+- Delta (2026-02-06 after unhappy-path coverage expansion and threshold wiring): `97.15%` lines, `95.96%` funcs.
 - Priority hotspot 1: `apps/admin-web/src/editor-shell.js` (`89.66%` lines) where document update/preview branches remain.
-- Priority hotspot 2: `apps/api-edge/src/app.js` (`93.28%` lines) for endpoint-level negative branches and rare error guards.
+- Priority hotspot 2: `apps/api-edge/src/app.js` (`95.61%` lines) for endpoint-level negative branches and rare error guards.
 - Priority hotspot 3: `packages/testing/src/inMemoryPlatform.js` (`97.38%` lines, `96.23%` funcs) with remaining branches tied to deeper revision/list edge paths.
 - Process: run `bun run test:coverage` at the end of each phase slice and append a one-line delta note here.

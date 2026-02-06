@@ -21,7 +21,7 @@ Edge-portable standalone Gutenberg CMS skeleton.
 - `npm run check:boundaries`
 - `npm run test:wrangler` (local Wrangler smoke: auth -> publish -> private -> preview -> releases)
 - `npm run test:wrangler:deployed` (deployed smoke; requires `GCMS_BASE_URL` and `GCMS_ADMIN_PASS`)
-- `npm run test:coverage:gate` (runs coverage and enforces min thresholds; excludes test helper files from threshold math)
+- `npm run test:coverage` (runs coverage and enforces min thresholds; excludes test helper files from threshold math)
 
 ## Cloudflare Env Hygiene
 
