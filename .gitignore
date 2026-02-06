@@ -8,3 +8,4 @@ dist/
 gutenberg/
 gutenberg
 CLAUDE.md
+coverage/

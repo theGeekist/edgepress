@@ -11,12 +11,15 @@ This file turns the architectural story from `idea.md` into concrete phases with
 - [x] Publish + release invariants (`packages/publish/src/publisher.js`).
 
 ## Phase 1 – Content + Admin Integration (in progress/outstanding)
-- [ ] Harden canonical SDK client (`packages/sdk/src/client.js`) and connect to `apps/admin-web/src/gutenberg-integration.js`.
-- [ ] Wire Gutenberg UI (`apps/admin-web`) to use `@wordpress/block-editor` with `@wordpress/api-fetch` middlewares and canonical stores.
-- [ ] Ensure `apps/api-edge` implements auth, docs, media, publish routes plus preview/tokenized URL behavior (`apps/api-edge/src/app.js`).  
+- [ ] Harden canonical SDK client (`packages/sdk/src/client.js`) and connect to `apps/admin-web/src/gutenberg-integration.js`.  
+  Next execution focus: finalize auth-refresh semantics in the SDK and add integration tests for token rotation/error propagation.
+- [ ] Wire Gutenberg UI (`apps/admin-web`) to use `@wordpress/block-editor` with `@wordpress/api-fetch` middlewares and canonical stores.  
+  Next execution focus: add a minimal runnable editor shell wired to canonical SDK stores (no `@wordpress/core-data` for MVP CRUD).
+- [x] Ensure `apps/api-edge` implements auth, docs, media, publish routes plus preview/tokenized URL behavior (`apps/api-edge/src/app.js`).  
   Added preview TTL runtime controls, canonical error envelope handling, preview expiry responses, and base64url helpers behind the runtime port.
-- [ ] Add targeted tests for document/media/publish flows (already in `packages/testing/test`).
-- [ ] Document open work: mention `packages/contracts` is a key validator until replaced with OpenAPI.
+- [x] Add targeted tests for document/media/publish flows (already in `packages/testing/test`).  
+  Includes negative-path checks for auth refresh/logout, media finalize token/not-found, release activation/publish job errors, preview TTL parsing clamp/fallback, and forms rate limiting (`packages/testing/test/api.behavior.test.js`).
+- [x] Document open work: mention `packages/contracts` is a key validator until replaced with OpenAPI.
 
 ## Phase 2 – Publishing + Delivery
 - [ ] Implement release activation history + pointer logic (currently tracked in `packages/testing/src/inMemoryPlatform.js`).
@@ -33,4 +36,5 @@ This file turns the architectural story from `idea.md` into concrete phases with
 - Ports + Domain must not depend on infrastructure; only `packages/adapters-cloudflare` uses Cloudflare-specific APIs. (`scripts/check-boundaries.js` enforces this.)
 - Canonical API tests currently validate required keys only. Replace `packages/contracts` with full schema before releasing Phase 3.
 - Bun tooling now drives installs/tests; `bun.lock` (Bun’s lockfile) keeps dependencies consistent across workspaces.
+- Coverage note: `packages/testing/src/inMemoryPlatform.js` still has intentionally uncovered branches for adapter fallback/error paths. Keep adding targeted tests as runtime and adapter behaviors are finalized.
 - Keep `PLANNING.md` updated as phases complete: mark boxes, add dates/owners, link follow-up issues.

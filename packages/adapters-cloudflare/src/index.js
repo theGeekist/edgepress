@@ -26,8 +26,7 @@ export function createCloudflareReferencePlatform(env = {}) {
         userAgentHash: request?.headers.get('user-agent') || 'cf_ua_unknown',
         requestId: cfRay
       };
-    }
-,
+    },
     base64urlEncode(value) {
       return base.runtime.base64urlEncode(value);
     },

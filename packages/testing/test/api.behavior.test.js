@@ -1,0 +1,119 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { createInMemoryPlatform } from '../src/inMemoryPlatform.js';
+import { authAsAdmin, requestJson } from '../src/testUtils.js';
+
+async function createDoc(handler, token) {
+  const created = await requestJson(handler, 'POST', '/v1/documents', {
+    token,
+    body: { title: 'Behavior Doc', content: '<p>body</p>' }
+  });
+  assert.equal(created.res.status, 201);
+  return created.json.document.id;
+}
+
+test('auth refresh rejects invalid and revoked refresh tokens with envelope', async () => {
+  const platform = createInMemoryPlatform();
+  const { handler, refreshToken } = await authAsAdmin(platform);
+
+  const invalid = await requestJson(handler, 'POST', '/v1/auth/refresh', {
+    body: { refreshToken: 'r_invalid' }
+  });
+  assert.equal(invalid.res.status, 401);
+  assert.equal(invalid.json.error.code, 'AUTH_INVALID_REFRESH');
+
+  await requestJson(handler, 'POST', '/v1/auth/logout', { body: { refreshToken } });
+  const revoked = await requestJson(handler, 'POST', '/v1/auth/refresh', {
+    body: { refreshToken }
+  });
+  assert.equal(revoked.res.status, 401);
+  assert.equal(revoked.json.error.code, 'AUTH_INVALID_REFRESH');
+});
+
+test('media finalize enforces token and not-found semantics', async () => {
+  const platform = createInMemoryPlatform();
+  const { handler, accessToken } = await authAsAdmin(platform);
+
+  const init = await requestJson(handler, 'POST', '/v1/media', { token: accessToken, body: {} });
+  assert.equal(init.res.status, 201);
+
+  const wrongToken = await requestJson(handler, 'POST', `/v1/media/${init.json.mediaId}/finalize`, {
+    token: accessToken,
+    body: {
+      uploadToken: 'up_wrong',
+      filename: 'hero.jpg',
+      mimeType: 'image/jpeg',
+      size: 11
+    }
+  });
+  assert.equal(wrongToken.res.status, 401);
+  assert.equal(wrongToken.json.error.code, 'MEDIA_UPLOAD_TOKEN_INVALID');
+
+  const missing = await requestJson(handler, 'POST', '/v1/media/med_missing/finalize', {
+    token: accessToken,
+    body: {
+      uploadToken: 'up_missing',
+      filename: 'hero.jpg',
+      mimeType: 'image/jpeg',
+      size: 11
+    }
+  });
+  assert.equal(missing.res.status, 404);
+  assert.equal(missing.json.error.code, 'MEDIA_NOT_FOUND');
+});
+
+test('release activation and publish job errors use canonical envelopes', async () => {
+  const platform = createInMemoryPlatform();
+  const { handler, accessToken } = await authAsAdmin(platform);
+
+  const missingActivation = await requestJson(handler, 'POST', '/v1/releases/rel_missing/activate', {
+    token: accessToken,
+    body: {}
+  });
+  assert.equal(missingActivation.res.status, 404);
+  assert.equal(missingActivation.json.error.code, 'RELEASE_ACTIVATE_FAILED');
+
+  const missingJob = await requestJson(handler, 'GET', '/v1/publish/job_missing', { token: accessToken });
+  assert.equal(missingJob.res.status, 404);
+  assert.equal(missingJob.json.error.code, 'PUBLISH_JOB_NOT_FOUND');
+});
+
+test('preview TTL parsing falls back and clamps from runtime env', async () => {
+  const platform = createInMemoryPlatform();
+  const { handler, accessToken } = await authAsAdmin(platform);
+  const docId = await createDoc(handler, accessToken);
+
+  platform.runtime.envOverrides.PREVIEW_TTL_SECONDS = 'NaN';
+  const fallbackPreview = await requestJson(handler, 'GET', `/v1/preview/${docId}`, { token: accessToken });
+  assert.equal(fallbackPreview.res.status, 200);
+  const fallbackMs = new Date(fallbackPreview.json.expiresAt).getTime() - Date.now();
+  assert.ok(fallbackMs > 14 * 60 * 1000);
+
+  platform.runtime.envOverrides.PREVIEW_TTL_SECONDS = '1';
+  const minRejectedPreview = await requestJson(handler, 'GET', `/v1/preview/${docId}`, { token: accessToken });
+  assert.equal(minRejectedPreview.res.status, 200);
+  const minRejectedMs = new Date(minRejectedPreview.json.expiresAt).getTime() - Date.now();
+  assert.ok(minRejectedMs > 14 * 60 * 1000);
+
+  platform.runtime.envOverrides.PREVIEW_TTL_SECONDS = String(7 * 24 * 60 * 60);
+  const clampedPreview = await requestJson(handler, 'GET', `/v1/preview/${docId}`, { token: accessToken });
+  assert.equal(clampedPreview.res.status, 200);
+  const clampedMs = new Date(clampedPreview.json.expiresAt).getTime() - Date.now();
+  assert.ok(clampedMs <= 24 * 60 * 60 * 1000 + 5000);
+});
+
+test('forms endpoint returns 429 envelope when rate limit exceeded', async () => {
+  const platform = createInMemoryPlatform();
+  const { handler } = await authAsAdmin(platform);
+
+  let limited;
+  for (let i = 0; i < 6; i += 1) {
+    limited = await requestJson(handler, 'POST', '/v1/forms/contact/submit', {
+      headers: { 'x-ip-hash': 'ip_same', 'x-ua-hash': 'ua_same' },
+      body: { payload: { idx: i } }
+    });
+  }
+
+  assert.equal(limited.res.status, 429);
+  assert.equal(limited.json.error.code, 'RATE_LIMITED');
+});
