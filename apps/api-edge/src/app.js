@@ -8,6 +8,13 @@ function route(method, path, handler) {
   return { method, path, handler };
 }
 
+function authzErrorResponse(e) {
+  if (typeof e?.status === 'number' && typeof e?.code === 'string') {
+    return error(e.code, e.message, e.status);
+  }
+  return error('FORBIDDEN', e?.message || 'Forbidden', 403);
+}
+
 async function authUserFromRequest(runtime, store, request) {
   const token = getBearerToken(request);
   return verifyAccessToken(runtime, token, store);
@@ -68,7 +75,7 @@ export function createApiHandler(platform) {
         const items = await store.listDocuments();
         return json({ items });
       } catch (e) {
-        return error('FORBIDDEN', e.message, 403);
+        return authzErrorResponse(e);
       }
     }),
 
@@ -94,7 +101,7 @@ export function createApiHandler(platform) {
         });
         return json({ document, revision }, 201);
       } catch (e) {
-        return error('FORBIDDEN', e.message, 403);
+        return authzErrorResponse(e);
       }
     }),
 
@@ -123,7 +130,7 @@ export function createApiHandler(platform) {
 
         return json({ document, revision });
       } catch (e) {
-        return error('FORBIDDEN', e.message, 403);
+        return authzErrorResponse(e);
       }
     }),
 
@@ -133,7 +140,7 @@ export function createApiHandler(platform) {
         const items = await store.listRevisions(params.id);
         return json({ items });
       } catch (e) {
-        return error('FORBIDDEN', e.message, 403);
+        return authzErrorResponse(e);
       }
     }),
 
@@ -154,7 +161,7 @@ export function createApiHandler(platform) {
         });
         return json({ revision }, 201);
       } catch (e) {
-        return error('FORBIDDEN', e.message, 403);
+        return authzErrorResponse(e);
       }
     }),
 
@@ -175,7 +182,7 @@ export function createApiHandler(platform) {
           requiredHeaders: session.requiredHeaders
         }, 201);
       } catch (e) {
-        return error('FORBIDDEN', e.message, 403);
+        return authzErrorResponse(e);
       }
     }),
 
@@ -200,7 +207,7 @@ export function createApiHandler(platform) {
         });
         return json({ media });
       } catch (e) {
-        return error('FORBIDDEN', e.message, 403);
+        return authzErrorResponse(e);
       }
     }),
 
@@ -211,7 +218,7 @@ export function createApiHandler(platform) {
         if (!media) return error('MEDIA_NOT_FOUND', 'Media not found', 404);
         return json({ media });
       } catch (e) {
-        return error('FORBIDDEN', e.message, 403);
+        return authzErrorResponse(e);
       }
     }),
 
@@ -251,7 +258,7 @@ export function createApiHandler(platform) {
 
         return json({ job }, 201);
       } catch (e) {
-        return error('FORBIDDEN', e.message, 403);
+        return authzErrorResponse(e);
       }
     }),
 
@@ -262,7 +269,7 @@ export function createApiHandler(platform) {
         if (!job) return error('PUBLISH_JOB_NOT_FOUND', 'Publish job not found', 404);
         return json({ job });
       } catch (e) {
-        return error('FORBIDDEN', e.message, 403);
+        return authzErrorResponse(e);
       }
     }),
 
@@ -284,7 +291,7 @@ export function createApiHandler(platform) {
         const activeRelease = await releaseStore.getActiveRelease();
         return json({ items, activeRelease });
       } catch (e) {
-        return error('FORBIDDEN', e.message, 403);
+        return authzErrorResponse(e);
       }
     }),
 
@@ -320,7 +327,7 @@ export function createApiHandler(platform) {
           releaseLikeRef
         });
       } catch (e) {
-        return error('FORBIDDEN', e.message, 403);
+        return authzErrorResponse(e);
       }
     }),
 
@@ -380,7 +387,7 @@ export function createApiHandler(platform) {
         await cacheStore.set(cacheKey, html, 120);
         return json({ route: routeId, html, releaseId: activeRelease, cache: 'miss' });
       } catch (e) {
-        return error('FORBIDDEN', e.message, 403);
+        return authzErrorResponse(e);
       }
     })
   ];

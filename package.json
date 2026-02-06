@@ -11,12 +11,24 @@
     "start:api": "bun apps/api-edge/src/server.js",
     "check:boundaries": "bun scripts/check-boundaries.js",
     "test:unit": "bun test packages/testing/test/*.test.js",
-    "test:coverage": "bun test --coverage --coverage-reporter text --coverage-reporter lcov --coverage-dir coverage packages/testing/test/*.test.js"
+    "test:coverage": "bun test --coverage --coverage-reporter text --coverage-reporter lcov --coverage-dir coverage packages/testing/test/*.test.js",
+    "start:admin-demo": "bun apps/admin-web/src/demo-server.js",
+    "lint": "bunx eslint . --max-warnings 0",
+    "lint:fix": "bunx eslint . --fix",
+    "sonar:verify": "bun run test:coverage && test -f coverage/lcov.info && echo sonar inputs ready",
+    "sonar:scan": "bunx sonar-scanner",
+    "context:gutenberg": "bun scripts/check-gutenberg-context.js"
   },
   "module": "index.ts",
   "devDependencies": {
+    "@eslint/js": "^9.39.2",
     "@types/bun": "latest",
     "@types/node": "^25.2.1",
+    "eslint": "^9.39.2",
+    "eslint-plugin-sonarjs": "^3.0.6",
+    "globals": "^17.3.0",
+    "sonar-scanner": "^3.1.0",
+    "ts-api-utils": "^2.4.0",
     "typescript": "5.9.3"
   },
   "peerDependencies": {

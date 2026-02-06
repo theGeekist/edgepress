@@ -1,29 +1,101 @@
-export function createClient({ baseUrl, fetchImpl = fetch, getAccessToken, onTokenRefresh }) {
-  async function request(method, path, body, retry = true) {
-    const headers = { 'content-type': 'application/json' };
-    const token = getAccessToken ? getAccessToken() : null;
+function createRequestError({ status, code, message, method, path, payload }) {
+  const error = new Error(message || 'Request failed');
+  error.name = 'ApiRequestError';
+  error.status = status;
+  error.code = code || 'REQUEST_FAILED';
+  error.method = method;
+  error.path = path;
+  error.payload = payload;
+  return error;
+}
+
+async function parsePayload(res) {
+  const contentType = res.headers.get('content-type') || '';
+  if (contentType.includes('application/json')) {
+    try {
+      return await res.json();
+    } catch {
+      return null;
+    }
+  }
+
+  try {
+    const text = await res.text();
+    return text ? { message: text } : null;
+  } catch {
+    return null;
+  }
+}
+
+export function createClient({
+  baseUrl,
+  fetchImpl = fetch,
+  getAccessToken,
+  onTokenRefresh,
+  onAuthFailure
+}) {
+  let refreshInFlight = null;
+
+  async function refreshTokenOnce() {
+    if (!onTokenRefresh) return false;
+    if (!refreshInFlight) {
+      refreshInFlight = (async () => {
+        try {
+          return Boolean(await onTokenRefresh());
+        } finally {
+          refreshInFlight = null;
+        }
+      })();
+    }
+    return refreshInFlight;
+  }
+
+  async function request(method, path, body, options = {}) {
+    const { retry = true, skipAuth = false, skipRefresh = false, headers: customHeaders } = options;
+
+    const headers = {
+      'content-type': 'application/json',
+      ...(customHeaders || {})
+    };
+
+    const token = !skipAuth && getAccessToken ? getAccessToken() : null;
     if (token) headers.authorization = `Bearer ${token}`;
 
     const res = await fetchImpl(`${baseUrl}${path}`, {
       method,
       headers,
-      body: body ? JSON.stringify(body) : undefined
+      body: body !== undefined ? JSON.stringify(body) : undefined
     });
 
-    if (res.status === 401 && retry && onTokenRefresh) {
-      const next = await onTokenRefresh();
-      if (next) return request(method, path, body, false);
+    if (res.status === 401 && retry && !skipRefresh && onTokenRefresh) {
+      const refreshed = await refreshTokenOnce();
+      if (refreshed) {
+        return request(method, path, body, { ...options, retry: false });
+      }
+      if (onAuthFailure) {
+        await onAuthFailure();
+      }
     }
 
-    const payload = await res.json();
-    if (!res.ok) throw new Error(payload?.error?.message || 'Request failed');
+    const payload = await parsePayload(res);
+    if (!res.ok) {
+      throw createRequestError({
+        status: res.status,
+        code: payload?.error?.code,
+        message: payload?.error?.message || payload?.message || 'Request failed',
+        method,
+        path,
+        payload
+      });
+    }
+
     return payload;
   }
 
   return {
-    token: (body) => request('POST', '/v1/auth/token', body),
-    refresh: (body) => request('POST', '/v1/auth/refresh', body),
-    logout: (body) => request('POST', '/v1/auth/logout', body),
+    token: (body) => request('POST', '/v1/auth/token', body, { skipRefresh: true }),
+    refresh: (body) => request('POST', '/v1/auth/refresh', body, { skipRefresh: true }),
+    logout: (body) => request('POST', '/v1/auth/logout', body, { skipRefresh: true }),
     listDocuments: () => request('GET', '/v1/documents'),
     createDocument: (body) => request('POST', '/v1/documents', body),
     updateDocument: (id, body) => request('PATCH', `/v1/documents/${id}`, body),

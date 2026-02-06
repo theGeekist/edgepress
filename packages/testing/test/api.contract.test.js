@@ -125,10 +125,10 @@ test('error envelope covers auth failures and contract stays stable', async () =
   const { handler } = await authAsAdmin(platform);
 
   const unauthorized = await requestJson(handler, 'GET', '/v1/documents');
-  assert.equal(unauthorized.res.status, 403);
+  assert.equal(unauthorized.res.status, 401);
   assert.deepStrictEqual(Object.keys(unauthorized.json), ['error']);
-  assert.equal(unauthorized.json.error.code, 'FORBIDDEN');
-  assert.ok(unauthorized.json.error.message.includes('Missing capability'));
+  assert.equal(unauthorized.json.error.code, 'AUTH_REQUIRED');
+  assert.ok(unauthorized.json.error.message.includes('Authentication required'));
 });
 
 test('preview tokens expire and invalid tokens return envelope', async () => {

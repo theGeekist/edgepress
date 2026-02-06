@@ -11,10 +11,10 @@ This file turns the architectural story from `idea.md` into concrete phases with
 - [x] Publish + release invariants (`packages/publish/src/publisher.js`).
 
 ## Phase 1 – Content + Admin Integration (in progress/outstanding)
-- [ ] Harden canonical SDK client (`packages/sdk/src/client.js`) and connect to `apps/admin-web/src/gutenberg-integration.js`.  
-  Next execution focus: finalize auth-refresh semantics in the SDK and add integration tests for token rotation/error propagation.
+- [x] Harden canonical SDK client (`packages/sdk/src/client.js`) and connect to `apps/admin-web/src/gutenberg-integration.js`.  
+  Completed: structured `ApiRequestError`, single-flight refresh retry, auth-failure callback, and SDK/admin-shell integration tests for token rotation/error propagation.
 - [ ] Wire Gutenberg UI (`apps/admin-web`) to use `@wordpress/block-editor` with `@wordpress/api-fetch` middlewares and canonical stores.  
-  Next execution focus: add a minimal runnable editor shell wired to canonical SDK stores (no `@wordpress/core-data` for MVP CRUD).
+  Current baseline: minimal runnable admin shell is wired to canonical SDK stores (`apps/admin-web/src/editor-shell.js`) without `@wordpress/core-data` CRUD.
 - [x] Ensure `apps/api-edge` implements auth, docs, media, publish routes plus preview/tokenized URL behavior (`apps/api-edge/src/app.js`).  
   Added preview TTL runtime controls, canonical error envelope handling, preview expiry responses, and base64url helpers behind the runtime port.
 - [x] Add targeted tests for document/media/publish flows (already in `packages/testing/test`).  
@@ -38,3 +38,4 @@ This file turns the architectural story from `idea.md` into concrete phases with
 - Bun tooling now drives installs/tests; `bun.lock` (Bun’s lockfile) keeps dependencies consistent across workspaces.
 - Coverage note: `packages/testing/src/inMemoryPlatform.js` still has intentionally uncovered branches for adapter fallback/error paths. Keep adding targeted tests as runtime and adapter behaviors are finalized.
 - Keep `PLANNING.md` updated as phases complete: mark boxes, add dates/owners, link follow-up issues.
+- Context guardrail: run `bun run context:gutenberg` before Gutenberg integration changes to pin branch/commit and verify key docs/package surfaces are still present.
