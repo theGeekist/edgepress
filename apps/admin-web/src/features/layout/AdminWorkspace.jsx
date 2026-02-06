@@ -23,6 +23,7 @@ export function AdminWorkspace({
   loop,
   previewLink,
   saveState,
+  settings,
   actions,
   isMobile,
   isSidebarOpen
@@ -151,8 +152,8 @@ export function AdminWorkspace({
               </Text>
               <FilterTabs
                 palette={palette}
-                currentFilter="plain"
-                onFilterChange={() => { }}
+                currentFilter={settings?.permalinkStructure || 'name'}
+                onFilterChange={(next) => actions.onUpdateSettings({ permalinkStructure: next })}
                 filters={[
                   { label: 'Plain', value: 'plain' },
                   { label: 'Day and name', value: 'day' },
