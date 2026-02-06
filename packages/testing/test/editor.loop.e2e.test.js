@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { parse } from '@wordpress/blocks';
 import { createInMemoryPlatform } from '../src/inMemoryPlatform.js';
 import { authAsAdmin, requestJson } from '../src/testUtils.js';
 
@@ -97,4 +98,57 @@ test('editor loop covers update, preview, publish, activate, and private deliver
   assert.equal(privateRead.json.releaseId, secondReleaseId);
   assert.equal(typeof privateRead.json.html, 'string');
   assert.ok(privateRead.json.html.includes('<p>v3</p>'));
+});
+
+test('block-json round-trip preserves canonical source through revisions and publish', async () => {
+  const platform = createInMemoryPlatform();
+  const { handler, accessToken } = await authAsAdmin(platform);
+
+  const v1Blocks = parse('<!-- wp:paragraph --><p>v1 block</p><!-- /wp:paragraph -->');
+  const created = await requestJson(handler, 'POST', '/v1/documents', {
+    token: accessToken,
+    body: {
+      title: 'Block Roundtrip',
+      content: '<p>v1 block</p>',
+      blocks: v1Blocks
+    }
+  });
+  assert.equal(created.res.status, 201);
+  const documentId = created.json.document.id;
+
+  const v2Blocks = parse('<!-- wp:paragraph --><p>v2 block</p><!-- /wp:paragraph -->');
+  const updated = await requestJson(handler, 'PATCH', `/v1/documents/${encodeURIComponent(documentId)}`, {
+    token: accessToken,
+    body: {
+      title: 'Block Roundtrip v2',
+      content: '<p>v2 block</p>',
+      blocks: v2Blocks
+    }
+  });
+  assert.equal(updated.res.status, 200);
+  assert.deepEqual(updated.json.document.blocks, v2Blocks);
+
+  const revisions = await requestJson(handler, 'GET', `/v1/documents/${encodeURIComponent(documentId)}/revisions`, {
+    token: accessToken
+  });
+  assert.equal(revisions.res.status, 200);
+  const latestRevision = revisions.json.items.at(-1);
+  assert.deepEqual(latestRevision.blocks, v2Blocks);
+
+  const publish = await requestJson(handler, 'POST', '/v1/publish', {
+    token: accessToken,
+    body: {}
+  });
+  assert.equal(publish.res.status, 201);
+  const releaseId = publish.json.job.releaseId;
+
+  const manifest = await platform.releaseStore.getManifest(releaseId);
+  assert.ok(Array.isArray(manifest.blockHashes));
+  assert.equal(manifest.blockHashes.length, 1);
+
+  const privateRead = await requestJson(handler, 'GET', `/v1/private/${encodeURIComponent(documentId)}`, {
+    token: accessToken
+  });
+  assert.equal(privateRead.res.status, 200);
+  assert.ok(privateRead.json.html.includes('<p>v2 block</p>'));
 });

@@ -103,6 +103,8 @@ Exit criteria:
 - [ ] Add webhook delivery surface for publish completed + release activated events.
 - `Increment complete`: replaced bespoke lifecycle hooks with canonical `@wordpress/hooks` semantics (`addAction`, `doAction`, `addFilter`, `applyFilters`) and added server-side JS bootstrap registration in composition roots (`apps/api-edge/src/hooks-bootstrap.js`, `apps/api-edge/src/server.js`, `packages/adapters-cloudflare/src/worker.js`).
 - Note: API runtime now requires a full WP-compatible hook registry surface when `platform.hooks` is supplied; partial custom registries intentionally fall back to shared `@wordpress/hooks`.
+- Trust boundary note: published HTML intentionally renders author-provided block/content HTML; sanitization is not performed in the publisher and must be enforced at authoring/import boundaries when untrusted inputs are introduced.
+- Hook bootstrap note: failing registrars are retried on subsequent attach attempts, with failure logging rate-limited to first failure per registry/registrar pair.
 
 Exit criteria:
 - Domain actions can be extended without direct coupling to route handlers.
@@ -110,12 +112,13 @@ Exit criteria:
 
 ## Phase 9 – Block Content Model Decision + Contract
 - [x] Decide and document source-of-truth strategy: **Option A** (block JSON canonical, publish renders HTML).
-- [ ] Add canonical fields to document/revision model for block JSON (`blocks`) and keep derived HTML as publish artifact output only.
-- [ ] Update editor write/autosave flows to persist validated block JSON, not HTML strings as source-of-truth.
-- [ ] Update publish pipeline to render HTML deterministically from stored block JSON and include block-hash provenance in manifest metadata.
-- [ ] Define block JSON validation and serialization invariants (schema versioning, unknown block retention, deterministic ordering).
-- [ ] Add migration notes and compatibility behavior for legacy HTML-first revisions (import/parse fallback rules).
-- [ ] Add regression coverage for round-trip: block JSON -> preview/publish HTML -> release artifact -> re-edit from JSON.
+- [x] Add canonical fields to document/revision model for block JSON (`blocks`) and keep derived HTML as publish artifact output only.
+- [x] Update editor write/autosave flows to persist validated block JSON, not HTML strings as source-of-truth.
+- [x] Update publish pipeline to render HTML deterministically from stored block JSON and include block-hash provenance in manifest metadata.
+- [x] Define block JSON validation and serialization invariants (schema versioning, unknown block retention, deterministic ordering).
+- [x] Add migration notes and compatibility behavior for legacy HTML-first revisions (import/parse fallback rules).
+- [x] Add regression coverage for round-trip: block JSON -> preview/publish HTML -> release artifact -> re-edit from JSON.
+- `Increment complete`: documented canonical block model + legacy HTML migration/compat behavior (`docs/architecture/block-content-model.md`) and linked it into architecture docs/navigation.
 
 Exit criteria:
 - Content canonical form is explicit and test-backed.
@@ -148,6 +151,7 @@ Exit criteria:
 - Current docs (`idea.md`) imply Gutenberg usability improvements, but execution tracking now lives in `Phase 10` above for explicit ownership.
 - Concurrency caveat: KV-backed pointer/history updates in the reference Cloudflare adapter are not strongly atomic under concurrent writers; use D1 transaction boundaries or a Durable Object single-writer path when moving from reference to production guarantees.
 - Hash caveat: current publisher hashing is intentionally non-cryptographic (`hashString`) for deterministic fingerprints and testability; do not treat `releaseHash`/`contentHash` as security primitives.
+- Block-hash caveat: missing blocks (`blocks` absent/non-array) map to a deterministic empty-block hash, while structurally invalid block arrays are logged and omitted from `manifest.blockHashes`.
 - Bun tooling now drives installs/tests; `bun.lock` (Bun’s lockfile) keeps dependencies consistent across workspaces.
 - Coverage note: `packages/testing/src/inMemoryPlatform.js` still has intentionally uncovered branches for adapter fallback/error paths. Keep adding targeted tests as runtime and adapter behaviors are finalized.
 - Keep `PLANNING.md` updated as phases complete: mark boxes, add dates/owners, link follow-up issues.

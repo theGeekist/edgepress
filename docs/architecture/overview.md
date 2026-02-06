@@ -37,6 +37,7 @@ We simplify the WordPress data model to its absolute essentials, optimizing for 
 ### Documents & Revisions
 - **Documents** are container entities. They hold stable IDs and metadata.
 - **Revisions** are where the content lives. Every save creates a new immutable revision. We never mutate content in place.
+- Canonical source-of-truth is block JSON (`blocks`) with versioned schema metadata; HTML is derived for publish output.
 
 ### The Publishing Pipeline
 Publishing in EdgePress is a **Compilation Process**, not a database flag.
@@ -44,6 +45,8 @@ Publishing in EdgePress is a **Compilation Process**, not a database flag.
 2. We compile the Block JSON into static HTML.
 3. We generate a **Release Manifest** (a JSON file describing the entire site state).
 4. We switch the "Active Release" pointer to the new Manifest.
+
+For migration and compatibility rules for legacy HTML-first revisions, see [/architecture/block-content-model](/architecture/block-content-model).
 
 Result: **The public site is just static files.** No database lookups are required to serve your readers.
 

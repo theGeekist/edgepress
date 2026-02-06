@@ -1,4 +1,5 @@
 import { getSharedHooksRegistry } from '../../../packages/hooks/src/index.js';
+import { toErrorMessage } from '../../../packages/domain/src/errors.js';
 
 export const HOOK_NAMES = {
   publishProvenanceFilter: 'edgepress.publish.provenance',
@@ -8,12 +9,6 @@ export const HOOK_NAMES = {
   publishCompletedAction: 'edgepress.publish.completed',
   releaseActivatedAction: 'edgepress.release.activated'
 };
-
-function asErrorMessage(error) {
-  if (!error) return 'Unknown hook error';
-  if (typeof error.message === 'string' && error.message) return error.message;
-  return String(error);
-}
 
 const WARNED_HOOKS_FALLBACK_KEY = '__edgepress_warned_hooks_fallback__';
 
@@ -90,7 +85,7 @@ export function doAction(runtime, hooks, hookName, payload) {
   } catch (error) {
     runtime.log('error', 'hook_sync_error', {
       hook: hookName,
-      message: asErrorMessage(error)
+      message: toErrorMessage(error, 'Unknown hook error')
     });
     throw error;
   }

@@ -10,6 +10,15 @@ function toBlocks(content) {
   }
 }
 
+function normalizePersistedBlocks(inputBlocks) {
+  try {
+    // Parse(serialized) drops transient editor-only fields before persistence.
+    return parse(serialize(Array.isArray(inputBlocks) ? inputBlocks : []));
+  } catch {
+    return [];
+  }
+}
+
 export function useEditorState(shell) {
   const [blocks, setBlocks] = useState([]);
 
@@ -25,8 +34,13 @@ export function useEditorState(shell) {
 
   async function saveDocument(selectedId, title) {
     if (!selectedId) return null;
-    const content = serialize(blocks);
-    const updated = await shell.updateDocument(selectedId, { title, blocks, content });
+    const persistedBlocks = normalizePersistedBlocks(blocks);
+    const content = serialize(persistedBlocks);
+    const updated = await shell.updateDocument(selectedId, {
+      title,
+      blocks: persistedBlocks,
+      content
+    });
     return updated.document;
   }
 

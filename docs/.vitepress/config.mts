@@ -45,6 +45,7 @@ export default defineConfig({
           text: "Architecture",
           items: [
             { text: "Overview", link: "/architecture/overview" },
+            { text: "Block Content Model", link: "/architecture/block-content-model" },
             { text: "Invariants", link: "/architecture/invariants" },
             { text: "Roadmap", link: "/architecture/roadmap" }
           ]

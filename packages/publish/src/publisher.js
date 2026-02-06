@@ -1,4 +1,6 @@
 import { assertReleaseManifestImmutable } from '../../domain/src/invariants.js';
+import { normalizeBlocksInput } from '../../domain/src/blocks.js';
+import { toErrorMessage } from '../../domain/src/errors.js';
 import { normalizePublishProvenanceInput } from '../../domain/src/provenance.js';
 import { serialize } from '@wordpress/blocks';
 
@@ -12,16 +14,21 @@ function hashString(input) {
   return Math.abs(hash >>> 0).toString(16).padStart(8, '0');
 }
 
-function asErrorMessage(error) {
-  if (!error) return 'Unknown serialization error';
-  if (typeof error.message === 'string' && error.message) return error.message;
-  return String(error);
+function escapeHtml(input) {
+  const value = String(input ?? '');
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
 }
 
 function serializeBlocks(runtime, doc) {
   if (!Array.isArray(doc.blocks)) return '';
   try {
-    const serialized = serialize(doc.blocks);
+    const canonicalBlocks = normalizeBlocksInput(doc.blocks);
+    const serialized = serialize(canonicalBlocks);
     if (doc.blocks.length > 0 && !serialized) {
       runtime.log('warn', 'publish_blocks_empty_serialization', {
         documentId: doc.id,
@@ -33,9 +40,23 @@ function serializeBlocks(runtime, doc) {
     runtime.log('warn', 'publish_blocks_serialize_failed', {
       documentId: doc.id,
       blockCount: doc.blocks.length,
-      message: asErrorMessage(error)
+      message: toErrorMessage(error, 'Unknown serialization error')
     });
     return '';
+  }
+}
+
+function hashBlocks(runtime, doc) {
+  if (!Array.isArray(doc.blocks)) return hashString('[]');
+  try {
+    return hashString(JSON.stringify(normalizeBlocksInput(doc.blocks)));
+  } catch (error) {
+    runtime.log('warn', 'publish_blocks_hash_failed', {
+      documentId: doc.id,
+      blockCount: doc.blocks.length,
+      message: toErrorMessage(error, 'Unknown serialization error')
+    });
+    return null;
   }
 }
 
@@ -51,12 +72,20 @@ export async function createRelease({ runtime, store, releaseStore, sourceRevisi
   }
   for (const doc of docs) {
     const route = doc.id;
+    const blocksHash = hashBlocks(runtime, doc);
     const serializedBlocks = serializeBlocks(runtime, doc);
     const canonicalContent = serializedBlocks || doc.content || '';
-    const html = `<html><body><article><h1>${doc.title}</h1>${canonicalContent || ''}</article></body></html>`;
+    const escapedTitle = escapeHtml(doc.title);
+    const html = `<html><body><article><h1>${escapedTitle}</h1>${canonicalContent}</article></body></html>`;
     const hash = hashString(html);
     const artifactRef = await releaseStore.writeArtifact(releaseId, route, html, 'text/html');
-    artifacts.push({ route, path: artifactRef.path, hash, contentType: artifactRef.contentType });
+    artifacts.push({
+      route,
+      path: artifactRef.path,
+      hash,
+      blocksHash,
+      contentType: artifactRef.contentType
+    });
   }
 
   const existing = await releaseStore.getManifest(releaseId);
@@ -70,13 +99,15 @@ export async function createRelease({ runtime, store, releaseStore, sourceRevisi
     sourceRevisionId: provenance.sourceRevisionId,
     sourceRevisionSet: provenance.sourceRevisionSet,
     artifacts,
-    artifactHashes: artifacts.map((artifact) => artifact.hash)
+    artifactHashes: artifacts.map((artifact) => artifact.hash),
+    blockHashes: artifacts.map((artifact) => artifact.blocksHash).filter(Boolean)
   };
   manifest.contentHash = hashString(
     JSON.stringify({
       schemaVersion: manifest.schemaVersion,
       sourceRevisionSet: manifest.sourceRevisionSet,
-      artifactHashes: manifest.artifactHashes
+      artifactHashes: manifest.artifactHashes,
+      blockHashes: manifest.blockHashes
     })
   );
   // releaseHash fingerprints this specific publish event (not pure content identity).
@@ -88,7 +119,8 @@ export async function createRelease({ runtime, store, releaseStore, sourceRevisi
       publishedBy: manifest.publishedBy,
       sourceRevisionId: manifest.sourceRevisionId,
       sourceRevisionSet: manifest.sourceRevisionSet,
-      artifactHashes: manifest.artifactHashes
+      artifactHashes: manifest.artifactHashes,
+      blockHashes: manifest.blockHashes
     })
   );
 
