@@ -228,12 +228,33 @@ export function createInMemoryPlatform() {
   };
 
   const releaseStore = {
+    async writeArtifact(releaseId, route, bytes, contentType = 'text/html') {
+      const path = `${releaseId}/${route}.html`;
+      await blobStore.putBlob(path, bytes, { contentType });
+      state.releaseHistory.push({
+        type: 'artifact_written',
+        releaseId,
+        route,
+        path,
+        at: runtime.now().toISOString()
+      });
+      return {
+        releaseId,
+        route,
+        path,
+        contentType
+      };
+    },
     async writeManifest(releaseId, manifest) {
       if (state.releases.has(releaseId)) {
         throw new Error('ReleaseManifest is immutable and already exists for this releaseId');
       }
       state.releases.set(releaseId, manifest);
-      state.releaseHistory.push({ releaseId, activatedAt: null });
+      state.releaseHistory.push({
+        type: 'manifest_written',
+        releaseId,
+        at: runtime.now().toISOString()
+      });
     },
     async getManifest(releaseId) {
       return state.releases.get(releaseId) || null;
@@ -245,9 +266,17 @@ export function createInMemoryPlatform() {
       if (!state.releases.has(releaseId)) {
         throw new Error('Unknown releaseId');
       }
+      const previousReleaseId = state.activeRelease;
+      if (previousReleaseId === releaseId) {
+        return state.activeRelease;
+      }
       state.activeRelease = releaseId;
-      const history = state.releaseHistory.find((h) => h.releaseId === releaseId);
-      if (history) history.activatedAt = runtime.now().toISOString();
+      state.releaseHistory.push({
+        type: 'activated',
+        releaseId,
+        previousReleaseId,
+        at: runtime.now().toISOString()
+      });
       return state.activeRelease;
     },
     async getActiveRelease() {

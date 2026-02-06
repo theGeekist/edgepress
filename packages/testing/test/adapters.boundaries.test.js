@@ -52,3 +52,21 @@ test('cloudflare reference runtime requestContext and base64 helpers are wired',
   const decoded = platform.runtime.base64urlDecode(encoded);
   assert.equal(decoded, 'hello');
 });
+
+test('cloudflare reference releaseStore explicitly supports writeArtifact', async () => {
+  const platform = createCloudflareReferencePlatform({ TOKEN_KEY: 'cf-key' });
+
+  const ref = await platform.releaseStore.writeArtifact(
+    'rel_cf_demo',
+    'route_demo',
+    '<html>demo</html>',
+    'text/html'
+  );
+  assert.equal(ref.path, 'rel_cf_demo/route_demo.html');
+  assert.equal(ref.contentType, 'text/html');
+
+  const blob = await platform.blobStore.getBlob(ref.path);
+  assert.ok(blob);
+  assert.equal(blob.bytes, '<html>demo</html>');
+  assert.equal(blob.metadata.contentType, 'text/html');
+});

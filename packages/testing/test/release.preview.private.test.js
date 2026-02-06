@@ -35,6 +35,67 @@ test('release manifest is immutable and active release pointer is atomic', async
   assert.ok(before === null || before === releaseId);
 });
 
+test('release history is append-only for manifest writes and pointer switches', async () => {
+  const platform = createInMemoryPlatform();
+  const { handler, accessToken } = await authAsAdmin(platform);
+
+  await seedDoc(handler, accessToken);
+  const first = await requestJson(handler, 'POST', '/v1/publish', { token: accessToken, body: {} });
+  assert.equal(first.res.status, 201);
+  const firstReleaseId = first.json.job.releaseId;
+
+  await seedDoc(handler, accessToken);
+  const second = await requestJson(handler, 'POST', '/v1/publish', { token: accessToken, body: {} });
+  assert.equal(second.res.status, 201);
+  const secondReleaseId = second.json.job.releaseId;
+
+  // Only first publish auto-activates.
+  assert.equal(await platform.releaseStore.getActiveRelease(), firstReleaseId);
+
+  // Activating the currently active release is idempotent and should not append history.
+  const beforeNoop = (await platform.releaseStore.getReleaseHistory()).length;
+  await platform.releaseStore.activateRelease(firstReleaseId);
+  const afterNoop = (await platform.releaseStore.getReleaseHistory()).length;
+  assert.equal(afterNoop, beforeNoop);
+
+  await platform.releaseStore.activateRelease(secondReleaseId);
+  assert.equal(await platform.releaseStore.getActiveRelease(), secondReleaseId);
+
+  const history = await platform.releaseStore.getReleaseHistory();
+  const activationEvents = history.filter((entry) => entry.type === 'activated');
+  const manifestEvents = history.filter((entry) => entry.type === 'manifest_written');
+
+  assert.equal(manifestEvents.length, 2);
+  assert.equal(activationEvents.length, 2);
+  assert.equal(activationEvents[0].releaseId, firstReleaseId);
+  assert.equal(activationEvents[0].previousReleaseId, null);
+  assert.equal(activationEvents[1].releaseId, secondReleaseId);
+  assert.equal(activationEvents[1].previousReleaseId, firstReleaseId);
+});
+
+test('publish writes release artifacts through releaseStore and persists blob refs', async () => {
+  const platform = createInMemoryPlatform();
+  const { handler, accessToken } = await authAsAdmin(platform);
+  const docId = await seedDoc(handler, accessToken);
+
+  const publish = await requestJson(handler, 'POST', '/v1/publish', { token: accessToken, body: {} });
+  assert.equal(publish.res.status, 201);
+  const releaseId = publish.json.job.releaseId;
+
+  const history = await platform.releaseStore.getReleaseHistory();
+  const artifactEvents = history.filter((entry) => entry.type === 'artifact_written');
+  assert.ok(artifactEvents.length >= 1);
+  assert.ok(artifactEvents.some((entry) => entry.releaseId === releaseId && entry.route === docId));
+
+  const manifest = await platform.releaseStore.getManifest(releaseId);
+  const artifact = manifest.artifacts.find((entry) => entry.route === docId);
+  assert.ok(artifact);
+
+  const blob = await platform.blobStore.getBlob(artifact.path);
+  assert.ok(blob);
+  assert.equal(blob.metadata.contentType, 'text/html');
+});
+
 test('preview returns tokenized URL and serves temporary release-like HTML', async () => {
   const platform = createInMemoryPlatform();
   const { handler, accessToken } = await authAsAdmin(platform);

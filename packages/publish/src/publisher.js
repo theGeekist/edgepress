@@ -9,19 +9,21 @@ function hashString(input) {
   return Math.abs(hash >>> 0).toString(16).padStart(8, '0');
 }
 
-export async function createRelease({ runtime, store, blobStore, releaseStore, sourceRevisionId, publishedBy }) {
+export async function createRelease({ runtime, store, releaseStore, sourceRevisionId, publishedBy }) {
   const docs = await store.listDocuments();
   const createdAt = runtime.now().toISOString();
   const releaseId = `rel_${runtime.uuid()}`;
 
   const artifacts = [];
+  if (typeof releaseStore.writeArtifact !== 'function') {
+    throw new Error('Missing required port method: writeArtifact');
+  }
   for (const doc of docs) {
     const route = doc.id;
     const html = `<html><body><article><h1>${doc.title}</h1>${doc.content}</article></body></html>`;
     const hash = hashString(html);
-    const path = `${releaseId}/${route}.html`;
-    await blobStore.putBlob(path, html, { contentType: 'text/html' });
-    artifacts.push({ route, path, hash, contentType: 'text/html' });
+    const artifactRef = await releaseStore.writeArtifact(releaseId, route, html, 'text/html');
+    artifacts.push({ route, path: artifactRef.path, hash, contentType: artifactRef.contentType });
   }
 
   const existing = await releaseStore.getManifest(releaseId);
