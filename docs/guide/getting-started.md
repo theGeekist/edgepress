@@ -2,47 +2,66 @@
 title: Getting Started
 ---
 
-# Getting Started
+# Welcome to EdgePress
 
-## Prereqs
+Ready to experience the future of content management? Let's get your local environment set up.
 
-- Bun
+## Prerequisites
 
-## Install
+- **Bun**: This project uses [Bun](https://bun.sh) for fast dependency management and testing.
+- **Node.js**: (Optional) If you prefer using Node for some tools, though Bun is the primary runtime.
+
+## Installation
+
+Clone the repository and install dependencies with a single command:
 
 ```sh
 bun install
 ```
 
-## Run the API (Node HTTP server)
+## Running the Development Environment
+
+EdgePress consists of two main parts: the **API** (backend) and the **Admin Interface** (frontend). You can run them separately or together.
+
+### 1. Start the API Server
+
+This spins up the core CMS logic. By default, it runs on port `3000`.
 
 ```sh
 bun run start:api
 ```
 
-Default local credentials (in-memory): `admin` / `admin`.
+> [!TIP]
+> **Default Credentials**
+>
+> Username: `admin`
+>
+> Password: `admin`
 
-## Run the Admin (Vite dev server)
+### 2. Start the Admin Interface
+
+In a new terminal, launch the diverse block editor admin shell.
 
 ```sh
 bun run dev:admin
 ```
 
-## Run the API as a Cloudflare Worker (local)
+Open your browser to the URL provided (usually `http://localhost:5173`) to start exploring.
+
+## Deployment Preview (Cloudflare Workers)
+
+To see how EdgePress runs in a production-like environment on Cloudflare Workers, use the wrapper script:
 
 ```sh
+# Setup environment variables
 cp .dev.vars.example .dev.vars
+
+# Run locally with Wrangler
 bunx wrangler dev --local
 ```
 
-## Run tests
+## Next Steps
 
-```sh
-bun test
-```
-
-## Docs site
-
-```sh
-bun run docs:dev
-```
+- **[Explore Workflows](/guide/workflows/auth)**: Learn how authentication and publishing work.
+- **[Architecture Deep Dive](/architecture/overview)**: Understand the "No-PHP" philosophy.
+- **[API Reference](/reference/api/)**: Build your own custom frontend against our strong contracts.

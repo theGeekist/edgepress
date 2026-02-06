@@ -1,22 +1,54 @@
 ---
-title: Repo Tour
+title: Developer's Guide (Repo Tour)
 ---
 
-# Repo Tour
+# Developer's Guide to the Codebase
 
-This repo is a monorepo with two apps and a set of packages.
+Welcome to the EdgePress monorepo. This guide is designed to help you navigate the code, whether you're adding a feature, fixing a bug, or just exploring.
 
-## Apps
+## Top-Level Structure
 
-- `apps/api-edge`: platform-agnostic API entrypoints and routing
-- `apps/admin-web`: Gutenberg admin integration + canonical SDK store wiring
+We use **Bun workspaces** to manage dependencies. `apps/` are deployable targets, and `packages/` are shared libraries.
 
-## Packages
+```
+/
+├── apps/               # The executable applications
+│   ├── api-edge/       # The backend (Cloudflare Worker / Node Server)
+│   └── admin-web/      # The frontend (Vite + React + Gutenberg)
+├── packages/           # The shared logic
+│   ├── domain/         # Pure business logic (No ext dependencies)
+│   ├── ports/          # Interfaces for infrastructure
+│   ├── adapters-*/     # Implementations of ports
+│   └── sdk/            # The canonical client used by the Admin
+├── docs/               # This site (VitePress)
+└── scripts/            # Build, test, and verification tools
+```
 
-- `packages/sdk`: canonical API client used by admin integration
-- `packages/contracts`: API contract schemas (current source for API reference)
-- `packages/domain`: entities + invariants
-- `packages/ports`: runtime/platform port contracts
-- `packages/publish`: release manifest + artifact generation
-- `packages/testing`: in-memory platform and tests
-- `packages/adapters-cloudflare`: Cloudflare reference adapter
+## Where to start if...
+
+### ...you want to add a new Feature (e.g., Comments)?
+1.  **Start in `packages/domain`**: Define your entities (`Comment`) and use-cases.
+2.  **Define Ports in `packages/ports`**: How will comments be stored? Add `CommentStore` interface.
+3.  **Update `apps/api-edge`**: Add the route handlers for your new use-cases.
+4.  **Implement Adapters**: Add clear implementation in `packages/testing` (in-memory) and `packages/adapters-cloudflare` (Production).
+
+### ...you want to modify the Admin UI?
+- Go to `apps/admin-web`.
+- This is a standard Vite + React application.
+- It "embeds" the generic Gutenberg packages (`@wordpress/*`) but talks to our custom `apps/api-edge` backend.
+
+### ...you want to change the Storage Layer?
+- Look at `packages/adapters-cloudflare`.
+- You'll see how we map the generic `StructuredStore` port to Cloudflare D1 SQL.
+- You can copy this pattern to create `packages/adapters-postgres` or others.
+
+## Key Packages Explained
+
+### `packages/domain`
+This is the brain. It contains the "Rules of the Game". It has ZERO dependencies on Cloudflare, Request objects, or Databases. It is pure JS function logic.
+
+### `packages/ports`
+These are the Contracts. They define the "shape" of the infrastructure. We use TypeScript JSDoc comments to strictly define input/outputs.
+
+### `packages/testing`
+This is our secret weapon. It contains a complete **In-Memory Platform**. This allows us to run the entire API test suite in milliseconds without spinning up any containers or real databases.

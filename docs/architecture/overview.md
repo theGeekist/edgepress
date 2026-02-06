@@ -1,70 +1,63 @@
 ---
-title: Overview
+title: Architecture Overview
 ---
 
 # Architecture Overview
 
-EdgePress is an edge-portable CMS core designed around a simple constraint: keep the API surface and domain logic platform-agnostic, and push platform-specific I/O behind ports and adapters.
+EdgePress is completely redesigned to solve the "WordPress at scale" problem by removing the biggest bottleneck: the runtime monolith.
 
-## Top-level components
+## Core Design Philosophy
 
-- API edge app: request routing + auth/capability checks + endpoint behavior.
-- Domain: invariants and small pure helpers.
-- Ports: the required runtime/platform methods (time, crypto, storage, caching).
-- Release publisher: turns documents into immutable release artifacts + a manifest.
-- Admin web host: a web-first shell that uses the canonical SDK client.
+The system is designed around one primary constraint: **The core logic must be platform-agnostic.**
 
-## Data model (current)
+This means the "CMS" is not a PHP application, nor is it a Node.js application. It is a set of pure JavaScript domain entities and use-cases that run *anywhere*. We push all platform-specific concerns (Database, File Storage, Caching, HTTP handling) to the very edges of the system using a strict [Ports and Adapters](https://alistair.cockburn.us/hexagonal-architecture/) (Hexagonal) architecture.
 
-- Document: `doc_*` with `title`, `content`, `status`.
-- Revision: `rev_*` created on create/update, chained by `sourceRevisionId`.
-- Media: `med_*` with an init session and a finalize step.
-- Publish job: `job_*` representing a publish request and outcome.
-- Release: `rel_*` with an immutable manifest (schemaVersion 2) and artifact list.
-- Preview session: `prv_*` token with TTL and a release-like HTML body.
+## The Stack
 
-## Request flow
+### 1. The Core (Domain)
+At the center lies the Business Logic. This layer defines what a "Document" is, how a "Revision" is created, and what happens when you "Publish". It has zero dependencies on frameworks or infrastructure.
+- **Location**: `packages/domain`
 
-1. A request hits `apps/api-edge`.
-2. The handler verifies bearer auth (when required) and enforces capabilities.
-3. The handler delegates reads/writes to `store`, `blobStore`, `releaseStore`, `previewStore`, `cacheStore`.
-4. Responses are returned with a canonical JSON envelope for errors.
+### 2. The Ports (Contracts)
+Surrounding the core are the Ports. these are strict interfaces that the Core uses to interact with the outside world. The Core doesn't know *how* to save a file, it just knows it has a `BlobStore` port with a `put()` method.
+- **Location**: `packages/ports`
 
-## Ports and adapters
+### 3. The Adapters (Infrastructure)
+These are the implementations of the Ports. This is where the rubber meets the road.
+- **Reference Adapter**: `packages/adapters-cloudflare`. We implement the ports using Cloudflare D1 (Database), R2 (Blob Storage), and KV (Cache).
+- **In-Memory Adapter**: `packages/testing`. We also have a full in-memory implementation for lightning-fast tests.
 
-The API handler takes a `platform` object and asserts required port methods.
+### 4. The Application (Wiring)
+Finally, we wire it all together. The `api-edge` application takes the Core, injects the Adapters, and exposes it via a clean REST API.
 
-- Reference port contract: `packages/ports/src/index.js`
-- Reference adapter: `packages/adapters-cloudflare`
+## Data Model & Invariants
 
-The boundary is enforced by `scripts/check-boundaries.js`.
+We simplify the WordPress data model to its absolute essentials, optimizing for static publishing:
 
-## Releases
+### Documents & Revisions
+- **Documents** are container entities. They hold stable IDs and metadata.
+- **Revisions** are where the content lives. Every save creates a new immutable revision. We never mutate content in place.
 
-Publishing produces:
+### The Publishing Pipeline
+Publishing in EdgePress is a **Compilation Process**, not a database flag.
+1. We take the latest Revision.
+2. We compile the Block JSON into static HTML.
+3. We generate a **Release Manifest** (a JSON file describing the entire site state).
+4. We switch the "Active Release" pointer to the new Manifest.
 
-- HTML artifacts per route (currently: one artifact per document id)
-- An immutable release manifest capturing provenance and hashes
+Result: **The public site is just static files.** No database lookups are required to serve your readers.
 
-Key invariants:
+## Request Lifecycle
 
-- Manifests are immutable once written.
-- The active release pointer can be switched atomically.
+1. **Request**: A request hits `apps/api-edge` (e.g., Cloudflare Worker).
+2. **Auth**: The handler verifies the JWT token (stateless auth).
+3. **Capabilities**: We check if the user has the `cap_write_document` capability.
+4. **Delegate**: The handler calls the Domain logic.
+5. **Port Call**: The Domain logic interacts with the `StructuredStore` or `BlobStore` ports.
+6. **Response**: The result is returned in a canonical JSON envelope.
 
-Implementation: `packages/publish/src/publisher.js`
+## Why this Architecture?
 
-## Where behavior is specified
-
-The most reliable truth today is tests:
-
-- API behavior: `packages/testing/test/api.behavior.test.js`
-- Contracts: `packages/testing/test/api.contract.test.js`
-- Release/private/preview: `packages/testing/test/release.preview.private.test.js`
-- SDK client behavior: `packages/testing/test/sdk.client.test.js`
-- Admin shell behavior: `packages/testing/test/admin.shell.test.js`
-
-## Background docs
-
-The raw design notes are kept as an appendix:
-
-- [/appendix/idea](/appendix/idea)
+- **Security**: By removing legacy PHP code and SQL query construction from the runtime, we eliminate entire classes of vulnerabilities.
+- **Performance**: Static releases mean your site is essentially un-crashable under load.
+- **Portability**: Don't like Cloudflare? Write a `packages/adapters-aws` adapter and run the exact same core on Lambda and DynamoDB.
