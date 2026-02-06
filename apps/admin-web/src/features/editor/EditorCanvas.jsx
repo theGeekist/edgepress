@@ -1,4 +1,4 @@
-import { Component, useEffect, useMemo, useState } from 'react';
+import { Component, useEffect, useMemo, useRef, useState } from 'react';
 import { SlotFillProvider, Popover } from '@wordpress/components';
 import {
   BlockCanvas,
@@ -55,10 +55,21 @@ function parseFallbackText(text) {
 function FallbackEditor({ blocks, setBlocks, palette }) {
   const initial = useMemo(() => toFallbackText(blocks), [blocks]);
   const [raw, setRaw] = useState(initial);
+  const isLocalUpdateRef = useRef(false);
+  const localUpdateTimerRef = useRef(null);
 
   useEffect(() => {
+    if (isLocalUpdateRef.current) {
+      return;
+    }
     setRaw(toFallbackText(blocks));
   }, [blocks]);
+
+  useEffect(() => () => {
+    if (localUpdateTimerRef.current) {
+      clearTimeout(localUpdateTimerRef.current);
+    }
+  }, []);
 
   return (
     <View style={[styles.fallbackWrap, { borderColor: palette?.border || '#d5dbe8' }]}>
@@ -69,6 +80,14 @@ function FallbackEditor({ blocks, setBlocks, palette }) {
         multiline
         value={raw}
         onChangeText={(next) => {
+          isLocalUpdateRef.current = true;
+          if (localUpdateTimerRef.current) {
+            clearTimeout(localUpdateTimerRef.current);
+          }
+          localUpdateTimerRef.current = setTimeout(() => {
+            isLocalUpdateRef.current = false;
+            localUpdateTimerRef.current = null;
+          }, 150);
           setRaw(next);
           setBlocks(parseFallbackText(next));
         }}

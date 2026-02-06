@@ -3,11 +3,11 @@ import { useMemo, useState } from 'react';
 const CONTENT_META_STORAGE_KEY = 'edgepress.admin.content-meta.v1';
 
 function readContentMeta() {
-  if (typeof window === 'undefined' || !window.localStorage) {
+  if (typeof globalThis === 'undefined' || !globalThis.window || !globalThis.window.localStorage) {
     return {};
   }
   try {
-    const raw = window.localStorage.getItem(CONTENT_META_STORAGE_KEY);
+    const raw = globalThis.window.localStorage.getItem(CONTENT_META_STORAGE_KEY);
     if (!raw) {
       return {};
     }
@@ -19,22 +19,42 @@ function readContentMeta() {
 }
 
 function writeContentMeta(value) {
-  if (typeof window === 'undefined' || !window.localStorage) {
+  if (typeof globalThis === 'undefined' || !globalThis.window || !globalThis.window.localStorage) {
     return;
   }
   try {
-    window.localStorage.setItem(CONTENT_META_STORAGE_KEY, JSON.stringify(value || {}));
+    globalThis.window.localStorage.setItem(CONTENT_META_STORAGE_KEY, JSON.stringify(value || {}));
   } catch {
     // Ignore localStorage write errors and continue in-memory.
   }
 }
 
 function toSlug(input) {
-  return String(input || '')
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
+  const normalized = String(input || '').trim().toLowerCase();
+  let slug = '';
+  let previousWasDash = false;
+  for (const char of normalized) {
+    const isAlphaNumeric = (char >= 'a' && char <= 'z') || (char >= '0' && char <= '9');
+    if (isAlphaNumeric) {
+      slug += char;
+      previousWasDash = false;
+      continue;
+    }
+    if (!previousWasDash) {
+      slug += '-';
+      previousWasDash = true;
+    }
+  }
+  if (slug.startsWith('-')) slug = slug.slice(1);
+  if (slug.endsWith('-')) slug = slug.slice(0, -1);
+  return slug;
+}
+
+function mapQuerySortBy(sortBy) {
+  if (sortBy === 'updated') return 'updatedAt';
+  if (sortBy === 'type') return 'type';
+  if (sortBy === 'status') return 'status';
+  return sortBy;
 }
 
 function normalizeStatus(item) {
@@ -172,7 +192,7 @@ export function useDocumentsState(shell) {
   }
 
   async function refresh() {
-    const querySortBy = sortBy === 'updated' ? 'updatedAt' : sortBy;
+    const querySortBy = mapQuerySortBy(sortBy);
     const payload = await shell.listDocuments({
       q: contentSearch || '',
       type: contentTypeFilter,
@@ -183,26 +203,10 @@ export function useDocumentsState(shell) {
       pageSize
     });
     const items = (payload.items || []).map((item) => withUiMeta(item, contentMeta));
-    items.sort((a, b) => {
-      const aValue = sortBy === 'type'
-        ? String(a?.ui?.type || '')
-        : sortBy === 'status'
-          ? String(a?.ui?.status || '')
-          : sortBy === 'updated'
-            ? String(a?.updatedAt || a?.createdAt || '')
-            : String(a?.[sortBy] || '');
-      const bValue = sortBy === 'type'
-        ? String(b?.ui?.type || '')
-        : sortBy === 'status'
-          ? String(b?.ui?.status || '')
-          : sortBy === 'updated'
-            ? String(b?.updatedAt || b?.createdAt || '')
-            : String(b?.[sortBy] || '');
-      return sortDir === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
-    });
+    const visibleIds = new Set(items.map((item) => item.id));
     setDocs(items);
     setPagination(payload.pagination || { page, pageSize, totalItems: items.length, totalPages: 1 });
-    setSelectedRowIds((prev) => prev.filter((id) => items.some((item) => item.id === id)));
+    setSelectedRowIds((prev) => prev.filter((id) => visibleIds.has(id)));
     return items;
   }
 

@@ -189,8 +189,10 @@ export function createAppStores({
           return this.updateDocument(id, { status: 'trash' });
         }
 
-        await d1.prepare(D1_SQL.deleteDocumentById).bind(id).run();
-        await d1.prepare(D1_SQL.deleteRevisionsByDocument).bind(id).run();
+        await d1.batch([
+          d1.prepare(D1_SQL.deleteRevisionsByDocument).bind(id),
+          d1.prepare(D1_SQL.deleteDocumentById).bind(id)
+        ]);
         return { id };
       },
       async listRevisions(documentId) {

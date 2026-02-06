@@ -2,7 +2,7 @@ import { View, Text, StyleSheet, ScrollView } from 'react-native';
 
 export function SettingsPage({ title, children, actions, palette }) {
     return (
-        <View style={[styles.container, { backgroundColor: palette.background }]}>
+        <View style={[styles.container, { backgroundColor: palette.page }]}>
             <View style={styles.header}>
                 <View>
                     <Text style={[styles.title, { color: palette.text }]}>{title}</Text>

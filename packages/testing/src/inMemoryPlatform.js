@@ -116,7 +116,15 @@ export function createInMemoryPlatform() {
     async listDocuments(query) {
       const all = Array.from(state.documents.values());
       if (!query) {
-        return all;
+        return {
+          items: all,
+          pagination: {
+            page: 1,
+            pageSize: all.length || 1,
+            totalItems: all.length,
+            totalPages: 1
+          }
+        };
       }
       const q = String(query.q || '').trim().toLowerCase();
       const type = query.type || 'all';

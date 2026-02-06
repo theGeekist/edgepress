@@ -1,11 +1,6 @@
-import { StyleSheet, Platform, Dimensions } from 'react-native';
+import { StyleSheet } from 'react-native';
 
 const BORDER_RADIUS = 4;
-const isWeb = Platform.OS === 'web';
-
-// Mock responsive values for initial render, actual responsiveness handled via JS logic or MediaQueries if using CSS
-const windowWidth = Dimensions.get('window').width;
-const isMobile = windowWidth < 768;
 
 export const layoutStyles = StyleSheet.create({
   page: {

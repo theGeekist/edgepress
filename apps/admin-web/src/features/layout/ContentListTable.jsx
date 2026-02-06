@@ -57,11 +57,13 @@ export function ContentListTable({
   const allVisibleIds = docs.map((doc) => doc.id);
   const allVisibleSelected = docs.length > 0 && docs.every((doc) => selectedRowIds.includes(doc.id));
 
-  function applyBulk() {
+  async function applyBulk() {
     if (bulkAction === 'none') {
       return;
     }
-    onBulkApply(bulkAction);
+    await onBulkApply(bulkAction);
+    setBulkAction('none');
+    onClearSelected();
   }
 
   // Define Columns
