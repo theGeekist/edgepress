@@ -29,6 +29,18 @@ export function createCanonicalSdkStore(config) {
     async finalizeMedia(id, input) {
       return client.finalizeMedia(id, input);
     },
+    async listMedia(query) {
+      return client.listMedia(query);
+    },
+    async getMedia(id) {
+      return client.getMedia(id);
+    },
+    async updateMedia(id, input) {
+      return client.updateMedia(id, input);
+    },
+    async deleteMedia(id) {
+      return client.deleteMedia(id);
+    },
     async getPreview(documentId) {
       return client.preview(documentId);
     },

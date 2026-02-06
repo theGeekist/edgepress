@@ -84,9 +84,9 @@ Exit criteria:
 - Fresh deployment is not accessible with predictable default credentials.
 
 ## Phase 7 – Editor-to-Publish Loop Lock
-- [ ] Deliver one clean end-to-end authoring loop in Admin UI: edit -> autosave revision -> signed preview -> publish -> activate -> private delivery read.
-- [ ] Add explicit acceptance tests for this loop in in-memory + wrangler-local + deployed smoke contexts.
-- [ ] Remove any remaining manual/implicit steps required to activate and verify a release.
+- [x] Deliver one clean end-to-end authoring loop in Admin UI: edit -> autosave revision -> signed preview -> publish -> activate -> private delivery read.
+- [x] Add explicit acceptance tests for this loop in in-memory + wrangler-local + deployed smoke contexts.
+- [x] Remove any remaining manual/implicit steps required to activate and verify a release.
 - `Increment complete`: added canonical in-memory loop coverage (`packages/testing/test/editor.loop.e2e.test.js`) and expanded wrangler smoke flows (`scripts/test-wrangler-local.js`, `scripts/test-wrangler-deployed.js`) with update/revision checks, second publish, explicit activation, and active-release private read assertions.
 - `Increment complete`: admin shell and UI now expose loop operations (revisions, preview, publish, activate release, private-read verification) with a dedicated loop status panel (`apps/admin-web/src/editor-shell.js`, `apps/admin-web/src/gutenberg-integration.js`, `apps/admin-web/src/app/App.jsx`, `apps/admin-web/src/features/releases/useReleaseLoopState.js`) and shell-level loop test coverage (`packages/testing/test/admin.shell.test.js`).
 
@@ -127,7 +127,7 @@ Exit criteria:
 ## Phase Gate Clarification (2026-02-06)
 - Phase 9 is complete by scope: block JSON is the canonical content model and publish/preview/revision paths are aligned to it.
 - Current branch `phase-10-admin-ui-foundations` is correct: we are in Phase 10 work.
-- Open items in Phase 7 and Phase 8 remain valid cross-cutting follow-ups and do not invalidate Phase 9 completion.
+- Open items in Phase 8 remain valid cross-cutting follow-ups and do not invalidate Phase 9 completion.
 
 ## Phase 10 – Admin UX Foundations (complete)
 - [x] Ship Admin IA baseline (Dashboard/Content/Media/Appearance/Settings nav + Content subviews Pages/Posts/Drafts/Published).
@@ -160,26 +160,40 @@ Exit criteria:
 - Permalinks are first-class persisted data and deterministically map to delivery routes.
 - Preview/private/live behavior remains stable across route changes and republish cycles.
 
-## Phase 12 – Navigation and Media Foundations
-- [ ] Add navigation domain model and API (menus/items/order/target route).
-- [ ] Render navigation into published output using canonical route mappings.
-- [ ] Implement media domain metadata parity (`alt`, `caption`, `description`, featured image linkage).
-- [ ] Implement media upload/browse workflow in admin and wire image block + featured image flows.
-- [ ] Implement foundational block set end-to-end: rich text, image+caption, embed (with embed validation policy).
+## Phase 12 – Navigation and Media Foundations (complete)
+- [x] Add navigation domain model and API (menus/items/order/target route).
+- [x] Defer Gutenberg navigation block parity and menu rendering semantics to block-parity phase (no standalone menu publish-artifact pipeline).
+- [x] Implement media domain metadata parity (`alt`, `caption`, `description`, featured image linkage).
+- [x] Implement media upload/browse workflow substrate in admin/API (selection UX and full block parity tracked in Phase 12B).
+- `Increment complete (2026-02-07)`: canonical navigation menu substrate is live via API/store/tests (`apps/api-edge/src/features/navigation-routes.js`, `packages/testing/src/inMemoryPlatform.js`, `packages/adapters-cloudflare/src/{app-store.js,d1-sql.js}`, `packages/testing/test/{api.behavior.test.js,api.contract.test.js,sdk.client.test.js,admin.shell.test.js}`).
+- `Increment complete (2026-02-07)`: canonical media substrate is live across API/store/admin for upload, list/edit/delete, and featured-image/media-id linkage into document save + publish-time media URL resolution (`apps/api-edge/src/features/media-routes.js`, `apps/admin-web/src/features/media/*`, `apps/admin-web/src/features/content/*`, `packages/publish/src/publisher.js`, `packages/testing/test/{api.behavior.test.js,publisher.test.js}`).
 
 Exit criteria:
-- Navigation and media are first-class data models connected to publish output and editor UX.
-- Foundational blocks survive revision -> preview -> publish -> live without special cases.
+- Navigation and media are first-class data models with stable API/store contracts and admin substrate flows.
+- Block-level authoring/render parity work is explicitly tracked in Phase 12B.
 
-## Phase 13 – Theme System and Design Parity
+## Phase 12B – Core Blocks and Gutenberg Parity (next)
+- [ ] Port/reuse core WordPress blocks and primitives needed for parity-first authoring.
+- [ ] Implement foundational block set end-to-end: rich text, image+caption, embed (with embed validation policy).
+- [ ] Implement Gutenberg navigation block parity and menu rendering semantics (no bespoke parallel pipeline).
+- [ ] Replace transitional featured-image/media-id controls with block-parity media selection primitives.
+- [ ] Ensure media/nav block flows survive revision -> preview -> publish -> live without special cases.
 - [ ] Introduce `theme.json` as first-class design token source for editor/preview/site.
 - [ ] Define token resolution model and fallback policy (theme defaults vs content overrides).
 - [ ] Add templates/patterns strategy and lifecycle (registration, versioning, migration).
 - [ ] Apply theme parity across admin editing chrome, preview skin, and published output.
+- [ ] Define WP compatibility profile scope needed for block/editor parity (`wp.*` guaranteed/partial/out-of-scope).
 
 Exit criteria:
-- Theme tokens and templates are versioned, testable, and consistently applied across surfaces.
-- Preview reflects the same design contract as live output.
+- Core block authoring uses WP-compatible primitives rather than custom transitional controls.
+- Navigation/media behaviors are owned by block parity and produce deterministic publish/live output.
+- Theme tokens/templates and block primitives resolve consistently across editor, preview, and live.
+
+## Phase 13 – Theme System and Design Parity (merged into Phase 12B)
+- [x] Theme-system parity backlog moved into Phase 12B to keep Gutenberg/block parity in one execution phase.
+
+Exit criteria:
+- Theme-system execution is owned by Phase 12B.
 
 ## Phase 14 – Platform Contract, API Compatibility, and Ops Confidence
 - [ ] Publish `createPlatform()` contract doc with required/optional ports and fallback/error semantics.
@@ -188,7 +202,7 @@ Exit criteria:
 - [ ] Add known degradations register and release-cut checklist.
 - [ ] Normalize API versioning/envelope/pagination rules and publish as stable guarantees.
 - [ ] Add webhook delivery surface for publish completed + release activated events.
-- [ ] Ship WP REST façade + `wp.*` compatibility profile (guaranteed/partial/out-of-scope).
+- [ ] Ship WP REST façade + `wp.*` compatibility profile (guaranteed/partial/out-of-scope), excluding block/editor parity scope already tracked in Phase 12B.
 
 Exit criteria:
 - Platform assembly, API schema, runtime parity, and compatibility guarantees are all versioned artifacts.

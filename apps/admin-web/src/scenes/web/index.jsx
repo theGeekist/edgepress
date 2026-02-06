@@ -2,6 +2,7 @@ import { View } from 'react-native';
 import { Sidebar } from '@components/ui/Sidebar.jsx';
 import { layoutStyles } from '@components/styles.js';
 import { ContentScene } from './ContentScene.jsx';
+import { MediaScene } from './MediaScene.jsx';
 import { SettingsScene } from './SettingsScene.jsx';
 import { AppearanceScene } from './AppearanceScene.jsx';
 import { PlaceholderScene } from './PlaceholderScene.jsx';
@@ -18,9 +19,11 @@ export function AdminScene({
   palette,
   appSection,
   contentView,
+  mediaView,
   onSectionChange,
   onOpenContentList,
   docs,
+  media,
   editor,
   loop,
   navigation,
@@ -60,10 +63,13 @@ export function AdminScene({
         {appSection === 'settings' ? (
           <SettingsScene palette={palette} settings={settings} actions={actions} />
         ) : null}
+        {appSection === 'media' ? (
+          <MediaScene palette={palette} media={media} mediaView={mediaView} actions={actions} />
+        ) : null}
         {appSection === 'appearance' ? (
           <AppearanceScene palette={palette} docs={docs} navigation={navigation} actions={actions} />
         ) : null}
-        {appSection !== 'content' && appSection !== 'settings' && appSection !== 'appearance' ? (
+        {appSection !== 'content' && appSection !== 'settings' && appSection !== 'appearance' && appSection !== 'media' ? (
           <PlaceholderScene palette={palette} appSection={appSection} />
         ) : null}
       </View>

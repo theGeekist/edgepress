@@ -24,25 +24,51 @@ function escapeHtml(input) {
     .replaceAll("'", '&#39;');
 }
 
-function serializeBlocks(runtime, doc) {
-  if (!Array.isArray(doc.blocks)) return '';
+function resolveImageBlocks(blocks, mediaById) {
+  if (!Array.isArray(blocks)) return [];
+  return blocks.map((block) => {
+    if (!block || typeof block !== 'object') return block;
+    const attributes = block.attributes && typeof block.attributes === 'object' ? { ...block.attributes } : {};
+    const mediaId = String(attributes.mediaId || attributes.id || '').trim();
+    if (block.name === 'core/image' && mediaId && mediaById.has(mediaId)) {
+      const media = mediaById.get(mediaId);
+      attributes.url = media.url || attributes.url || '';
+      if (!attributes.alt && media.alt) {
+        attributes.alt = media.alt;
+      }
+    }
+    return {
+      ...block,
+      attributes,
+      innerBlocks: resolveImageBlocks(block.innerBlocks, mediaById)
+    };
+  });
+}
+
+function serializeBlocks(runtime, doc, mediaById) {
+  if (!Array.isArray(doc.blocks)) return { html: '', featuredImage: null };
   try {
     const canonicalBlocks = normalizeBlocksInput(doc.blocks);
-    const serialized = serialize(canonicalBlocks);
+    const resolvedBlocks = resolveImageBlocks(canonicalBlocks, mediaById);
+    const serialized = serialize(resolvedBlocks);
     if (doc.blocks.length > 0 && !serialized) {
       runtime.log('warn', 'publish_blocks_empty_serialization', {
         documentId: doc.id,
         blockCount: doc.blocks.length
       });
     }
-    return serialized;
+    const featuredImageId = String(doc.featuredImageId || '').trim();
+    const featuredImage = featuredImageId && mediaById.has(featuredImageId)
+      ? mediaById.get(featuredImageId)
+      : null;
+    return { html: serialized, featuredImage };
   } catch (error) {
     runtime.log('warn', 'publish_blocks_serialize_failed', {
       documentId: doc.id,
       blockCount: doc.blocks.length,
       message: toErrorMessage(error, 'Unknown serialization error')
     });
-    return '';
+    return { html: '', featuredImage: null };
   }
 }
 
@@ -63,6 +89,11 @@ function hashBlocks(runtime, doc) {
 export async function createRelease({ runtime, store, releaseStore, sourceRevisionId, sourceRevisionSet, publishedBy }) {
   const listed = await store.listDocuments();
   const docs = Array.isArray(listed) ? listed : listed.items || [];
+  const mediaListed = typeof store.listMedia === 'function'
+    ? await store.listMedia({ page: 1, pageSize: 500 })
+    : { items: [] };
+  const mediaItems = Array.isArray(mediaListed) ? mediaListed : mediaListed?.items || [];
+  const mediaById = new Map(mediaItems.map((item) => [item.id, item]));
   const createdAt = runtime.now().toISOString();
   const releaseId = `rel_${runtime.uuid()}`;
   const provenance = normalizePublishProvenanceInput({ sourceRevisionId, sourceRevisionSet });
@@ -74,10 +105,13 @@ export async function createRelease({ runtime, store, releaseStore, sourceRevisi
   for (const doc of docs) {
     const route = doc.slug || doc.id;
     const blocksHash = hashBlocks(runtime, doc);
-    const serializedBlocks = serializeBlocks(runtime, doc);
+    const { html: serializedBlocks, featuredImage } = serializeBlocks(runtime, doc, mediaById);
     const canonicalContent = serializedBlocks || doc.content || '';
     const escapedTitle = escapeHtml(doc.title);
-    const html = `<html><body><article><h1>${escapedTitle}</h1>${canonicalContent}</article></body></html>`;
+    const featuredImageMarkup = featuredImage?.url
+      ? `<figure><img src="${escapeHtml(featuredImage.url)}" alt="${escapeHtml(featuredImage.alt || '')}" /></figure>`
+      : '';
+    const html = `<html><body><article>${featuredImageMarkup}<h1>${escapedTitle}</h1>${canonicalContent}</article></body></html>`;
     const hash = hashString(html);
     const artifactRef = await releaseStore.writeArtifact(releaseId, route, html, 'text/html');
     artifacts.push({

@@ -55,7 +55,9 @@ export const D1_SQL = {
   selectRevisionById: 'SELECT revision_json FROM app_revisions WHERE id = ?',
   upsertRevision:
     'INSERT INTO app_revisions (id, document_id, revision_json, created_at) VALUES (?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET document_id = excluded.document_id, revision_json = excluded.revision_json, created_at = excluded.created_at',
+  selectMedia: 'SELECT media_json FROM app_media ORDER BY updated_at DESC',
   selectMediaById: 'SELECT media_json FROM app_media WHERE id = ?',
+  deleteMediaById: 'DELETE FROM app_media WHERE id = ?',
   upsertMedia:
     'INSERT INTO app_media (id, media_json, updated_at) VALUES (?, ?, ?) ON CONFLICT(id) DO UPDATE SET media_json = excluded.media_json, updated_at = excluded.updated_at',
   selectPublishJobById: 'SELECT publish_job_json FROM app_publish_jobs WHERE id = ?',

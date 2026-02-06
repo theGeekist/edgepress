@@ -112,8 +112,12 @@ export function createClient({
     deleteDocument: (id, options = {}) =>
       request('DELETE', withQuery(`/v1/documents/${id}`, { permanent: options?.permanent ? 1 : undefined })),
     listRevisions: (id) => request('GET', `/v1/documents/${id}/revisions`),
-    initMedia: (body) => request('POST', '/v1/media', body),
+    initMedia: (body) => request('POST', '/v1/media/init', body),
     finalizeMedia: (id, body) => request('POST', `/v1/media/${id}/finalize`, body),
+    listMedia: (query) => request('GET', withQuery('/v1/media', query)),
+    getMedia: (id) => request('GET', `/v1/media/${id}`),
+    updateMedia: (id, body) => request('PATCH', `/v1/media/${id}`, body),
+    deleteMedia: (id) => request('DELETE', `/v1/media/${id}`),
     publish: (body) => request('POST', '/v1/publish', body),
     getPublishJob: (jobId) => request('GET', `/v1/publish/${jobId}`),
     activateRelease: (id) => request('POST', `/v1/releases/${id}/activate`),

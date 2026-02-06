@@ -4,6 +4,7 @@ import apiFetch from '@wordpress/api-fetch';
 import { useAuthState } from '@features/auth';
 import { useDocumentsState, useReleaseLoopState } from '@features/content';
 import { createAdminShell, configureApiFetch, useEditorState } from '@features/editor';
+import { useMediaState } from '@features/media';
 import { useThemeMode } from '@components/theme.js';
 
 function asErrorMessage(error) {
@@ -11,6 +12,87 @@ function asErrorMessage(error) {
 }
 
 const SETTINGS_STORAGE_KEY = 'edgepress.admin.settings.v1';
+const NAV_STORAGE_KEY = 'edgepress.admin.nav.v1';
+
+function normalizeAppSection(value) {
+  const allowed = new Set(['dashboard', 'content', 'media', 'appearance', 'settings']);
+  return allowed.has(value) ? value : 'content';
+}
+
+function normalizeContentView(value) {
+  return value === 'editor' ? 'editor' : 'list';
+}
+
+function normalizeMediaView(value) {
+  return value === 'editor' ? 'editor' : 'list';
+}
+
+function parseNavFromHash() {
+  if (typeof globalThis === 'undefined' || !globalThis.window) {
+    return null;
+  }
+  const raw = String(globalThis.window.location.hash || '').replace(/^#/, '');
+  if (!raw) return null;
+  const [sectionRaw, viewRaw] = raw.split('/').filter(Boolean);
+  const section = normalizeAppSection(sectionRaw);
+  return {
+    appSection: section,
+    contentView: section === 'content' ? normalizeContentView(viewRaw) : 'list',
+    mediaView: section === 'media' ? normalizeMediaView(viewRaw) : 'list'
+  };
+}
+
+function buildNavHash({ appSection, contentView, mediaView }) {
+  const section = normalizeAppSection(appSection);
+  if (section === 'content') {
+    return contentView === 'editor' ? '#/content/editor' : '#/content/list';
+  }
+  if (section === 'media') {
+    return mediaView === 'editor' ? '#/media/editor' : '#/media/list';
+  }
+  return `#/${section}`;
+}
+
+function readStoredNavState() {
+  if (typeof globalThis === 'undefined' || !globalThis.window || !globalThis.window.localStorage) {
+    return null;
+  }
+  try {
+    const raw = globalThis.window.localStorage.getItem(NAV_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return {
+      appSection: normalizeAppSection(parsed?.appSection),
+      contentView: normalizeContentView(parsed?.contentView),
+      mediaView: normalizeMediaView(parsed?.mediaView)
+    };
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredNavState(nextState) {
+  if (typeof globalThis === 'undefined' || !globalThis.window || !globalThis.window.localStorage) {
+    return;
+  }
+  try {
+    globalThis.window.localStorage.setItem(NAV_STORAGE_KEY, JSON.stringify({
+      appSection: normalizeAppSection(nextState?.appSection),
+      contentView: normalizeContentView(nextState?.contentView),
+      mediaView: normalizeMediaView(nextState?.mediaView)
+    }));
+  } catch {
+    // Ignore localStorage write errors.
+  }
+}
+
+function readInitialNavState() {
+  return parseNavFromHash() || readStoredNavState() || {
+    appSection: 'content',
+    contentView: 'list',
+    mediaView: 'list'
+  };
+}
 
 function readStoredSettings() {
   if (typeof globalThis === 'undefined' || !globalThis.window || !globalThis.window.localStorage) {
@@ -42,23 +124,28 @@ function writeStoredSettings(settings) {
 }
 
 export function useAdminAppController() {
+  const initialNavState = useMemo(() => readInitialNavState(), []);
   const apiBase = import.meta.env.VITE_API_BASE_URL || '';
   const shell = useMemo(() => createAdminShell({ baseUrl: apiBase || '' }), [apiBase]);
   const configuredApiFetchRef = useRef(null);
   const hydratedRef = useRef(false);
+  const applyHashWithReplaceRef = useRef(false);
+  const hasSyncedNavRef = useRef(false);
   const { palette, mode, setMode } = useThemeMode();
 
   const auth = useAuthState(shell);
   const docs = useDocumentsState(shell);
   const editor = useEditorState(shell);
   const loop = useReleaseLoopState(shell);
+  const media = useMediaState(shell);
 
   const [status, setStatus] = useState('');
   const [error, setError] = useState('');
   const [previewLink, setPreviewLink] = useState(null);
   const [saveState, setSaveState] = useState('idle');
-  const [appSection, setAppSection] = useState('content');
-  const [contentView, setContentView] = useState('list');
+  const [appSection, setAppSection] = useState(initialNavState.appSection);
+  const [contentView, setContentView] = useState(initialNavState.contentView);
+  const [mediaView, setMediaView] = useState(initialNavState.mediaView);
   const [settings, setSettings] = useState(() => readStoredSettings());
   const [navigationMenu, setNavigationMenu] = useState(null);
   const [navigationMenuLoading, setNavigationMenuLoading] = useState(false);
@@ -119,6 +206,54 @@ export function useAdminAppController() {
       setError(asErrorMessage(nextError));
     });
   }, [auth.user, appSection]);
+
+  useEffect(() => {
+    if (!auth.user || appSection !== 'media') {
+      return;
+    }
+    media.refresh().catch((nextError) => {
+      setError(asErrorMessage(nextError));
+    });
+  }, [auth.user, appSection, media.search, media.mimeTypeFilter, media.page]);
+
+  useEffect(() => {
+    const nextState = { appSection, contentView, mediaView };
+    writeStoredNavState(nextState);
+    if (typeof globalThis === 'undefined' || !globalThis.window) {
+      return;
+    }
+    const nextHash = buildNavHash(nextState);
+    if (globalThis.window.location.hash === nextHash) {
+      return;
+    }
+    if (applyHashWithReplaceRef.current || !hasSyncedNavRef.current) {
+      globalThis.window.history.replaceState({}, '', nextHash);
+      applyHashWithReplaceRef.current = false;
+      hasSyncedNavRef.current = true;
+    } else {
+      globalThis.window.history.pushState({}, '', nextHash);
+    }
+  }, [appSection, contentView, mediaView]);
+
+  useEffect(() => {
+    if (typeof globalThis === 'undefined' || !globalThis.window) {
+      return undefined;
+    }
+    const applyFromHash = () => {
+      const parsed = parseNavFromHash();
+      if (!parsed) return;
+      applyHashWithReplaceRef.current = true;
+      setAppSection(parsed.appSection);
+      setContentView(parsed.contentView);
+      setMediaView(parsed.mediaView);
+    };
+    globalThis.window.addEventListener('popstate', applyFromHash);
+    globalThis.window.addEventListener('hashchange', applyFromHash);
+    return () => {
+      globalThis.window.removeEventListener('popstate', applyFromHash);
+      globalThis.window.removeEventListener('hashchange', applyFromHash);
+    };
+  }, []);
 
   async function refreshAndSelectFirst() {
     await docs.refresh();
@@ -227,7 +362,8 @@ export function useAdminAppController() {
       const selectedDoc = docs.getSelectedDoc();
       const updated = await editor.saveDocument(docs.selectedId, docs.title, {
         type: selectedDoc?.ui?.type || selectedDoc?.type || 'page',
-        slug: selectedDoc?.ui?.slug || selectedDoc?.slug || ''
+        slug: selectedDoc?.ui?.slug || selectedDoc?.slug || '',
+        featuredImageId: selectedDoc?.ui?.featuredImageId || selectedDoc?.featuredImageId || ''
       });
       await docs.refresh();
       if (updated) {
@@ -364,7 +500,11 @@ export function useAdminAppController() {
       setStatus('');
     } finally {
       docs.clearSelectedRows();
-      await docs.refresh();
+      try {
+        await docs.refresh();
+      } catch (refreshError) {
+        console.warn('docs.refresh failed after bulk apply', refreshError);
+      }
     }
   }
 
@@ -406,6 +546,76 @@ export function useAdminAppController() {
     }
   }
 
+  async function onSaveSelectedMedia() {
+    setError('');
+    setStatus('Saving media metadata...');
+    try {
+      const saved = await media.saveSelected();
+      if (saved) {
+        setStatus('Media metadata saved.');
+      } else {
+        setStatus('No media selected.');
+      }
+    } catch (nextError) {
+      setError(asErrorMessage(nextError));
+      setStatus('');
+    }
+  }
+
+  async function onUploadMedia(files) {
+    setError('');
+    setStatus('Uploading media...');
+    try {
+      const uploaded = await media.uploadFiles(files);
+      if (uploaded.length > 0) {
+        setStatus(`Uploaded ${uploaded.length} media item${uploaded.length === 1 ? '' : 's'}.`);
+      } else {
+        setStatus('No files selected.');
+      }
+    } catch (nextError) {
+      setError(asErrorMessage(nextError));
+      setStatus('');
+    }
+  }
+
+  function onEditMedia(item) {
+    if (!item) return;
+    media.selectItem(item);
+    setAppSection('media');
+    setMediaView('editor');
+  }
+
+  async function onDeleteMedia(item) {
+    if (!item?.id) return;
+    setError('');
+    setStatus('Deleting media...');
+    try {
+      await media.deleteMedia(item.id);
+      setStatus('Media deleted.');
+      setMediaView('list');
+    } catch (nextError) {
+      setError(asErrorMessage(nextError));
+      setStatus('');
+    }
+  }
+
+  async function onBulkDeleteMedia() {
+    setError('');
+    setStatus('Deleting selected media...');
+    try {
+      const deleted = await media.bulkDeleteSelected();
+      if (deleted > 0) {
+        setStatus(`Deleted ${deleted} media item${deleted === 1 ? '' : 's'}.`);
+      } else {
+        setStatus('No rows selected.');
+      }
+      setMediaView('list');
+    } catch (nextError) {
+      setError(asErrorMessage(nextError));
+      setStatus('');
+    }
+  }
+
   const actions = {
     onLogin,
     onCreate,
@@ -418,6 +628,11 @@ export function useAdminAppController() {
     onBulkApply,
     onTrashContent,
     onDeleteContent,
+    onSaveSelectedMedia,
+    onUploadMedia,
+    onEditMedia,
+    onDeleteMedia,
+    onBulkDeleteMedia,
     onLoadNavigationMenu,
     onSaveNavigationMenu,
     onUpdateSettings: (patch) => {
@@ -428,10 +643,15 @@ export function useAdminAppController() {
       });
     },
     onOpenContentList: () => setContentView('list'),
+    onOpenMediaList: () => setMediaView('list'),
     onChangeSection: (nextSection) => {
-      setAppSection(nextSection);
-      if (nextSection === 'content') {
+      const section = normalizeAppSection(nextSection);
+      setAppSection(section);
+      if (section === 'content') {
         setContentView('list');
+      }
+      if (section === 'media') {
+        setMediaView('list');
       }
     },
     toggleTheme: () => setMode(mode === 'dark' ? 'light' : 'dark')
@@ -442,12 +662,14 @@ export function useAdminAppController() {
     mode,
     appSection,
     contentView,
+    mediaView,
     saveState,
     settings,
     auth,
     docs,
     editor,
     loop,
+    media,
     navigation: {
       menu: navigationMenu,
       isLoading: navigationMenuLoading,

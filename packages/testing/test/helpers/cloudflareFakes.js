@@ -139,6 +139,11 @@ export function createFakeD1() {
           media.set(id, { id, mediaJson, updatedAt });
           return { success: true };
         }
+        if (is(sql, D1_SQL.deleteMediaById)) {
+          const [id] = args;
+          media.delete(id);
+          return { success: true };
+        }
         if (is(sql, D1_SQL.upsertPublishJob)) {
           const [id, publishJobJson, updatedAt] = args;
           publishJobs.set(id, { id, publishJobJson, updatedAt });
@@ -251,6 +256,13 @@ export function createFakeD1() {
               .filter((entry) => entry.documentId === documentId)
               .sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt)))
               .map((entry) => ({ revision_json: entry.revisionJson }))
+          };
+        }
+        if (is(sql, D1_SQL.selectMedia)) {
+          return {
+            results: Array.from(media.values())
+              .sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)))
+              .map((entry) => ({ media_json: entry.mediaJson }))
           };
         }
         return { results: [] };

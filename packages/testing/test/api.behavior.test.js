@@ -62,6 +62,85 @@ test('media finalize enforces token and not-found semantics', async () => {
   assert.equal(missing.json.error.code, 'MEDIA_NOT_FOUND');
 });
 
+test('media list and metadata updates persist canonical fields', async () => {
+  const platform = createInMemoryPlatform();
+  platform.blobStore.signedReadUrl = async (path, ttlSeconds = 300) => `/blob/${path}?ttl=${ttlSeconds}`;
+  const { handler, accessToken } = await authAsAdmin(platform);
+
+  const init = await requestJson(handler, 'POST', '/v1/media/init', { token: accessToken, body: {} });
+  assert.equal(init.res.status, 201);
+
+  const uploadReq = new Request(`http://test.local/uploads/${init.json.mediaId}`, {
+    method: 'PUT',
+    headers: {
+      authorization: `Bearer ${accessToken}`,
+      'x-upload-token': init.json.uploadToken,
+      'content-type': 'image/jpeg'
+    },
+    body: new Uint8Array([1, 2, 3, 4])
+  });
+  const uploadRes = await handler(uploadReq);
+  assert.equal(uploadRes.status, 200);
+
+  const finalized = await requestJson(handler, 'POST', `/v1/media/${init.json.mediaId}/finalize`, {
+    token: accessToken,
+    body: {
+      uploadToken: init.json.uploadToken,
+      filename: 'hero.jpg',
+      mimeType: 'image/jpeg',
+      size: 1024,
+      width: 1200,
+      height: 630,
+      alt: 'Hero image',
+      caption: 'Primary hero',
+      description: 'Homepage hero media'
+    }
+  });
+  assert.equal(finalized.res.status, 200);
+  assert.equal(finalized.json.media.width, 1200);
+  assert.equal(finalized.json.media.height, 630);
+  assert.equal(finalized.json.media.alt, 'Hero image');
+  assert.ok(/^http:\/\/test\.local\/blob\//.test(finalized.json.media.url));
+
+  const mediaUrl = new URL(finalized.json.media.url);
+  const blobRes = await handler(new Request(mediaUrl.toString(), { method: 'GET' }));
+  assert.equal(blobRes.status, 200);
+  assert.equal(blobRes.headers.get('content-type'), 'image/jpeg');
+  const blobBytes = new Uint8Array(await blobRes.arrayBuffer());
+  assert.deepEqual(Array.from(blobBytes), [1, 2, 3, 4]);
+
+  const updated = await requestJson(handler, 'PATCH', `/v1/media/${init.json.mediaId}`, {
+    token: accessToken,
+    body: {
+      alt: 'Updated alt',
+      caption: 'Updated caption',
+      description: 'Updated description'
+    }
+  });
+  assert.equal(updated.res.status, 200);
+  assert.equal(updated.json.media.alt, 'Updated alt');
+
+  const listed = await requestJson(handler, 'GET', '/v1/media?q=updated&mimeType=image%2Fjpeg', {
+    token: accessToken
+  });
+  assert.equal(listed.res.status, 200);
+  assert.equal(listed.json.items.length, 1);
+  assert.equal(listed.json.items[0].id, init.json.mediaId);
+  assert.equal(listed.json.pagination.totalItems, 1);
+
+  const deleted = await requestJson(handler, 'DELETE', `/v1/media/${init.json.mediaId}`, {
+    token: accessToken
+  });
+  assert.equal(deleted.res.status, 200);
+  assert.equal(deleted.json.deleted, true);
+
+  const listedAfterDelete = await requestJson(handler, 'GET', '/v1/media', {
+    token: accessToken
+  });
+  assert.equal(listedAfterDelete.res.status, 200);
+  assert.equal(listedAfterDelete.json.items.length, 0);
+});
+
 test('release activation and publish job errors use canonical envelopes', async () => {
   const platform = createInMemoryPlatform();
   const { handler, accessToken } = await authAsAdmin(platform);
@@ -192,6 +271,7 @@ test('document create/update validates and persists canonical block metadata', a
     body: {
       title: 'Valid blocks',
       content: '<p>seed</p>',
+      featuredImageId: 'med_featured_1',
       blocks: [
         {
           name: 'core/paragraph',
@@ -203,11 +283,13 @@ test('document create/update validates and persists canonical block metadata', a
   assert.equal(created.res.status, 201);
   assert.equal(created.json.document.blocksSchemaVersion, 1);
   assert.equal(created.json.revision.blocksSchemaVersion, 1);
+  assert.equal(created.json.document.featuredImageId, 'med_featured_1');
 
   const documentId = created.json.document.id;
   const updated = await requestJson(handler, 'PATCH', `/v1/documents/${encodeURIComponent(documentId)}`, {
     token: accessToken,
     body: {
+      featuredImageId: 'med_featured_2',
       blocks: [
         {
           name: 'core/paragraph',
@@ -219,6 +301,7 @@ test('document create/update validates and persists canonical block metadata', a
   assert.equal(updated.res.status, 200);
   assert.equal(updated.json.document.blocksSchemaVersion, 1);
   assert.equal(updated.json.revision.blocksSchemaVersion, 1);
+  assert.equal(updated.json.document.featuredImageId, 'med_featured_2');
 });
 
 test('document delete route supports soft-trash and permanent delete', async () => {

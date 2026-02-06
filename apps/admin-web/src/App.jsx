@@ -12,7 +12,7 @@ registerFoundationalBlocks();
 
 export function App() {
   const controller = useAdminAppController();
-  const { palette, mode, appSection, contentView, saveState, settings, auth, docs, editor, loop, navigation, status, error, previewLink, actions } = controller;
+  const { palette, mode, appSection, contentView, mediaView, saveState, settings, auth, docs, media, editor, loop, navigation, status, error, previewLink, actions } = controller;
 
   const { width } = useWindowDimensions();
   const isMobile = width < 768;
@@ -76,9 +76,11 @@ export function App() {
         palette={palette}
         appSection={appSection}
         contentView={contentView}
+        mediaView={mediaView}
         onSectionChange={actions.onChangeSection}
         onOpenContentList={actions.onOpenContentList}
         docs={docs}
+        media={media}
         editor={editor}
         loop={loop}
         navigation={navigation}

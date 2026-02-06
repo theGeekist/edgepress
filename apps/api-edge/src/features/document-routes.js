@@ -2,7 +2,7 @@ import { BLOCKS_SCHEMA_VERSION } from '../../../../packages/domain/src/index.js'
 import { requireCapability } from '../auth.js';
 import { error, json, readJson } from '../http.js';
 import { normalizeBlocksForWrite } from '../request-validation.js';
-import { doAction, HOOK_NAMES } from '@hooks.js';
+import { doAction, HOOK_NAMES } from '../hooks.js';
 
 const ALLOWED_DOCUMENT_SORT_BY = new Set(['updatedAt', 'createdAt', 'title', 'type', 'status']);
 
@@ -125,6 +125,7 @@ export function createDocumentRoutes({ runtime, store, hooks, route, authzErrorR
           content: body.content || '',
           type: body.type || 'page',
           slug,
+          featuredImageId: body.featuredImageId || '',
           blocks: normalizedBlocks.blocks,
           blocksSchemaVersion: normalizedBlocks.blocksSchemaVersion,
           createdBy: user.id,
@@ -169,6 +170,7 @@ export function createDocumentRoutes({ runtime, store, hooks, route, authzErrorR
           content: body.content ?? existing.content,
           type: body.type ?? existing.type ?? 'page',
           slug,
+          featuredImageId: body.featuredImageId ?? existing.featuredImageId ?? '',
           blocks: normalizedBlocks.blocks,
           blocksSchemaVersion: normalizedBlocks.blocksSchemaVersion,
           status: body.status ?? existing.status

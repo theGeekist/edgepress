@@ -26,7 +26,7 @@ export function ContentScene({
     slug: '',
     excerpt: '',
     publishDate: '',
-    featuredImageUrl: ''
+    featuredImageId: ''
   };
   const isTitleDirty = Boolean(selectedDoc) && docs.title !== (selectedDoc.title || '');
   const saveHint = saveState === 'saving'
