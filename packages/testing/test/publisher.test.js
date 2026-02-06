@@ -37,6 +37,7 @@ test('createRelease writes artifacts via releaseStore.writeArtifact when availab
     store,
     releaseStore,
     sourceRevisionId: 'rev_1',
+    sourceRevisionSet: ['rev_2'],
     publishedBy: 'u_admin'
   });
 
@@ -45,6 +46,40 @@ test('createRelease writes artifacts via releaseStore.writeArtifact when availab
   assert.equal(calls[0].route, 'doc_1');
   assert.equal(calls[0].contentType, 'text/html');
   assert.equal(manifest.artifacts[0].path, 'rel_fixeduuid0001/doc_1.html');
+  assert.equal(manifest.schemaVersion, 2);
+  assert.equal(manifest.sourceRevisionId, 'rev_1');
+  assert.deepEqual(manifest.sourceRevisionSet, ['rev_1', 'rev_2']);
+  assert.ok(Array.isArray(manifest.artifactHashes));
+  assert.equal(manifest.artifactHashes.length, 1);
+  assert.equal(typeof manifest.contentHash, 'string');
+  assert.ok(manifest.contentHash.length > 0);
+  assert.equal(typeof manifest.releaseHash, 'string');
+  assert.ok(manifest.releaseHash.length > 0);
+});
+
+test('createRelease canonicalizes sourceRevisionId from sourceRevisionSet when id is omitted', async () => {
+  const runtime = createRuntime();
+  const store = createStore();
+  const releaseStore = {
+    async writeArtifact(releaseId, route, bytes, contentType) {
+      return { path: `${releaseId}/${route}.html`, contentType };
+    },
+    async getManifest() {
+      return null;
+    },
+    async writeManifest() {}
+  };
+
+  const manifest = await createRelease({
+    runtime,
+    store,
+    releaseStore,
+    sourceRevisionSet: ['rev_only'],
+    publishedBy: 'u_admin'
+  });
+
+  assert.equal(manifest.sourceRevisionId, 'rev_only');
+  assert.deepEqual(manifest.sourceRevisionSet, ['rev_only']);
 });
 
 test('createRelease throws when releaseStore.writeArtifact is missing', async () => {

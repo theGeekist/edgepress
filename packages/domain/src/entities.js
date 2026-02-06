@@ -38,11 +38,12 @@ export function createRevision({ id, documentId, title, content, sourceRevisionI
   };
 }
 
-export function createPublishJob({ id, requestedBy, sourceRevisionId = null, now }) {
+export function createPublishJob({ id, requestedBy, sourceRevisionId = null, sourceRevisionSet = null, now }) {
   return {
     id,
     requestedBy,
     sourceRevisionId,
+    sourceRevisionSet,
     status: 'running',
     releaseId: null,
     error: null,

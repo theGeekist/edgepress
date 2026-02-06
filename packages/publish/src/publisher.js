@@ -1,5 +1,7 @@
 import { assertReleaseManifestImmutable } from '../../domain/src/invariants.js';
+import { normalizePublishProvenanceInput } from '../../domain/src/provenance.js';
 
+// Non-cryptographic hash for deterministic testable fingerprints only.
 function hashString(input) {
   let hash = 2166136261;
   for (let i = 0; i < input.length; i += 1) {
@@ -9,10 +11,11 @@ function hashString(input) {
   return Math.abs(hash >>> 0).toString(16).padStart(8, '0');
 }
 
-export async function createRelease({ runtime, store, releaseStore, sourceRevisionId, publishedBy }) {
+export async function createRelease({ runtime, store, releaseStore, sourceRevisionId, sourceRevisionSet, publishedBy }) {
   const docs = await store.listDocuments();
   const createdAt = runtime.now().toISOString();
   const releaseId = `rel_${runtime.uuid()}`;
+  const provenance = normalizePublishProvenanceInput({ sourceRevisionId, sourceRevisionSet });
 
   const artifacts = [];
   if (typeof releaseStore.writeArtifact !== 'function') {
@@ -31,12 +34,33 @@ export async function createRelease({ runtime, store, releaseStore, sourceRevisi
 
   const manifest = {
     releaseId,
-    schemaVersion: 1,
+    schemaVersion: 2,
     createdAt,
     publishedBy,
-    sourceRevisionId: sourceRevisionId || null,
-    artifacts
+    sourceRevisionId: provenance.sourceRevisionId,
+    sourceRevisionSet: provenance.sourceRevisionSet,
+    artifacts,
+    artifactHashes: artifacts.map((artifact) => artifact.hash)
   };
+  manifest.contentHash = hashString(
+    JSON.stringify({
+      schemaVersion: manifest.schemaVersion,
+      sourceRevisionSet: manifest.sourceRevisionSet,
+      artifactHashes: manifest.artifactHashes
+    })
+  );
+  // releaseHash fingerprints this specific publish event (not pure content identity).
+  manifest.releaseHash = hashString(
+    JSON.stringify({
+      releaseId: manifest.releaseId,
+      schemaVersion: manifest.schemaVersion,
+      createdAt: manifest.createdAt,
+      publishedBy: manifest.publishedBy,
+      sourceRevisionId: manifest.sourceRevisionId,
+      sourceRevisionSet: manifest.sourceRevisionSet,
+      artifactHashes: manifest.artifactHashes
+    })
+  );
 
   await releaseStore.writeManifest(releaseId, manifest);
   return manifest;

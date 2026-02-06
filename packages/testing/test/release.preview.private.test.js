@@ -96,6 +96,33 @@ test('publish writes release artifacts through releaseStore and persists blob re
   assert.equal(blob.metadata.contentType, 'text/html');
 });
 
+test('publish manifest captures provenance and release hash fields', async () => {
+  const platform = createInMemoryPlatform();
+  const { handler, accessToken } = await authAsAdmin(platform);
+  await seedDoc(handler, accessToken);
+
+  const publish = await requestJson(handler, 'POST', '/v1/publish', {
+    token: accessToken,
+    body: {
+      sourceRevisionId: 'rev_manual_a',
+      sourceRevisionSet: ['rev_manual_b']
+    }
+  });
+  assert.equal(publish.res.status, 201);
+
+  const releaseId = publish.json.job.releaseId;
+  const manifest = await platform.releaseStore.getManifest(releaseId);
+  assert.equal(manifest.schemaVersion, 2);
+  assert.equal(manifest.sourceRevisionId, 'rev_manual_a');
+  assert.deepEqual(manifest.sourceRevisionSet, ['rev_manual_a', 'rev_manual_b']);
+  assert.ok(Array.isArray(manifest.artifactHashes));
+  assert.equal(manifest.artifactHashes.length, manifest.artifacts.length);
+  assert.equal(typeof manifest.contentHash, 'string');
+  assert.ok(manifest.contentHash.length > 0);
+  assert.equal(typeof manifest.releaseHash, 'string');
+  assert.ok(manifest.releaseHash.length > 0);
+});
+
 test('preview returns tokenized URL and serves temporary release-like HTML', async () => {
   const platform = createInMemoryPlatform();
   const { handler, accessToken } = await authAsAdmin(platform);
