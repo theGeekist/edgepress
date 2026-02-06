@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { ThemedTextInput } from '../../../components/ui/ThemedTextInput.jsx';
+import { ThemedTextInput } from '@components/ui/ThemedTextInput.jsx';
 
 export function MenuItemCard({ item, depth, onUpdate, onRemove, drag, dragHandleProps, dragHandleRef, isActive, palette }) {
     const [expanded, setExpanded] = useState(false);

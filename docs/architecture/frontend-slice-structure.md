@@ -44,4 +44,4 @@ Design each `components/*`, `hooks/*`, `features/*`, and `scenes/*` subtree as i
 3. Split each top-level route into a dedicated scene module (for example `scenes/web/routes/ContentScene.jsx`).
 4. If code is generic/presentational and stateless, keep it in global `components/*`.
 5. Keep imports directional: scenes -> features -> components/hooks.
-6. Import features only from feature root paths (for example `from '../features/editor'`), never from feature internals like `features/editor/hooks/*` or `features/editor/components/*`.
+6. Import features only from feature root paths (for example `from '@features/editor'`), never from feature internals like `features/editor/hooks/*` or `features/editor/components/*`.

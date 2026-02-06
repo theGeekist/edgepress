@@ -1,8 +1,8 @@
 import { Text, View } from 'react-native';
 
-import { ActionButton } from '../../../components/ui/ActionButton.jsx';
-import { MetaBox } from '../../../components/ui/MetaBox.jsx';
-import { layoutStyles } from '../../../components/styles.js';
+import { ActionButton } from '@components/ui/ActionButton.jsx';
+import { MetaBox } from '@components/ui/MetaBox.jsx';
+import { layoutStyles } from '@components/styles.js';
 
 export function PublishPanel({ palette, hasSelection, loop, previewLink, actions }) {
   const isLive = Boolean(loop?.activeRelease);

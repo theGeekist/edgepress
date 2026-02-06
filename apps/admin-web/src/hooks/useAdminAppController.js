@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import apiFetch from '@wordpress/api-fetch';
 
-import { useAuthState } from '../features/auth';
-import { useDocumentsState, useReleaseLoopState } from '../features/content';
-import { createAdminShell, configureApiFetch, useEditorState } from '../features/editor';
-import { useThemeMode } from '../components/theme.js';
+import { useAuthState } from '@features/auth';
+import { useDocumentsState, useReleaseLoopState } from '@features/content';
+import { createAdminShell, configureApiFetch, useEditorState } from '@features/editor';
+import { useThemeMode } from '@components/theme.js';
 
 function asErrorMessage(error) {
   return error instanceof Error ? error.message : String(error);

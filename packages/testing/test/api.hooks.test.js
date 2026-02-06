@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { HOOK_NAMES, resolveHooks } from '../../../apps/api-edge/src/hooks.js';
-import { createHooksRegistry } from '../../hooks/src/index.js';
+import { createHooksRegistry } from '@hooks/src/index.js';
 import { createInMemoryPlatform } from '../src/inMemoryPlatform.js';
 import { authAsAdmin, requestJson } from '../src/testUtils.js';
 

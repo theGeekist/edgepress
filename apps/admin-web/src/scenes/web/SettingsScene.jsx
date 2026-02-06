@@ -1,10 +1,10 @@
 import { Text, View } from 'react-native';
 
-import { ActionButton } from '../../components/ui/ActionButton.jsx';
-import { FilterTabs } from '../../components/ui/FilterTabs.jsx';
-import { MetaBox } from '../../components/ui/MetaBox.jsx';
-import { PageLayout } from '../../components/ui/PageLayout.jsx';
-import { ThemedTextInput } from '../../components/ui/ThemedTextInput.jsx';
+import { ActionButton } from '@components/ui/ActionButton.jsx';
+import { FilterTabs } from '@components/ui/FilterTabs.jsx';
+import { MetaBox } from '@components/ui/MetaBox.jsx';
+import { PageLayout } from '@components/ui/PageLayout.jsx';
+import { ThemedTextInput } from '@components/ui/ThemedTextInput.jsx';
 
 export function SettingsScene({ palette, settings, actions }) {
   return (

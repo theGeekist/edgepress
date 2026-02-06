@@ -2,7 +2,7 @@ import { BLOCKS_SCHEMA_VERSION } from '../../../../packages/domain/src/index.js'
 import { requireCapability } from '../auth.js';
 import { error, json, readJson } from '../http.js';
 import { normalizeBlocksForWrite } from '../request-validation.js';
-import { doAction, HOOK_NAMES } from '../hooks.js';
+import { doAction, HOOK_NAMES } from '@hooks.js';
 
 const ALLOWED_DOCUMENT_SORT_BY = new Set(['updatedAt', 'createdAt', 'title', 'type', 'status']);
 
