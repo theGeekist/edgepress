@@ -90,6 +90,13 @@ export const layoutStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center'
   },
+  navSubButton: {
+    paddingVertical: 8,
+    paddingLeft: 24,
+    paddingRight: 12,
+    flexDirection: 'row',
+    alignItems: 'center'
+  },
   navButtonActive: {
     borderLeftWidth: 4,
     paddingLeft: 8 // Compensate for border

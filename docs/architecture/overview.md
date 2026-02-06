@@ -64,3 +64,7 @@ Result: **The public site is just static files.** No database lookups are requir
 - **Security**: By removing legacy PHP code and SQL query construction from the runtime, we eliminate entire classes of vulnerabilities.
 - **Performance**: Static releases mean your site is essentially un-crashable under load.
 - **Portability**: Don't like Cloudflare? Write a `packages/adapters-aws` adapter and run the exact same core on Lambda and DynamoDB.
+
+## Frontend Module Boundaries
+
+Frontend module layout and extraction rules live in [/architecture/frontend-slice-structure](/architecture/frontend-slice-structure).

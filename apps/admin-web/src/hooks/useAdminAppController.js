@@ -1,13 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import apiFetch from '@wordpress/api-fetch';
 
-import { createAdminShell } from '../editor-shell.js';
-import { configureApiFetch } from '../gutenberg-integration.js';
-import { useThemeMode } from './theme.js';
-import { useAuthState } from '../features/auth/useAuthState.js';
-import { useDocumentsState } from '../features/documents/useDocumentsState.js';
-import { useEditorState } from '../features/editor/useEditorState.js';
-import { useReleaseLoopState } from '../features/releases/useReleaseLoopState.js';
+import { useAuthState } from '../features/auth';
+import { useDocumentsState, useReleaseLoopState } from '../features/content';
+import { createAdminShell, configureApiFetch, useEditorState } from '../features/editor';
+import { useThemeMode } from '../components/theme.js';
 
 function asErrorMessage(error) {
   return error instanceof Error ? error.message : String(error);
@@ -63,6 +60,10 @@ export function useAdminAppController() {
   const [appSection, setAppSection] = useState('content');
   const [contentView, setContentView] = useState('list');
   const [settings, setSettings] = useState(() => readStoredSettings());
+  const [navigationMenu, setNavigationMenu] = useState(null);
+  const [navigationMenuLoading, setNavigationMenuLoading] = useState(false);
+  const [navigationMenuSaving, setNavigationMenuSaving] = useState(false);
+  const loadedNavigationMenuKeyRef = useRef(null);
 
   useEffect(() => {
     const configKey = apiBase || '(same-origin)';
@@ -107,9 +108,68 @@ export function useAdminAppController() {
     docs.page
   ]);
 
+  useEffect(() => {
+    if (!auth.user || appSection !== 'appearance') {
+      return;
+    }
+    if (loadedNavigationMenuKeyRef.current === 'primary') {
+      return;
+    }
+    onLoadNavigationMenu('primary').catch((nextError) => {
+      setError(asErrorMessage(nextError));
+    });
+  }, [auth.user, appSection]);
+
   async function refreshAndSelectFirst() {
     await docs.refresh();
     await loop.refreshReleases();
+  }
+
+  async function onLoadNavigationMenu(key = 'primary', { force = false } = {}) {
+    if (!auth.user) {
+      return null;
+    }
+    if (!force && loadedNavigationMenuKeyRef.current === key && navigationMenu) {
+      return navigationMenu;
+    }
+    setNavigationMenuLoading(true);
+    try {
+      const payload = await shell.getNavigationMenu(key);
+      const menu = payload?.menu || null;
+      setNavigationMenu(menu);
+      loadedNavigationMenuKeyRef.current = key;
+      return menu;
+    } finally {
+      setNavigationMenuLoading(false);
+    }
+  }
+
+  async function onSaveNavigationMenu(nextMenu, key = 'primary') {
+    if (!auth.user) {
+      return null;
+    }
+    setNavigationMenuSaving(true);
+    setError('');
+    setStatus('Saving menu...');
+    try {
+      const payload = await shell.upsertNavigationMenu(key, {
+        title: nextMenu?.title || key,
+        items: Array.isArray(nextMenu?.items) ? nextMenu.items : []
+      });
+      const menu = payload?.menu || null;
+      if (menu) {
+        setNavigationMenu(menu);
+        loadedNavigationMenuKeyRef.current = key;
+      }
+      setStatus('Menu saved.');
+      return menu;
+    } catch (nextError) {
+      setError(asErrorMessage(nextError));
+      setStatus('');
+      throw nextError;
+    } finally {
+      setNavigationMenuSaving(false);
+    }
   }
 
   async function onEditContent(doc) {
@@ -198,6 +258,8 @@ export function useAdminAppController() {
     setError('');
     setPreviewLink(null);
     setSaveState('idle');
+    setNavigationMenu(null);
+    loadedNavigationMenuKeyRef.current = null;
   }
 
   async function onPreview() {
@@ -356,6 +418,8 @@ export function useAdminAppController() {
     onBulkApply,
     onTrashContent,
     onDeleteContent,
+    onLoadNavigationMenu,
+    onSaveNavigationMenu,
     onUpdateSettings: (patch) => {
       setSettings((prev) => {
         const next = { ...prev, ...patch };
@@ -384,6 +448,11 @@ export function useAdminAppController() {
     docs,
     editor,
     loop,
+    navigation: {
+      menu: navigationMenu,
+      isLoading: navigationMenuLoading,
+      isSaving: navigationMenuSaving
+    },
     status,
     error,
     previewLink,

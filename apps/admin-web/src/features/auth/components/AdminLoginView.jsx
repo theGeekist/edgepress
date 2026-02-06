@@ -1,8 +1,8 @@
 import { Text, View } from 'react-native';
 
-import { ActionButton } from '../../components/ui/ActionButton.jsx';
-import { ThemedTextInput } from '../../components/ui/ThemedTextInput.jsx';
-import { layoutStyles } from './styles.js';
+import { ActionButton } from '../../../components/ui/ActionButton.jsx';
+import { ThemedTextInput } from '../../../components/ui/ThemedTextInput.jsx';
+import { layoutStyles } from '../../../components/styles.js';
 
 export function AdminLoginView({ palette, auth, status, error, onLogin }) {
   return (

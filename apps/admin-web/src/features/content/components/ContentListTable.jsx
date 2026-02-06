@@ -1,11 +1,11 @@
 import { Pressable, Text, View } from 'react-native';
 import { useState } from 'react';
-import { ActionButton } from '../../components/ui/ActionButton.jsx';
-import { ThemedTextInput } from '../../components/ui/ThemedTextInput.jsx';
-import { DataTable } from '../../components/ui/DataTable.jsx';
-import { DropdownButton } from '../../components/ui/DropdownButton.jsx';
-import { FilterTabs } from '../../components/ui/FilterTabs.jsx';
-import { layoutStyles } from './styles.js';
+import { ActionButton } from '../../../components/ui/ActionButton.jsx';
+import { ThemedTextInput } from '../../../components/ui/ThemedTextInput.jsx';
+import { DataTable } from '../../../components/ui/DataTable.jsx';
+import { DropdownButton } from '../../../components/ui/DropdownButton.jsx';
+import { FilterTabs } from '../../../components/ui/FilterTabs.jsx';
+import { layoutStyles } from '../../../components/styles.js';
 
 function labelStatus(value) {
   const labels = {

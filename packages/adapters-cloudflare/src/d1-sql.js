@@ -31,9 +31,12 @@ export const D1_SQL = {
     'CREATE TABLE IF NOT EXISTS app_form_submissions (id TEXT PRIMARY KEY, form_id TEXT NOT NULL, submission_json TEXT NOT NULL, created_at TEXT NOT NULL)',
   createAppPreviews:
     'CREATE TABLE IF NOT EXISTS app_previews (preview_token TEXT PRIMARY KEY, preview_json TEXT NOT NULL, expires_at TEXT NOT NULL)',
+  createAppNavigationMenus:
+    'CREATE TABLE IF NOT EXISTS app_navigation_menus (key TEXT PRIMARY KEY, menu_json TEXT NOT NULL, updated_at TEXT NOT NULL)',
   createIdxRevisionsDocument: 'CREATE INDEX IF NOT EXISTS idx_app_revisions_document ON app_revisions(document_id, created_at)',
   createIdxFormsFormId: 'CREATE INDEX IF NOT EXISTS idx_app_forms_form_id ON app_form_submissions(form_id, created_at)',
   createIdxPreviewsExpiresAt: 'CREATE INDEX IF NOT EXISTS idx_app_previews_expires_at ON app_previews(expires_at)',
+  createIdxNavigationMenusUpdatedAt: 'CREATE INDEX IF NOT EXISTS idx_app_navigation_menus_updated_at ON app_navigation_menus(updated_at)',
   selectUserById: 'SELECT user_json FROM app_users WHERE id = ?',
   selectUserByUsername: 'SELECT user_json FROM app_users WHERE username = ?',
   upsertUser:
@@ -62,5 +65,9 @@ export const D1_SQL = {
     'INSERT INTO app_form_submissions (id, form_id, submission_json, created_at) VALUES (?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET form_id = excluded.form_id, submission_json = excluded.submission_json, created_at = excluded.created_at',
   selectPreviewByToken: 'SELECT preview_json FROM app_previews WHERE preview_token = ?',
   upsertPreview:
-    'INSERT INTO app_previews (preview_token, preview_json, expires_at) VALUES (?, ?, ?) ON CONFLICT(preview_token) DO UPDATE SET preview_json = excluded.preview_json, expires_at = excluded.expires_at'
+    'INSERT INTO app_previews (preview_token, preview_json, expires_at) VALUES (?, ?, ?) ON CONFLICT(preview_token) DO UPDATE SET preview_json = excluded.preview_json, expires_at = excluded.expires_at',
+  selectNavigationMenus: 'SELECT menu_json FROM app_navigation_menus ORDER BY updated_at ASC',
+  selectNavigationMenuByKey: 'SELECT menu_json FROM app_navigation_menus WHERE key = ?',
+  upsertNavigationMenu:
+    'INSERT INTO app_navigation_menus (key, menu_json, updated_at) VALUES (?, ?, ?) ON CONFLICT(key) DO UPDATE SET menu_json = excluded.menu_json, updated_at = excluded.updated_at'
 };

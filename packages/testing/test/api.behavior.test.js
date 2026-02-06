@@ -360,3 +360,39 @@ test('route edits are reflected after republish while doc-id private reads stay 
   assert.equal(stableByDocId.res.status, 200);
   assert.equal(stableByDocId.json.releaseId, secondReleaseId);
 });
+
+test('navigation menus support default read and persisted upsert', async () => {
+  const platform = createInMemoryPlatform();
+  const { handler, accessToken } = await authAsAdmin(platform);
+
+  const initialList = await requestJson(handler, 'GET', '/v1/navigation/menus', { token: accessToken });
+  assert.equal(initialList.res.status, 200);
+  assert.deepEqual(initialList.json.items, []);
+
+  const defaultPrimary = await requestJson(handler, 'GET', '/v1/navigation/menus/primary', { token: accessToken });
+  assert.equal(defaultPrimary.res.status, 200);
+  assert.equal(defaultPrimary.json.menu.key, 'primary');
+  assert.ok(Array.isArray(defaultPrimary.json.menu.items));
+  assert.equal(defaultPrimary.json.menu.items.length, 0);
+
+  const saved = await requestJson(handler, 'PUT', '/v1/navigation/menus/primary', {
+    token: accessToken,
+    body: {
+      title: 'Primary Nav',
+      items: [
+        { label: 'Home', kind: 'internal', route: 'home' },
+        { label: 'Blog', kind: 'internal', route: 'blog' }
+      ]
+    }
+  });
+  assert.equal(saved.res.status, 200);
+  assert.equal(saved.json.menu.title, 'Primary Nav');
+  assert.equal(saved.json.menu.items.length, 2);
+  assert.equal(saved.json.menu.items[0].order, 0);
+  assert.equal(saved.json.menu.items[1].order, 1);
+
+  const listed = await requestJson(handler, 'GET', '/v1/navigation/menus', { token: accessToken });
+  assert.equal(listed.res.status, 200);
+  assert.equal(listed.json.items.length, 1);
+  assert.equal(listed.json.items[0].key, 'primary');
+});
