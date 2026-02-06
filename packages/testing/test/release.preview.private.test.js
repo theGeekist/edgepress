@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createInMemoryPlatform } from '../src/inMemoryPlatform.js';
 import { authAsAdmin, requestJson } from '../src/testUtils.js';
+import { createUser } from '../../domain/src/entities.js';
 
 async function seedDoc(handler, token) {
   const created = await requestJson(handler, 'POST', '/v1/documents', {
@@ -135,6 +136,10 @@ test('preview returns tokenized URL and serves temporary release-like HTML', asy
 
   const view = await requestJson(handler, 'GET', preview.json.previewUrl, {});
   assert.equal(view.res.status, 200);
+
+  const tampered = await requestJson(handler, 'GET', `${preview.json.previewUrl.split('?')[0]}?sig=tampered`, {});
+  assert.equal(tampered.res.status, 401);
+  assert.equal(tampered.json.error.code, 'PREVIEW_TOKEN_INVALID');
 });
 
 test('private route reads static artifact and uses auth-scoped cache', async () => {
@@ -150,4 +155,32 @@ test('private route reads static artifact and uses auth-scoped cache', async () 
   const second = await requestJson(handler, 'GET', `/v1/private/${encodeURIComponent(docId)}`, { token: accessToken });
   assert.equal(second.res.status, 200);
   assert.equal(second.json.cache, 'hit');
+});
+
+test('private route cache scope is isolated by auth capabilities', async () => {
+  const platform = createInMemoryPlatform();
+  const { handler, accessToken } = await authAsAdmin(platform);
+  const docId = await seedDoc(handler, accessToken);
+  await requestJson(handler, 'POST', '/v1/publish', { token: accessToken, body: {} });
+
+  const adminB = createUser({ id: 'u_admin_b', username: 'admin_b', password: 'admin', role: 'admin' });
+  adminB.capabilities = ['private:read'];
+  await platform.store.seedUser(adminB);
+  const authB = await requestJson(handler, 'POST', '/v1/auth/token', {
+    body: { username: 'admin_b', password: 'admin' }
+  });
+  assert.equal(authB.res.status, 200);
+  const accessTokenB = authB.json.accessToken;
+
+  const firstA = await requestJson(handler, 'GET', `/v1/private/${encodeURIComponent(docId)}`, { token: accessToken });
+  assert.equal(firstA.res.status, 200);
+  assert.equal(firstA.json.cache, 'miss');
+
+  const firstB = await requestJson(handler, 'GET', `/v1/private/${encodeURIComponent(docId)}`, { token: accessTokenB });
+  assert.equal(firstB.res.status, 200);
+  assert.equal(firstB.json.cache, 'miss');
+
+  const secondB = await requestJson(handler, 'GET', `/v1/private/${encodeURIComponent(docId)}`, { token: accessTokenB });
+  assert.equal(secondB.res.status, 200);
+  assert.equal(secondB.json.cache, 'hit');
 });

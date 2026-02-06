@@ -26,6 +26,28 @@ function normalizePublishProvenance(body) {
   }
 }
 
+function parseTtlSeconds(value, { fallback, min, max }) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < min) {
+    return fallback;
+  }
+  return Math.min(parsed, max);
+}
+
+async function signPreviewToken(runtime, previewToken) {
+  return runtime.hmacSign(previewToken, 'PREVIEW_TOKEN_KEY');
+}
+
+async function verifyPreviewTokenSignature(runtime, previewToken, signature) {
+  if (!signature) return false;
+  return runtime.hmacVerify(previewToken, signature, 'PREVIEW_TOKEN_KEY');
+}
+
+async function buildPrivateCacheScope(runtime, user) {
+  const capabilityScope = Array.isArray(user?.capabilities) ? user.capabilities.slice().sort().join(',') : '';
+  return runtime.hmacSign(`${user?.id || 'unknown'}|${capabilityScope}`, 'PRIVATE_CACHE_SCOPE_KEY');
+}
+
 async function authUserFromRequest(runtime, store, request) {
   const token = getBearerToken(request);
   return verifyAccessToken(runtime, token, store);
@@ -315,14 +337,13 @@ export function createApiHandler(platform) {
         const doc = await store.getDocument(params.documentId);
         if (!doc) return error('DOCUMENT_NOT_FOUND', 'Document not found', 404);
 
-        const DEFAULT_TTL = 15 * 60;
-        const MIN_TTL = 30;
-        const MAX_TTL = 24 * 60 * 60;
-        const rawTtl = runtime.env('PREVIEW_TTL_SECONDS');
-        const parsedTtl = Number(rawTtl);
-        const previewTtlSeconds =
-          Number.isFinite(parsedTtl) && parsedTtl >= MIN_TTL ? Math.min(parsedTtl, MAX_TTL) : DEFAULT_TTL;
+        const previewTtlSeconds = parseTtlSeconds(runtime.env('PREVIEW_TTL_SECONDS'), {
+          fallback: 15 * 60,
+          min: 30,
+          max: 24 * 60 * 60
+        });
         const previewToken = `prv_${runtime.uuid()}`;
+        const signature = await signPreviewToken(runtime, previewToken);
         const expiresAt = new Date(runtime.now().getTime() + previewTtlSeconds * 1000).toISOString();
         const releaseLikeRef = `preview_${runtime.uuid()}`;
 
@@ -336,7 +357,7 @@ export function createApiHandler(platform) {
         });
 
         return json({
-          previewUrl: `/preview/${previewToken}`,
+          previewUrl: `/preview/${previewToken}?sig=${encodeURIComponent(signature)}`,
           expiresAt,
           releaseLikeRef
         });
@@ -349,6 +370,11 @@ export function createApiHandler(platform) {
       const preview = await previewStore.getPreview(params.token);
       if (!preview) {
         return error('PREVIEW_NOT_FOUND', 'Preview not found', 404);
+      }
+      const signature = new URL(request.url).searchParams.get('sig');
+      const validSignature = await verifyPreviewTokenSignature(runtime, params.token, signature);
+      if (!validSignature) {
+        return error('PREVIEW_TOKEN_INVALID', 'Preview token signature is invalid', 401);
       }
       try {
         assertPreviewNotExpired(preview, runtime.now().toISOString());
@@ -384,7 +410,8 @@ export function createApiHandler(platform) {
         const activeRelease = await releaseStore.getActiveRelease();
         if (!activeRelease) return error('RELEASE_NOT_ACTIVE', 'No active release', 404);
 
-        const cacheKey = `private:${activeRelease}:${routeId}:${user.id}`;
+        const cacheScope = await buildPrivateCacheScope(runtime, user);
+        const cacheKey = `private:${activeRelease}:${routeId}:${cacheScope}`;
         const cached = await cacheStore.get(cacheKey);
         if (cached) {
           return json({ route: routeId, html: cached, releaseId: activeRelease, cache: 'hit' });
@@ -398,7 +425,12 @@ export function createApiHandler(platform) {
         if (!blob) return error('ARTIFACT_NOT_FOUND', 'Artifact blob missing', 404);
 
         const html = blob.bytes;
-        await cacheStore.set(cacheKey, html, 120);
+        const privateCacheTtlSeconds = parseTtlSeconds(runtime.env('PRIVATE_CACHE_TTL_SECONDS'), {
+          fallback: 120,
+          min: 5,
+          max: 3600
+        });
+        await cacheStore.set(cacheKey, html, privateCacheTtlSeconds);
         return json({ route: routeId, html, releaseId: activeRelease, cache: 'miss' });
       } catch (e) {
         return authzErrorResponse(e);

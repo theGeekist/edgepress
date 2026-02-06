@@ -19,3 +19,14 @@ Edge-portable standalone Gutenberg CMS skeleton.
 - `npm test`
 - `npm run start:api`
 - `npm run check:boundaries`
+- `npm run test:wrangler` (local Wrangler smoke: auth -> publish -> private -> preview -> releases)
+- `npm run test:wrangler:deployed` (deployed smoke; requires `GCMS_BASE_URL`)
+
+## Cloudflare Env Hygiene
+
+- Keep secrets out of `wrangler.toml`.
+- For local dev, copy `.dev.vars.example` to `.dev.vars` and set real values.
+- For deployed environments, use Wrangler secrets:
+  - `wrangler secret put TOKEN_KEY`
+  - `wrangler secret put PREVIEW_TOKEN_KEY`
+  - `wrangler secret put PRIVATE_CACHE_SCOPE_KEY`

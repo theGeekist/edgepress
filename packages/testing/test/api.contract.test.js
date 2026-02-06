@@ -138,15 +138,21 @@ test('preview tokens expire and invalid tokens return envelope', async () => {
 
   const preview = await requestJson(handler, 'GET', `/v1/preview/${document.id}`, { token: accessToken });
   assert.equal(preview.res.status, 200);
-  const previewToken = preview.json.previewUrl.replace('/preview/', '');
+  const previewPath = preview.json.previewUrl;
+  const previewUrl = new URL(`http://localhost${previewPath}`);
+  const previewToken = previewUrl.pathname.replace('/preview/', '');
 
   const previewEntry = platform.state.previews.get(previewToken);
   previewEntry.expiresAt = new Date(Date.now() - 1000).toISOString();
 
-  const expired = await requestJson(handler, 'GET', `/preview/${previewToken}`);
+  const expired = await requestJson(handler, 'GET', previewPath);
   assert.equal(expired.res.status, 410);
   assert.equal(expired.json.error.code, 'PREVIEW_EXPIRED');
   assert.ok(expired.json.error.message.includes('expired'));
+
+  const invalidSignature = await requestJson(handler, 'GET', `${previewUrl.pathname}?sig=bad_signature`);
+  assert.equal(invalidSignature.res.status, 401);
+  assert.equal(invalidSignature.json.error.code, 'PREVIEW_TOKEN_INVALID');
 
   const missing = await requestJson(handler, 'GET', '/preview/not-a-token');
   assert.equal(missing.res.status, 404);
