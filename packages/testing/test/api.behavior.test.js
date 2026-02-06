@@ -172,3 +172,51 @@ test('private cache TTL parsing falls back and clamps from runtime env', async (
   const clampedEntry = Array.from(platform.state.cache.values()).at(-1);
   assert.ok(clampedEntry.expiresAt - Date.now() <= 3600 * 1000 + 5000);
 });
+
+test('document create/update validates and persists canonical block metadata', async () => {
+  const platform = createInMemoryPlatform();
+  const { handler, accessToken } = await authAsAdmin(platform);
+
+  const invalidCreate = await requestJson(handler, 'POST', '/v1/documents', {
+    token: accessToken,
+    body: {
+      title: 'Invalid blocks',
+      blocks: [{ attributes: {} }]
+    }
+  });
+  assert.equal(invalidCreate.res.status, 400);
+  assert.equal(invalidCreate.json.error.code, 'BLOCKS_INVALID');
+
+  const created = await requestJson(handler, 'POST', '/v1/documents', {
+    token: accessToken,
+    body: {
+      title: 'Valid blocks',
+      content: '<p>seed</p>',
+      blocks: [
+        {
+          name: 'core/paragraph',
+          attributes: { content: 'seed' }
+        }
+      ]
+    }
+  });
+  assert.equal(created.res.status, 201);
+  assert.equal(created.json.document.blocksSchemaVersion, 1);
+  assert.equal(created.json.revision.blocksSchemaVersion, 1);
+
+  const documentId = created.json.document.id;
+  const updated = await requestJson(handler, 'PATCH', `/v1/documents/${encodeURIComponent(documentId)}`, {
+    token: accessToken,
+    body: {
+      blocks: [
+        {
+          name: 'core/paragraph',
+          attributes: { content: 'updated' }
+        }
+      ]
+    }
+  });
+  assert.equal(updated.res.status, 200);
+  assert.equal(updated.json.document.blocksSchemaVersion, 1);
+  assert.equal(updated.json.revision.blocksSchemaVersion, 1);
+});

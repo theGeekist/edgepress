@@ -8,6 +8,10 @@ import {
   resetServerHookRegistrarsForTests
 } from '../../../apps/api-edge/src/hooks-bootstrap.js';
 
+test.afterEach(() => {
+  resetServerHookRegistrarsForTests();
+});
+
 async function createDoc(handler, token, suffix = 'bootstrap') {
   const created = await requestJson(handler, 'POST', '/v1/documents', {
     token,
@@ -96,4 +100,58 @@ test('attachServerHooks is idempotent for the same registry and registrar', asyn
   attachServerHooks(platform);
 
   assert.equal(registrations, 1);
+});
+
+test('attachServerHooks continues when one registrar throws', async () => {
+  resetServerHookRegistrarsForTests();
+  registerServerHookRegistrar(() => {
+    throw new Error('broken registrar');
+  });
+  registerServerHookRegistrar(({ hooks, hookNames }) => {
+    hooks.addFilter(
+      hookNames.publishProvenanceFilter,
+      'edgepress/tests/bootstrap_after_error',
+      (payload) => ({
+        ...payload,
+        provenance: {
+          sourceRevisionId: 'rev_after_error',
+          sourceRevisionSet: ['rev_after_error']
+        }
+      })
+    );
+  });
+
+  const platform = createInMemoryPlatform();
+  attachServerHooks(platform);
+  const { handler, accessToken } = await authAsAdmin(platform);
+  await createDoc(handler, accessToken, 'after-error');
+
+  const publish = await requestJson(handler, 'POST', '/v1/publish', {
+    token: accessToken,
+    body: {}
+  });
+  assert.equal(publish.res.status, 201);
+  assert.equal(publish.json.job.sourceRevisionId, 'rev_after_error');
+});
+
+test('attachServerHooks retries failing registrars without repeated log spam', () => {
+  resetServerHookRegistrarsForTests();
+  let attempts = 0;
+  registerServerHookRegistrar(() => {
+    attempts += 1;
+    throw new Error('broken registrar');
+  });
+
+  const logs = [];
+  const platform = createInMemoryPlatform();
+  platform.runtime.log = (level, event, meta) => {
+    logs.push({ level, event, meta });
+  };
+
+  attachServerHooks(platform);
+  attachServerHooks(platform);
+
+  assert.equal(attempts, 2);
+  const failureLogs = logs.filter((entry) => entry.event === 'hooks_registrar_attach_failed');
+  assert.equal(failureLogs.length, 1);
 });

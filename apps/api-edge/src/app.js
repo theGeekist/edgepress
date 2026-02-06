@@ -1,9 +1,16 @@
 import { assertPlatformPorts } from '../../../packages/ports/src/index.js';
 import { createRelease } from '../../../packages/publish/src/publisher.js';
-import { assertPreviewNotExpired, normalizePublishProvenanceInput } from '../../../packages/domain/src/index.js';
+import { BLOCKS_SCHEMA_VERSION, assertPreviewNotExpired } from '../../../packages/domain/src/index.js';
 import { createAccessToken, requireCapability, verifyAccessToken } from './auth.js';
 import { applyFilters, doAction, HOOK_NAMES, resolveHooks } from './hooks.js';
 import { error, getBearerToken, getCorsHeaders, json, matchPath, readJson, withCors } from './http.js';
+import { normalizeBlocksForWrite, normalizePublishProvenance } from './request-validation.js';
+import {
+  buildPrivateCacheScope,
+  parseTtlSeconds,
+  signPreviewToken,
+  verifyPreviewTokenSignature
+} from './runtime-utils.js';
 
 function route(method, path, handler) {
   return { method, path, handler };
@@ -14,39 +21,6 @@ function authzErrorResponse(e) {
     return error(e.code, e.message, e.status);
   }
   return error('FORBIDDEN', e?.message || 'Forbidden', 403);
-}
-
-function normalizePublishProvenance(body) {
-  try {
-    return normalizePublishProvenanceInput(body);
-  } catch (e) {
-    if (typeof e?.message === 'string' && e.message.startsWith('sourceRevisionSet')) {
-      return { error: error('PUBLISH_INVALID_SOURCE_SET', e.message, 400) };
-    }
-    return { error: error('PUBLISH_INVALID_SOURCE_SET', 'Invalid publish provenance payload', 400) };
-  }
-}
-
-function parseTtlSeconds(value, { fallback, min, max }) {
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed) || parsed < min) {
-    return fallback;
-  }
-  return Math.min(parsed, max);
-}
-
-async function signPreviewToken(runtime, previewToken) {
-  return runtime.hmacSign(previewToken, 'PREVIEW_TOKEN_KEY');
-}
-
-async function verifyPreviewTokenSignature(runtime, previewToken, signature) {
-  if (!signature) return false;
-  return runtime.hmacVerify(previewToken, signature, 'PREVIEW_TOKEN_KEY');
-}
-
-async function buildPrivateCacheScope(runtime, user) {
-  const capabilityScope = Array.isArray(user?.capabilities) ? user.capabilities.slice().sort().join(',') : '';
-  return runtime.hmacSign(`${user?.id || 'unknown'}|${capabilityScope}`, 'PRIVATE_CACHE_SCOPE_KEY');
 }
 
 async function authUserFromRequest(runtime, store, request) {
@@ -118,12 +92,15 @@ export function createApiHandler(platform) {
       try {
         const user = await requireCapability({ runtime, store, request, capability: 'document:write' });
         const body = await readJson(request);
+        const normalizedBlocks = normalizeBlocksForWrite(body.blocks, []);
+        if (normalizedBlocks.error) return normalizedBlocks.error;
         const id = `doc_${runtime.uuid()}`;
         const document = await store.createDocument({
           id,
           title: body.title || 'Untitled',
           content: body.content || '',
-          blocks: Array.isArray(body.blocks) ? body.blocks : [],
+          blocks: normalizedBlocks.blocks,
+          blocksSchemaVersion: normalizedBlocks.blocksSchemaVersion,
           createdBy: user.id,
           status: body.status || 'draft'
         });
@@ -133,6 +110,7 @@ export function createApiHandler(platform) {
           title: document.title,
           content: document.content,
           blocks: document.blocks,
+          blocksSchemaVersion: document.blocksSchemaVersion || BLOCKS_SCHEMA_VERSION,
           sourceRevisionId: null,
           authorId: user.id
         });
@@ -160,11 +138,14 @@ export function createApiHandler(platform) {
         const body = await readJson(request);
         const existing = await store.getDocument(params.id);
         if (!existing) return error('DOCUMENT_NOT_FOUND', 'Document not found', 404);
+        const normalizedBlocks = normalizeBlocksForWrite(body.blocks, existing.blocks || []);
+        if (normalizedBlocks.error) return normalizedBlocks.error;
 
         const document = await store.updateDocument(params.id, {
           title: body.title ?? existing.title,
           content: body.content ?? existing.content,
-          blocks: Array.isArray(body.blocks) ? body.blocks : existing.blocks,
+          blocks: normalizedBlocks.blocks,
+          blocksSchemaVersion: normalizedBlocks.blocksSchemaVersion,
           status: body.status ?? existing.status
         });
         const revisions = await store.listRevisions(params.id);
@@ -175,6 +156,7 @@ export function createApiHandler(platform) {
           title: document.title,
           content: document.content,
           blocks: document.blocks,
+          blocksSchemaVersion: document.blocksSchemaVersion || BLOCKS_SCHEMA_VERSION,
           sourceRevisionId: latest?.id || null,
           authorId: user.id
         });
@@ -220,6 +202,7 @@ export function createApiHandler(platform) {
           title: document.title,
           content: document.content,
           blocks: document.blocks,
+          blocksSchemaVersion: document.blocksSchemaVersion || BLOCKS_SCHEMA_VERSION,
           sourceRevisionId: latest?.id || null,
           authorId: user.id
         });
