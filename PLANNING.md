@@ -7,7 +7,7 @@ This file turns the architectural story from `idea.md` into concrete phases with
 - Non-negotiable boundary: `apps/api-edge` may only depend on runtime/storage ports; Cloudflare-specific bindings stay only in `packages/adapters-cloudflare`.
 - Runtime portability rule: edge runtime is an adapter/DI concern, not the product architecture.
 - API invariants in force: two-phase media (`init` + `finalize`), preview returns `{ previewUrl, expiresAt, releaseLikeRef }`, canonical `{ error: { code, message } }` envelope.
-- Release invariants in force: immutable manifest, atomic active-release pointer, release history retained.
+- Release invariants target: immutable manifest, active-release pointer switching, release history retained.
 - Explicitly deferred: collaborative editing/presence, server-side runtime block rendering, broad plugin compatibility, multi-tenant isolation.
 
 ## Phase 0 – Contracts & Platform Skeleton (complete)
@@ -44,10 +44,14 @@ This file turns the architectural story from `idea.md` into concrete phases with
 
 ## Phase 2 – Publishing + Delivery
 - [x] Implement release activation history + pointer logic (currently tracked in `packages/testing/src/inMemoryPlatform.js`).  
-  Completed: release history is now append-only with explicit `manifest_written` and `activated` events; active release switching records `previousReleaseId`; activating the already active release is idempotent (no duplicate event); covered by `packages/testing/test/release.preview.private.test.js`.
+  Completed (reference-adapter scope): release history is append-only with explicit `manifest_written` and `activated` events; active release switching records `previousReleaseId`; activating the already active release is idempotent (no duplicate event); covered by `packages/testing/test/release.preview.private.test.js`.
 - [ ] Build real artifact generation + release manifest storage (adapt `packages/adapters-cloudflare` to D1/R2/KV).
   Increment complete: publish now writes artifacts through mandatory `ReleaseStorePort.writeArtifact` (fallback removed to keep contract strict), and tests verify artifact events + persisted blob refs (`packages/testing/test/release.preview.private.test.js`, `packages/testing/test/publisher.test.js`).
   Increment complete: Cloudflare reference adapter now explicitly implements `releaseStore.writeArtifact` and has dedicated adapter conformance coverage (`packages/adapters-cloudflare/src/index.js`, `packages/testing/test/adapters.boundaries.test.js`).
+  Increment complete: Cloudflare reference adapter now owns release-state behavior (manifest storage, active pointer switching, release history events) rather than delegating release state to in-memory internals; covered in adapter conformance tests.
+  Increment complete: Cloudflare reference adapter is now binding-aware for `R2_BUCKET` and `KV` paths (artifacts/blob reads, cache get/set/del, release manifests/pointer/history), with explicit tests for both binding-backed and fallback-local behavior.
+  Increment complete: installed Cloudflare tooling/types (`wrangler`, `@cloudflare/workers-types`), added `wrangler.toml`, and moved Worker entrypoint to `packages/adapters-cloudflare/src/worker.js` to preserve boundary rules while enabling real Workers wiring.
+  Increment complete: hardened Cloudflare adapter correctness details: removed Node `Buffer` dependency in blob decoding, added KV manifest pagination cursor handling, and removed `this` coupling in `activateRelease`; adapter conformance tests now cover these paths.
 - [ ] Add preview-release token enforcement + private read caching logic (already exercised by tests; document requirements in this tracker).
 - [ ] Expand `packages/publish` to emit provenance data (`sourceRevisionId`, `publishedBy`, `schemaVersion`, hash list).
 - [ ] Add release manifest hash set and artifact provenance wiring (`createdAt`, `sourceRevisionId`/revision set, `publishedBy`) with immutability tests.
@@ -71,6 +75,7 @@ This file turns the architectural story from `idea.md` into concrete phases with
 - Ports + Domain must not depend on infrastructure; only `packages/adapters-cloudflare` uses Cloudflare-specific APIs. (`scripts/check-boundaries.js` enforces this.)
 - Canonical API tests currently validate required keys only. Replace `packages/contracts` with full schema before releasing Phase 3.
 - Current docs (`idea.md`) imply Gutenberg usability improvements, but execution tracking now lives in `Phase 3b` above for explicit ownership.
+- Concurrency caveat: KV-backed pointer/history updates in the reference Cloudflare adapter are not strongly atomic under concurrent writers; use D1 transaction boundaries or a Durable Object single-writer path when moving from reference to production guarantees.
 - Bun tooling now drives installs/tests; `bun.lock` (Bun’s lockfile) keeps dependencies consistent across workspaces.
 - Coverage note: `packages/testing/src/inMemoryPlatform.js` still has intentionally uncovered branches for adapter fallback/error paths. Keep adding targeted tests as runtime and adapter behaviors are finalized.
 - Keep `PLANNING.md` updated as phases complete: mark boxes, add dates/owners, link follow-up issues.
@@ -82,6 +87,10 @@ This file turns the architectural story from `idea.md` into concrete phases with
 - Delta (2026-02-06 after Phase 2 item 1): `94.32%` lines, `94.03%` funcs.
 - Delta (2026-02-06 after Phase 2 item 2 increment): `94.34%` lines, `94.04%` funcs.
 - Delta (2026-02-06 after Cloudflare writeArtifact increment): `94.34%` lines, `94.04%` funcs.
+- Delta (2026-02-06 after Cloudflare release-state increment): `94.34%` lines, `94.04%` funcs.
+- Delta (2026-02-06 after binding-aware Cloudflare adapter increment): `94.23%` lines, `94.17%` funcs.
+- Delta (2026-02-06 after wrangler + typed CF worker increment): `94.46%` lines, `94.41%` funcs.
+- Delta (2026-02-06 after adapter hardening fixes): `94.48%` lines, `94.41%` funcs.
 - Priority hotspot 1: `apps/admin-web/src/editor-shell.js` (`89.66%` lines) where document update/preview branches remain.
 - Priority hotspot 2: `apps/api-edge/src/app.js` (`93.18%` lines) for endpoint-level negative branches and rare error guards.
 - Priority hotspot 3: `packages/testing/src/inMemoryPlatform.js` (`97.38%` lines, `96.23%` funcs) with remaining branches tied to deeper revision/list edge paths.
