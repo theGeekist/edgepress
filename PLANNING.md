@@ -53,8 +53,12 @@ This file turns the architectural story from `idea.md` into concrete phases with
   Increment complete: installed Cloudflare tooling/types (`wrangler`, `@cloudflare/workers-types`), added `wrangler.toml`, and moved Worker entrypoint to `packages/adapters-cloudflare/src/worker.js` to preserve boundary rules while enabling real Workers wiring.
   Increment complete: hardened Cloudflare adapter correctness details: removed Node `Buffer` dependency in blob decoding, added KV manifest pagination cursor handling, and removed `this` coupling in `activateRelease`; adapter conformance tests now cover these paths.
 - [ ] Add preview-release token enforcement + private read caching logic (already exercised by tests; document requirements in this tracker).
-- [ ] Expand `packages/publish` to emit provenance data (`sourceRevisionId`, `publishedBy`, `schemaVersion`, hash list).
-- [ ] Add release manifest hash set and artifact provenance wiring (`createdAt`, `sourceRevisionId`/revision set, `publishedBy`) with immutability tests.
+- [x] Expand `packages/publish` to emit provenance data (`sourceRevisionId`, `publishedBy`, `schemaVersion`, hash list).  
+  Completed: publish now normalizes provenance input (`sourceRevisionId` + `sourceRevisionSet`), persists provenance into `PublishJob`, and emits manifest `schemaVersion: 2` with `artifactHashes` and `releaseHash`; covered by publish unit + API behavior tests.
+- [x] Add release manifest hash set and artifact provenance wiring (`createdAt`, `sourceRevisionId`/revision set, `publishedBy`) with immutability tests.  
+  Completed: manifest now includes `sourceRevisionSet`, canonicalized `sourceRevisionId`, `artifactHashes`, and deterministic `releaseHash`; release immutability checks continue to pass with updated schema.
+  Increment complete: provenance normalization is now shared in `packages/domain/src/provenance.js` and enforced in both `apps/api-edge/src/app.js` and `packages/publish/src/publisher.js`, preventing divergent `sourceRevisionId`/`sourceRevisionSet` across direct publisher calls and API calls.
+  Increment complete: manifest now carries both `releaseHash` (publish-event fingerprint) and `contentHash` (content/provenance fingerprint excluding release id/timestamp) so hash semantics are explicit and testable.
 
 ## Phase 3 – WP Compatibility Layer
 - [ ] Layer in a WP REST façade and `wp.*` compatibility runtime adapters (separate package until API stable).
@@ -76,6 +80,7 @@ This file turns the architectural story from `idea.md` into concrete phases with
 - Canonical API tests currently validate required keys only. Replace `packages/contracts` with full schema before releasing Phase 3.
 - Current docs (`idea.md`) imply Gutenberg usability improvements, but execution tracking now lives in `Phase 3b` above for explicit ownership.
 - Concurrency caveat: KV-backed pointer/history updates in the reference Cloudflare adapter are not strongly atomic under concurrent writers; use D1 transaction boundaries or a Durable Object single-writer path when moving from reference to production guarantees.
+- Hash caveat: current publisher hashing is intentionally non-cryptographic (`hashString`) for deterministic fingerprints and testability; do not treat `releaseHash`/`contentHash` as security primitives.
 - Bun tooling now drives installs/tests; `bun.lock` (Bun’s lockfile) keeps dependencies consistent across workspaces.
 - Coverage note: `packages/testing/src/inMemoryPlatform.js` still has intentionally uncovered branches for adapter fallback/error paths. Keep adding targeted tests as runtime and adapter behaviors are finalized.
 - Keep `PLANNING.md` updated as phases complete: mark boxes, add dates/owners, link follow-up issues.
@@ -91,6 +96,8 @@ This file turns the architectural story from `idea.md` into concrete phases with
 - Delta (2026-02-06 after binding-aware Cloudflare adapter increment): `94.23%` lines, `94.17%` funcs.
 - Delta (2026-02-06 after wrangler + typed CF worker increment): `94.46%` lines, `94.41%` funcs.
 - Delta (2026-02-06 after adapter hardening fixes): `94.48%` lines, `94.41%` funcs.
+- Delta (2026-02-06 after provenance/hash increment): `94.52%` lines, `94.41%` funcs.
+- Delta (2026-02-06 after shared provenance normalization + contentHash): `95.11%` lines, `95.06%` funcs.
 - Priority hotspot 1: `apps/admin-web/src/editor-shell.js` (`89.66%` lines) where document update/preview branches remain.
 - Priority hotspot 2: `apps/api-edge/src/app.js` (`93.18%` lines) for endpoint-level negative branches and rare error guards.
 - Priority hotspot 3: `packages/testing/src/inMemoryPlatform.js` (`97.38%` lines, `96.23%` funcs) with remaining branches tied to deeper revision/list edge paths.

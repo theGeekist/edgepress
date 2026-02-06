@@ -117,3 +117,35 @@ test('forms endpoint returns 429 envelope when rate limit exceeded', async () =>
   assert.equal(limited.res.status, 429);
   assert.equal(limited.json.error.code, 'RATE_LIMITED');
 });
+
+test('publish validates sourceRevisionSet payload shape', async () => {
+  const platform = createInMemoryPlatform();
+  const { handler, accessToken } = await authAsAdmin(platform);
+
+  const notArray = await requestJson(handler, 'POST', '/v1/publish', {
+    token: accessToken,
+    body: { sourceRevisionSet: 'rev_bad' }
+  });
+  assert.equal(notArray.res.status, 400);
+  assert.equal(notArray.json.error.code, 'PUBLISH_INVALID_SOURCE_SET');
+
+  const invalidEntry = await requestJson(handler, 'POST', '/v1/publish', {
+    token: accessToken,
+    body: { sourceRevisionSet: ['rev_ok', 42] }
+  });
+  assert.equal(invalidEntry.res.status, 400);
+  assert.equal(invalidEntry.json.error.code, 'PUBLISH_INVALID_SOURCE_SET');
+});
+
+test('publish canonicalizes sourceRevisionId from sourceRevisionSet when omitted', async () => {
+  const platform = createInMemoryPlatform();
+  const { handler, accessToken } = await authAsAdmin(platform);
+
+  const publish = await requestJson(handler, 'POST', '/v1/publish', {
+    token: accessToken,
+    body: { sourceRevisionSet: ['rev_derived'] }
+  });
+  assert.equal(publish.res.status, 201);
+  assert.equal(publish.json.job.sourceRevisionId, 'rev_derived');
+  assert.deepEqual(publish.json.job.sourceRevisionSet, ['rev_derived']);
+});

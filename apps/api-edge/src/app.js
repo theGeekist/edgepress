@@ -1,6 +1,6 @@
 import { assertPlatformPorts } from '../../../packages/ports/src/index.js';
 import { createRelease } from '../../../packages/publish/src/publisher.js';
-import { assertPreviewNotExpired } from '../../../packages/domain/src/invariants.js';
+import { assertPreviewNotExpired, normalizePublishProvenanceInput } from '../../../packages/domain/src/index.js';
 import { createAccessToken, requireCapability, verifyAccessToken } from './auth.js';
 import { error, getBearerToken, getCorsHeaders, json, matchPath, readJson, withCors } from './http.js';
 
@@ -13,6 +13,17 @@ function authzErrorResponse(e) {
     return error(e.code, e.message, e.status);
   }
   return error('FORBIDDEN', e?.message || 'Forbidden', 403);
+}
+
+function normalizePublishProvenance(body) {
+  try {
+    return normalizePublishProvenanceInput(body);
+  } catch (e) {
+    if (typeof e?.message === 'string' && e.message.startsWith('sourceRevisionSet')) {
+      return { error: error('PUBLISH_INVALID_SOURCE_SET', e.message, 400) };
+    }
+    return { error: error('PUBLISH_INVALID_SOURCE_SET', 'Invalid publish provenance payload', 400) };
+  }
 }
 
 async function authUserFromRequest(runtime, store, request) {
@@ -226,20 +237,23 @@ export function createApiHandler(platform) {
       try {
         const user = await requireCapability({ runtime, store, request, capability: 'publish:write' });
         const body = await readJson(request);
+        const provenance = normalizePublishProvenance(body);
+        if (provenance.error) return provenance.error;
         const jobId = `job_${runtime.uuid()}`;
         let job = await store.createPublishJob({
           id: jobId,
           requestedBy: user.id,
-          sourceRevisionId: body.sourceRevisionId || null
+          sourceRevisionId: provenance.sourceRevisionId,
+          sourceRevisionSet: provenance.sourceRevisionSet
         });
 
         try {
           const manifest = await createRelease({
             runtime,
             store,
-            blobStore,
             releaseStore,
-            sourceRevisionId: body.sourceRevisionId || null,
+            sourceRevisionId: provenance.sourceRevisionId,
+            sourceRevisionSet: provenance.sourceRevisionSet,
             publishedBy: user.id
           });
           if (!(await releaseStore.getActiveRelease())) {
