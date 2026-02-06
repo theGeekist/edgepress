@@ -56,4 +56,8 @@ const out = [
   ""
 ].join("\n");
 
-await Bun.write("docs/reference/api/routes.generated.md", out);
+const bunRuntime = globalThis.Bun;
+if (!bunRuntime?.write) {
+  throw new Error("This script must run with Bun.");
+}
+await bunRuntime.write("docs/reference/api/routes.generated.md", out);

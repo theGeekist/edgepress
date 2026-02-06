@@ -61,7 +61,8 @@ function hashBlocks(runtime, doc) {
 }
 
 export async function createRelease({ runtime, store, releaseStore, sourceRevisionId, sourceRevisionSet, publishedBy }) {
-  const docs = await store.listDocuments();
+  const listed = await store.listDocuments();
+  const docs = Array.isArray(listed) ? listed : listed.items || [];
   const createdAt = runtime.now().toISOString();
   const releaseId = `rel_${runtime.uuid()}`;
   const provenance = normalizePublishProvenanceInput({ sourceRevisionId, sourceRevisionSet });

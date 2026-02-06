@@ -4,7 +4,7 @@ import { createCanonicalSdkStore } from './gutenberg-integration.js';
 const SESSION_STORAGE_KEY = 'edgepress.admin.session.v1';
 
 function canUseStorage() {
-  return typeof window !== 'undefined' && window.localStorage;
+  return typeof globalThis !== 'undefined' && globalThis.window && globalThis.window.localStorage;
 }
 
 function readStoredSession() {
@@ -12,7 +12,7 @@ function readStoredSession() {
     return null;
   }
   try {
-    const raw = window.localStorage.getItem(SESSION_STORAGE_KEY);
+    const raw = globalThis.window.localStorage.getItem(SESSION_STORAGE_KEY);
     if (!raw) {
       return null;
     }
@@ -36,10 +36,10 @@ function writeStoredSession(session) {
   }
   try {
     if (!session?.refreshToken) {
-      window.localStorage.removeItem(SESSION_STORAGE_KEY);
+      globalThis.window.localStorage.removeItem(SESSION_STORAGE_KEY);
       return;
     }
-    window.localStorage.setItem(
+    globalThis.window.localStorage.setItem(
       SESSION_STORAGE_KEY,
       JSON.stringify({
         accessToken: session.accessToken,

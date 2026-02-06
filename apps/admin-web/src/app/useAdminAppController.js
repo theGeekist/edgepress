@@ -13,6 +13,37 @@ function asErrorMessage(error) {
   return error instanceof Error ? error.message : String(error);
 }
 
+const SETTINGS_STORAGE_KEY = 'edgepress.admin.settings.v1';
+
+function readStoredSettings() {
+  if (typeof globalThis === 'undefined' || !globalThis.window || !globalThis.window.localStorage) {
+    return { permalinkStructure: 'name' };
+  }
+  try {
+    const raw = globalThis.window.localStorage.getItem(SETTINGS_STORAGE_KEY);
+    if (!raw) return { permalinkStructure: 'name' };
+    const parsed = JSON.parse(raw);
+    return {
+      permalinkStructure: parsed?.permalinkStructure === 'plain' || parsed?.permalinkStructure === 'day'
+        ? parsed.permalinkStructure
+        : 'name'
+    };
+  } catch {
+    return { permalinkStructure: 'name' };
+  }
+}
+
+function writeStoredSettings(settings) {
+  if (typeof globalThis === 'undefined' || !globalThis.window || !globalThis.window.localStorage) {
+    return;
+  }
+  try {
+    globalThis.window.localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+  } catch {
+    // Ignore localStorage write errors.
+  }
+}
+
 export function useAdminAppController() {
   const apiBase = import.meta.env.VITE_API_BASE_URL || '';
   const shell = useMemo(() => createAdminShell({ baseUrl: apiBase || '' }), [apiBase]);
@@ -31,6 +62,7 @@ export function useAdminAppController() {
   const [saveState, setSaveState] = useState('idle');
   const [appSection, setAppSection] = useState('content');
   const [contentView, setContentView] = useState('list');
+  const [settings, setSettings] = useState(() => readStoredSettings());
 
   useEffect(() => {
     const configKey = apiBase || '(same-origin)';
@@ -134,7 +166,8 @@ export function useAdminAppController() {
     try {
       const selectedDoc = docs.getSelectedDoc();
       const updated = await editor.saveDocument(docs.selectedId, docs.title, {
-        type: selectedDoc?.ui?.type || selectedDoc?.type || 'page'
+        type: selectedDoc?.ui?.type || selectedDoc?.type || 'page',
+        slug: selectedDoc?.ui?.slug || selectedDoc?.slug || ''
       });
       await docs.refresh();
       if (updated) {
@@ -175,7 +208,7 @@ export function useAdminAppController() {
       const rawPreviewUrl = payload.previewUrl || '';
       let resolvedPreviewUrl = rawPreviewUrl;
       if (rawPreviewUrl && !/^https?:\/\//i.test(rawPreviewUrl)) {
-        const base = typeof window !== 'undefined' ? window.location.origin : 'http://localhost';
+        const base = typeof globalThis !== 'undefined' && globalThis.window ? globalThis.window.location.origin : 'http://localhost';
         resolvedPreviewUrl = new URL(rawPreviewUrl, base).toString();
       }
       if (resolvedPreviewUrl) {
@@ -227,7 +260,9 @@ export function useAdminAppController() {
     setPreviewLink(null);
     setStatus('Checking live content delivery...');
     try {
-      const payload = await loop.verifyPrivateRead(docs.selectedId);
+      const selectedDoc = docs.getSelectedDoc();
+      const routeId = selectedDoc?.slug || selectedDoc?.ui?.slug || selectedDoc?.id || docs.selectedId;
+      const payload = await loop.verifyPrivateRead(routeId);
       if (payload.releaseId) {
         setStatus('Live content check passed.');
       } else {
@@ -277,11 +312,13 @@ export function useAdminAppController() {
     setStatus('Moving content to trash...');
     try {
       await docs.deleteDocument(doc.id, { permanent: false });
-      docs.clearSelectedRows();
       setStatus('Moved to trash.');
     } catch (nextError) {
       setError(asErrorMessage(nextError));
       setStatus('');
+    } finally {
+      docs.clearSelectedRows();
+      await docs.refresh();
     }
   }
 
@@ -290,11 +327,13 @@ export function useAdminAppController() {
     setStatus('Deleting permanently...');
     try {
       await docs.deleteDocument(doc.id, { permanent: true });
-      docs.clearSelectedRows();
       setStatus('Deleted permanently.');
     } catch (nextError) {
       setError(asErrorMessage(nextError));
       setStatus('');
+    } finally {
+      docs.clearSelectedRows();
+      await docs.refresh();
     }
   }
 
@@ -310,6 +349,13 @@ export function useAdminAppController() {
     onBulkApply,
     onTrashContent,
     onDeleteContent,
+    onUpdateSettings: (patch) => {
+      setSettings((prev) => {
+        const next = { ...prev, ...patch };
+        writeStoredSettings(next);
+        return next;
+      });
+    },
     onOpenContentList: () => setContentView('list'),
     onChangeSection: (nextSection) => {
       setAppSection(nextSection);
@@ -326,6 +372,7 @@ export function useAdminAppController() {
     appSection,
     contentView,
     saveState,
+    settings,
     auth,
     docs,
     editor,

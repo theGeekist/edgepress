@@ -1,5 +1,15 @@
 {
   "extends": "./tsconfig.base.json",
-  "include": ["apps/**/*", "packages/**/*", "scripts/**/*"],
-  "exclude": ["node_modules", "bun.lockb"]
+  "compilerOptions": {
+    "allowJs": true
+  },
+  "include": [
+    "apps/**/*",
+    "packages/**/*",
+    "scripts/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "bun.lockb"
+  ]
 }
