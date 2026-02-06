@@ -1,66 +1,78 @@
 ---
-title: Auth
+title: Authentication & Capabilities
 ---
 
-# Auth
+# Authentication & Capabilities
 
-This workflow covers:
+EdgePress uses a secure, stateless authentication system designed for distributed environments. It combines standard **JWT Bearer Tokens** with a granular **Capability** system to control access.
 
-- exchanging credentials for `{ accessToken, refreshToken }`
-- refreshing access tokens
-- revoking refresh tokens on logout
+## The Auth Flow
+
+We use a dual-token strategy:
+1.  **Access Token (Short-lived)**: Used for API requests. Valid for 10-15 minutes.
+2.  **Refresh Token (Long-lived)**: Used to get new Access Tokens. Stored securely.
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant App as Admin API (Client)
+    participant API as Edge API
+    participant DB as D1 / KV
+
+    User->>App: Submits Username/Password
+    App->>API: POST /v1/auth/token
+    API->>DB: Verify Credentials
+    DB-->>API: Valid
+
+    API->>API: Generate Access + Refresh Tokens
+    API-->>App: Returns { accessToken, refreshToken, user }
+    
+    Note over App: Client stores tokens
+
+    App->>API: GET /v1/documents (Bearer accessToken)
+    API->>API: Verify JWT Signature (Stateless)
+    API-->>App: Returns Data
+
+    Note over App: Access Token Expires...
+
+    App->>API: POST /v1/auth/refresh { refreshToken }
+    API->>DB: Check if Refresh Token is Revoked
+    DB-->>API: OK
+    API-->>App: Returns NEW Access Token
+```
+
+## Capabilities: Granular Access Control
+
+We don't just check "Is this an Admin?". We check "Can this user `edit_document`?".
+
+Capabilities are strings like `cap_read_document`, `cap_write_document`, `cap_publish_release`.
+
+### How it works
+1.  When a user logs in, their capabilities are baked into the `user` object.
+2.  The API endpoints enforce these capabilities.
+    ```js
+    // Internal Domain Logic Example
+    if (!user.hasCapability('cap_publish')) {
+      throw new Error("Unauthorized");
+    }
+    ```
 
 ## Endpoints
 
-- `POST /v1/auth/token` (no auth)
-- `POST /v1/auth/refresh` (no auth)
-- `POST /v1/auth/logout` (no auth)
+### Login
+**`POST /v1/auth/token`**
+Exchange credentials for tokens.
 
-## Request/response
+### Refresh
+**`POST /v1/auth/refresh`**
+Get a fresh access token using a valid refresh token.
 
-Login:
+### Logout
+**`POST /v1/auth/logout`**
+Revoke a refresh token. This effectively kills the session once the short-lived access token expires.
 
-```json
-{ "username": "admin", "password": "admin" }
-```
+## SDK Usage
 
-Response:
-
-```json
-{ "accessToken": "...", "refreshToken": "...", "user": { "id": "...", "username": "admin", "capabilities": [] } }
-```
-
-Refresh:
-
-```json
-{ "refreshToken": "r_..." }
-```
-
-## Error behavior
-
-All API errors return the canonical envelope:
-
-```json
-{
-  "error": {
-    "code": "SOME_CODE",
-    "message": "Human-readable message"
-  }
-}
-```
-
-Common auth errors:
-
-- `AUTH_INVALID` (401): invalid username/password
-- `AUTH_INVALID_REFRESH` (401): refresh token invalid or revoked
-
-## SDK usage
-
-`packages/sdk` exposes `token()`, `refresh()`, `logout()`.
+The canonical SDK handles the complexity for you, including automatic token refreshing.
 
 <<< @/snippets/sdk-auth.js
-
-## Tests that prove behavior
-
-- `packages/testing/test/api.contract.test.js`
-- `packages/testing/test/api.behavior.test.js`

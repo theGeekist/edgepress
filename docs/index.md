@@ -1,32 +1,69 @@
 ---
-title: EdgePress
+layout: home
+
+hero:
+  name: EdgePress
+  text: The WordPress Editor, Unshackled.
+  tagline: A standalone, edge-first, no-PHP CMS for the future of content.
+  image:
+    src: /logo.svg
+    alt: EdgePress Logo
+  actions:
+    - theme: brand
+      text: Get Started
+      link: /guide/getting-started
+    - theme: alt
+      text: View Project Vision
+      link: /architecture/overview
+
+features:
+  - title: Client-Agnostic
+    details: The editor and admin shell work across web, React Native, and desktop. The backend assumes nothing about the client.
+  - title: Edge-First API
+    details: A strongly designed API layer with explicit contracts. Deploy to Cloudflare Workers, or any edge runtime.
+  - title: Static Releases
+    details: Published output is served as static release artifacts. "CMS uptime" is not a serving dependency.
 ---
 
-# EdgePress
+<script setup>
+import mermaid from 'mermaid'
+import { onMounted } from 'vue'
 
-Edge-portable standalone Gutenberg CMS skeleton.
+onMounted(() => {
+  mermaid.initialize({ startOnLoad: true })
+})
+</script>
 
-## Start here
+# The Future of Gutenberg
 
-- Quickstart: [Getting Started](/guide/getting-started)
-- Key workflows: [Auth](/guide/workflows/auth)
-- Architecture: [Architecture Overview](/architecture/overview)
-- API reference (stable keys from contracts): [API Reference](/reference/api/)
+EdgePress decouples the best block editor in the world from its legacy PHP roots. It provides a clean, modern, and performant platform for building content-rich applications.
 
-## What you're building
+## Architecture
 
-EdgePress gives you a CMS core that can run at the edge (Cloudflare is the reference adapter today) while keeping the domain and API surface platform-agnostic.
+This isn't just a headless WordPress. It's a completely reimagined architecture.
 
-The implementation currently includes:
+```mermaid
+flowchart LR
+  UI[Editor Clients\nWeb + RN + Desktop] --> DATA[@wordpress/data\nstores + registry]
+  DATA --> HOOKS[@wordpress/hooks\nfilters/actions]
+  DATA --> APIFETCH[@wordpress/api-fetch\nfetch handler + middleware]
+  APIFETCH --> API[(CMS API\nEdge Functions)]
+  API --> PORTS[[Ports/Adapters\n(Infra DI Boundary)]]
+  PORTS --> DB[(Structured Store\nSQL adapter)]
+  PORTS --> BLOBS[(Blob/Artefact Store\nadapter)]
+  PORTS --> CACHE[(Cache/Index/Token Store\nadapter)]
+  PORTS --> COORD[(Coordination\noptional adapter)]
+  API --> RELEASES[(Release pipeline\npublish manifests)]
+  RELEASES --> SITE[Static Site\nPages/any host]
+```
 
-- Capability-gated auth
-- Documents + revisions
-- Two-phase media finalize
-- Publish jobs that produce immutable releases (manifest + artifacts)
-- Preview sessions with TTL clamping
-- Private reads of release artifacts (auth-scoped cache)
-- Rate-limited forms endpoint
+## Why EdgePress?
 
-## What lives where
+### 🚀 Performance
+By moving the CMS logic to the edge and serving content as static artifacts, EdgePress delivers sub-millisecond response times for your readers.
 
-See [/guide/repo-tour](/guide/repo-tour).
+### 🛡️ Security
+No more SQL injection vulnerabilities or "database surgery". Publish produces immutable releases. Rollback is as simple as switching a pointer.
+
+### 💻 Developer Experience
+Typescript-first, with a strong focus on developer ergonomics. Use the tools you love, like `wrangler` and `bun`.

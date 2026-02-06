@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <!-- Background: Represents the reliable foundation/network -->
+  <defs>
+    <linearGradient id="edgeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Central Cube/Block: Represents Content/Gutenberg Blocks -->
+  <!-- Designed to look "floating" or "distributed" -->
+  <path d="M50 20 L80 35 L80 65 L50 80 L20 65 L20 35 Z" fill="url(#edgeGradient)" opacity="0.9" />
+  
+  <!-- "Edge" connections/lines -->
+  <path d="M50 20 L50 50 L80 35" stroke="white" stroke-width="2" stroke-linecap="round" />
+  <path d="M50 50 L20 35" stroke="white" stroke-width="2" stroke-linecap="round" />
+  <path d="M50 50 L50 80" stroke="white" stroke-width="2" stroke-linecap="round" />
+
+  <!-- Orbiting elements representing edge nodes -->
+  <circle cx="85" cy="30" r="4" fill="#10b981" />
+  <circle cx="15" cy="70" r="4" fill="#10b981" />
+  
+</svg>
