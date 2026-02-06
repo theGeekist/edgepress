@@ -87,6 +87,8 @@ Exit criteria:
 - [ ] Deliver one clean end-to-end authoring loop in Admin UI: edit -> autosave revision -> signed preview -> publish -> activate -> private delivery read.
 - [ ] Add explicit acceptance tests for this loop in in-memory + wrangler-local + deployed smoke contexts.
 - [ ] Remove any remaining manual/implicit steps required to activate and verify a release.
+- `Increment complete`: added canonical in-memory loop coverage (`packages/testing/test/editor.loop.e2e.test.js`) and expanded wrangler smoke flows (`scripts/test-wrangler-local.js`, `scripts/test-wrangler-deployed.js`) with update/revision checks, second publish, explicit activation, and active-release private read assertions.
+- `Increment complete`: admin shell and UI now expose loop operations (revisions, preview, publish, activate release, private-read verification) with a dedicated loop status panel (`apps/admin-web/src/editor-shell.js`, `apps/admin-web/src/gutenberg-integration.js`, `apps/admin-web/src/app/App.jsx`, `apps/admin-web/src/features/releases/useReleaseLoopState.js`) and shell-level loop test coverage (`packages/testing/test/admin.shell.test.js`).
 
 Exit criteria:
 - A single operator path exists for authoring-to-delivery with no side scripts.
