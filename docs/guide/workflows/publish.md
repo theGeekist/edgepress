@@ -29,6 +29,10 @@ The implementation canonicalizes provenance:
 
 Manifests are immutable once written.
 
+## Persistence in the Cloudflare adapter
+
+If the Cloudflare reference adapter has `D1` bound, release manifests/history and the active release pointer are persisted in D1.
+
 ## Tests that prove behavior
 
 - `packages/testing/test/release.preview.private.test.js`
