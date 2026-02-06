@@ -1,6 +1,17 @@
 import { requireCapability } from '../auth.js';
 import { error, json, readJson } from '../http.js';
 
+function sanitizeFilename(input) {
+  const candidate = String(input || '')
+    .replace(/\0/g, '')
+    .replace(/[\\/]+/g, '/')
+    .split('/')
+    .pop()
+    ?.replace(/\.\.+/g, '.')
+    .trim();
+  return candidate || 'asset.bin';
+}
+
 export function createMediaRoutes({ runtime, store, blobStore, route, authzErrorResponse }) {
   return [
     route('POST', '/v1/media', async (request) => {
@@ -34,11 +45,12 @@ export function createMediaRoutes({ runtime, store, blobStore, route, authzError
           return error('MEDIA_UPLOAD_TOKEN_INVALID', 'Upload token invalid', 401);
         }
 
-        const path = `media/${params.id}/${body.filename || 'asset.bin'}`;
+        const sanitizedFilename = sanitizeFilename(body.filename);
+        const path = `media/${params.id}/${sanitizedFilename}`;
         await blobStore.putBlob(path, 'placeholder-bytes', { contentType: body.mimeType || 'application/octet-stream' });
         const signedUrl = await blobStore.signedReadUrl(path, 3600);
         const media = await store.finalizeMedia(params.id, {
-          filename: body.filename || 'asset.bin',
+          filename: sanitizedFilename,
           mimeType: body.mimeType || 'application/octet-stream',
           size: body.size || 0,
           url: signedUrl

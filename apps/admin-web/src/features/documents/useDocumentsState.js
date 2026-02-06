@@ -191,7 +191,8 @@ export function useDocumentsState(shell) {
     setSelectedRowIds([]);
   }
 
-  async function refresh() {
+  async function refresh(metaOverride = null) {
+    const effectiveMeta = metaOverride || contentMeta;
     const querySortBy = mapQuerySortBy(sortBy);
     const payload = await shell.listDocuments({
       q: contentSearch || '',
@@ -202,7 +203,7 @@ export function useDocumentsState(shell) {
       page,
       pageSize
     });
-    const items = (payload.items || []).map((item) => withUiMeta(item, contentMeta));
+    const items = (payload.items || []).map((item) => withUiMeta(item, effectiveMeta));
     const visibleIds = new Set(items.map((item) => item.id));
     setDocs(items);
     setPagination(payload.pagination || { page, pageSize, totalItems: items.length, totalPages: 1 });
@@ -224,7 +225,7 @@ export function useDocumentsState(shell) {
       }
     };
     persistMeta(nextMeta);
-    await refresh();
+    await refresh(nextMeta);
     return withUiMeta(document, nextMeta);
   }
 
@@ -237,13 +238,24 @@ export function useDocumentsState(shell) {
     if (rows.length === 0) {
       return 0;
     }
-    await Promise.all(rows.map((row) => shell.updateDocument(row.id, {
+    const failures = [];
+    await Promise.all(rows.map(async (row) => {
+      try {
+        await shell.updateDocument(row.id, {
         title: row.title,
         content: row.content,
         blocks: Array.isArray(row.blocks) ? row.blocks : [],
         status
-      })));
+      });
+      } catch (error) {
+        failures.push({ id: row.id, error });
+        console.error('bulkSetStatus row update failed', { id: row.id, error });
+      }
+    }));
     await refresh();
+    if (failures.length > 0) {
+      throw new Error(`Failed to update ${failures.length} document(s).`);
+    }
     return rows.length;
   }
 
@@ -284,12 +296,15 @@ export function useDocumentsState(shell) {
     if (!row) {
       return false;
     }
-    await shell.deleteDocument(documentId, { permanent });
-    if (selectedId === documentId) {
-      setSelectedId(null);
-      setTitle('');
+    try {
+      await shell.deleteDocument(documentId, { permanent });
+    } finally {
+      if (selectedId === documentId) {
+        setSelectedId(null);
+        setTitle('');
+      }
+      await refresh();
     }
-    await refresh();
     return true;
   }
 

@@ -29,6 +29,7 @@ export function createPublishRoutes({ runtime, store, releaseStore, hooks, route
         });
         doAction(runtime, hooks, HOOK_NAMES.publishStartedAction, { user, job });
 
+        let publishError = null;
         try {
           const manifest = await createRelease({
             runtime,
@@ -57,19 +58,37 @@ export function createPublishRoutes({ runtime, store, releaseStore, hooks, route
             manifest,
             activatedRelease
           });
-        } catch (publishError) {
-          job = await store.updatePublishJob(jobId, {
-            status: 'failed',
-            error: publishError.message
-          });
-          doAction(runtime, hooks, HOOK_NAMES.publishCompletedAction, {
-            user,
-            job,
-            error: publishError
-          });
+        } catch (nextPublishError) {
+          publishError = nextPublishError;
+          try {
+            job = await store.updatePublishJob(jobId, {
+              status: 'failed',
+              error: nextPublishError.message
+            });
+          } catch (updateError) {
+            runtime.log('error', 'publish_job_update_failed', {
+              jobId,
+              error: updateError?.message || String(updateError),
+              publishError: nextPublishError?.message || String(nextPublishError)
+            });
+          }
+          try {
+            doAction(runtime, hooks, HOOK_NAMES.publishCompletedAction, {
+              user,
+              job,
+              error: nextPublishError
+            });
+          } catch (hookError) {
+            runtime.log('error', 'publish_complete_action_failed', {
+              jobId,
+              error: hookError?.message || String(hookError),
+              publishError: nextPublishError?.message || String(nextPublishError)
+            });
+          }
         }
 
-        return json({ job }, 201);
+        const responseStatus = publishError ? 500 : 201;
+        return json({ job }, responseStatus);
       } catch (e) {
         return authzErrorResponse(e);
       }
@@ -96,8 +115,13 @@ export function createPublishRoutes({ runtime, store, releaseStore, hooks, route
         });
         return json({ activeRelease });
       } catch (e) {
-        const status = e.message === 'Unknown releaseId' ? 404 : 403;
-        return error('RELEASE_ACTIVATE_FAILED', e.message, status);
+        if (e?.code === 'AUTH_REQUIRED' || e?.code === 'AUTH_FORBIDDEN') {
+          return authzErrorResponse(e);
+        }
+        if (e?.message === 'Unknown releaseId') {
+          return error('RELEASE_NOT_FOUND', e.message, 404);
+        }
+        return error('RELEASE_ACTIVATE_FAILED', e.message || 'Unable to activate release', 500);
       }
     }),
 

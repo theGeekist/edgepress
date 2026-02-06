@@ -3,6 +3,15 @@ import { requireCapability } from '../auth.js';
 import { error, json } from '../http.js';
 import { parseTtlSeconds, signPreviewToken, verifyPreviewTokenSignature } from '../runtime-utils.js';
 
+function escapeHtml(input) {
+  return String(input || '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
 export function createPreviewRoutes({ runtime, store, previewStore, route, authzErrorResponse }) {
   return [
     route('GET', '/v1/preview/:documentId', async (request, params) => {
@@ -27,7 +36,7 @@ export function createPreviewRoutes({ runtime, store, previewStore, route, authz
           releaseLikeRef,
           expiresAt,
           createdBy: user.id,
-          html: `<html><body><article><h1>${doc.title}</h1>${doc.content}</article></body></html>`
+          html: `<html><body><article><h1>${escapeHtml(doc.title)}</h1>${doc.content || ''}</article></body></html>`
         });
 
         return json({
