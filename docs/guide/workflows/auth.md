@@ -52,8 +52,8 @@ Capabilities are strings like `cap_read_document`, `cap_write_document`, `cap_pu
 2.  The API endpoints enforce these capabilities.
     ```js
     // Internal Domain Logic Example
-    if (!user.hasCapability('cap_publish')) {
-      throw authError("AUTH_FORBIDDEN", "Missing capability: cap_publish");
+    if (!user.hasCapability('cap_publish_release')) {
+      throw authError("AUTH_FORBIDDEN", "Missing capability: cap_publish_release");
     }
     ```
 
