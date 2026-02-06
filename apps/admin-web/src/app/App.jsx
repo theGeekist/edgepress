@@ -128,7 +128,7 @@ export function App() {
     try {
       const payload = await loop.publishCurrent();
       await loop.refreshReleases();
-      setStatus(`Published job ${payload.job.id}`);
+      setStatus(`Published job ${payload.job?.id || 'unknown'}`);
     } catch (err) {
       setError(err.message);
       setStatus('');
