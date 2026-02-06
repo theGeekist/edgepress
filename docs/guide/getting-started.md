@@ -28,6 +28,13 @@ Default local credentials (in-memory): `admin` / `admin`.
 bun run dev:admin
 ```
 
+## Run the API as a Cloudflare Worker (local)
+
+```sh
+cp .dev.vars.example .dev.vars
+bunx wrangler dev --local
+```
+
 ## Run tests
 
 ```sh
