@@ -46,3 +46,24 @@ export function getBearerToken(request) {
   if (!header.startsWith('Bearer ')) return null;
   return header.slice('Bearer '.length);
 }
+
+export function getCorsHeaders(origin = '*') {
+  return {
+    'access-control-allow-origin': origin,
+    'access-control-allow-methods': 'GET,POST,PATCH,OPTIONS',
+    'access-control-allow-headers': 'content-type,authorization,x-trace-id,x-ip-hash,x-ua-hash'
+  };
+}
+
+export function withCors(response, origin = '*') {
+  const headers = new Headers(response.headers);
+  const cors = getCorsHeaders(origin);
+  for (const [key, value] of Object.entries(cors)) {
+    headers.set(key, value);
+  }
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers
+  });
+}

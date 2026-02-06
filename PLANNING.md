@@ -13,8 +13,8 @@ This file turns the architectural story from `idea.md` into concrete phases with
 ## Phase 1 – Content + Admin Integration (in progress/outstanding)
 - [x] Harden canonical SDK client (`packages/sdk/src/client.js`) and connect to `apps/admin-web/src/gutenberg-integration.js`.  
   Completed: structured `ApiRequestError`, single-flight refresh retry, auth-failure callback, and SDK/admin-shell integration tests for token rotation/error propagation.
-- [ ] Wire Gutenberg UI (`apps/admin-web`) to use `@wordpress/block-editor` with `@wordpress/api-fetch` middlewares and canonical stores.  
-  Current baseline: minimal runnable admin shell is wired to canonical SDK stores (`apps/admin-web/src/editor-shell.js`) without `@wordpress/core-data` CRUD.
+- [x] Wire Gutenberg UI (`apps/admin-web`) to use `@wordpress/block-editor` with `@wordpress/api-fetch` middlewares and canonical stores.  
+  Completed: Vite+React host with RN-web primitives, modular `components/ui` + `features/*` state organization, canonical SDK session shell, and `api-fetch` auth/refresh/trace middlewares wired to the same refresh path; no `@wordpress/core-data` CRUD in MVP flow.
 - [x] Ensure `apps/api-edge` implements auth, docs, media, publish routes plus preview/tokenized URL behavior (`apps/api-edge/src/app.js`).  
   Added preview TTL runtime controls, canonical error envelope handling, preview expiry responses, and base64url helpers behind the runtime port.
 - [x] Add targeted tests for document/media/publish flows (already in `packages/testing/test`).  

@@ -13,25 +13,43 @@
     "test:unit": "bun test packages/testing/test/*.test.js",
     "test:coverage": "bun test --coverage --coverage-reporter text --coverage-reporter lcov --coverage-dir coverage packages/testing/test/*.test.js",
     "start:admin-demo": "bun apps/admin-web/src/demo-server.js",
-    "lint": "bunx eslint . --max-warnings 0",
-    "lint:fix": "bunx eslint . --fix",
+    "lint": "bunx eslint . --max-warnings 0 --cache",
+    "lint:fix": "bunx eslint . --fix --cache",
     "sonar:verify": "bun run test:coverage && test -f coverage/lcov.info && echo sonar inputs ready",
     "sonar:scan": "bunx sonar-scanner",
-    "context:gutenberg": "bun scripts/check-gutenberg-context.js"
+    "context:gutenberg": "bun scripts/check-gutenberg-context.js",
+    "dev:admin": "bunx vite --config apps/admin-web/vite.config.js",
+    "build:admin": "bunx vite build --config apps/admin-web/vite.config.js"
   },
   "module": "index.ts",
   "devDependencies": {
     "@eslint/js": "^9.39.2",
     "@types/bun": "latest",
     "@types/node": "^25.2.1",
+    "@vitejs/plugin-react": "^5.1.3",
     "eslint": "^9.39.2",
     "eslint-plugin-sonarjs": "^3.0.6",
     "globals": "^17.3.0",
     "sonar-scanner": "^3.1.0",
     "ts-api-utils": "^2.4.0",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "vite": "^7.3.1"
   },
   "peerDependencies": {
     "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@wordpress/api-fetch": "^7.39.0",
+    "@wordpress/block-editor": "^15.12.0",
+    "@wordpress/block-library": "^9.39.0",
+    "@wordpress/blocks": "^15.12.0",
+    "@wordpress/components": "^32.1.0",
+    "@wordpress/data": "^10.39.0",
+    "@wordpress/dom-ready": "^4.39.0",
+    "@wordpress/element": "^6.39.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "react-native": "0.74.5",
+    "react-native-web": "^0.21.2"
   }
 }

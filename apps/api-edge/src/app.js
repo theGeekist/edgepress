@@ -2,7 +2,7 @@ import { assertPlatformPorts } from '../../../packages/ports/src/index.js';
 import { createRelease } from '../../../packages/publish/src/publisher.js';
 import { assertPreviewNotExpired } from '../../../packages/domain/src/invariants.js';
 import { createAccessToken, requireCapability, verifyAccessToken } from './auth.js';
-import { error, getBearerToken, json, matchPath, readJson } from './http.js';
+import { error, getBearerToken, getCorsHeaders, json, matchPath, readJson, withCors } from './http.js';
 
 function route(method, path, handler) {
   return { method, path, handler };
@@ -393,6 +393,11 @@ export function createApiHandler(platform) {
   ];
 
   return async function handleRequest(request) {
+    const corsOrigin = runtime.env('DEV_CORS_ORIGIN') || '*';
+    if (request.method === 'OPTIONS') {
+      return new Response(null, { status: 204, headers: getCorsHeaders(corsOrigin) });
+    }
+
     try {
       const url = new URL(request.url);
 
@@ -400,13 +405,13 @@ export function createApiHandler(platform) {
         if (request.method !== def.method) continue;
         const params = matchPath(def.path, url.pathname);
         if (!params) continue;
-        return def.handler(request, params);
+        return withCors(await def.handler(request, params), corsOrigin);
       }
 
-      return error('NOT_FOUND', 'Route not found', 404);
+      return withCors(error('NOT_FOUND', 'Route not found', 404), corsOrigin);
     } catch (e) {
       runtime.log('error', 'unhandled_exception', { message: e.message });
-      return error('INTERNAL_ERROR', 'Internal server error', 500);
+      return withCors(error('INTERNAL_ERROR', 'Internal server error', 500), corsOrigin);
     }
   };
 }

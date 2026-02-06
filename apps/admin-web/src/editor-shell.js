@@ -12,44 +12,41 @@ export function createAdminShell({ baseUrl, fetchImpl = fetch }) {
     user: null
   };
 
+  async function refreshSession(client) {
+    if (!session.refreshToken) return false;
+    const refreshed = await client.refresh({ refreshToken: session.refreshToken });
+    session.accessToken = refreshed.accessToken;
+    session.refreshToken = refreshed.refreshToken;
+    return true;
+  }
+
+  async function clearSession() {
+    session.accessToken = null;
+    session.refreshToken = null;
+    session.user = null;
+  }
+
   const client = createClient({
     baseUrl,
     fetchImpl,
     getAccessToken: () => session.accessToken,
-    onTokenRefresh: async () => {
-      if (!session.refreshToken) return false;
-      const refreshed = await client.refresh({ refreshToken: session.refreshToken });
-      session.accessToken = refreshed.accessToken;
-      session.refreshToken = refreshed.refreshToken;
-      return true;
-    },
-    onAuthFailure: async () => {
-      session.accessToken = null;
-      session.refreshToken = null;
-      session.user = null;
-    }
+    onTokenRefresh: async () => refreshSession(client),
+    onAuthFailure: clearSession
   });
 
   const store = createCanonicalSdkStore({
     baseUrl,
     fetchImpl,
     getAccessToken: () => session.accessToken,
-    onTokenRefresh: async () => {
-      if (!session.refreshToken) return false;
-      const refreshed = await client.refresh({ refreshToken: session.refreshToken });
-      session.accessToken = refreshed.accessToken;
-      session.refreshToken = refreshed.refreshToken;
-      return true;
-    },
-    onAuthFailure: async () => {
-      session.accessToken = null;
-      session.refreshToken = null;
-      session.user = null;
-    }
+    onTokenRefresh: async () => refreshSession(client),
+    onAuthFailure: clearSession
   });
 
   return {
     session,
+    async refreshSession() {
+      return refreshSession(client);
+    },
     async login(username, password) {
       const payload = await client.token({ username, password });
       session.accessToken = payload.accessToken;
@@ -61,9 +58,7 @@ export function createAdminShell({ baseUrl, fetchImpl = fetch }) {
       if (session.refreshToken) {
         await client.logout({ refreshToken: session.refreshToken });
       }
-      session.accessToken = null;
-      session.refreshToken = null;
-      session.user = null;
+      await clearSession();
     },
     async listDocuments() {
       return store.listDocuments();

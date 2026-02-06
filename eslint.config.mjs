@@ -5,10 +5,11 @@ import sonarjs from 'eslint-plugin-sonarjs';
 export default [
   {
     ignores: [
-      'node_modules/**',
-      'coverage/**',
+      '**/node_modules/**',
+      '**/coverage/**',
+      'gutenberg',
       'gutenberg/**',
-      'dist/**'
+      '**/dist/**'
     ]
   },
   js.configs.recommended,
@@ -32,7 +33,8 @@ export default [
     files: ['packages/testing/**/*.js', 'apps/admin-web/src/demo-server.js'],
     rules: {
       'sonarjs/no-hardcoded-passwords': 'off',
-      'sonarjs/no-clear-text-protocols': 'off'
+      'sonarjs/no-clear-text-protocols': 'off',
+      'sonarjs/no-nested-functions': 'off'
     }
   },
   {
