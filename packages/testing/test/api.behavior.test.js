@@ -277,3 +277,37 @@ test('document type filtering is backed by canonical stored type', async () => {
   assert.ok(postsOnly.json.items.length >= 1);
   assert.ok(postsOnly.json.items.every((doc) => (doc.type || 'page') === 'post'));
 });
+
+test('document creation enforces unique slugs and private read supports slug routes', async () => {
+  const platform = createInMemoryPlatform();
+  const { handler, accessToken } = await authAsAdmin(platform);
+
+  const first = await requestJson(handler, 'POST', '/v1/documents', {
+    token: accessToken,
+    body: { title: 'Hello World', content: '<p>one</p>' }
+  });
+  const second = await requestJson(handler, 'POST', '/v1/documents', {
+    token: accessToken,
+    body: { title: 'Hello World', content: '<p>two</p>' }
+  });
+  assert.equal(first.res.status, 201);
+  assert.equal(second.res.status, 201);
+  assert.equal(first.json.document.slug, 'hello-world');
+  assert.equal(second.json.document.slug, 'hello-world-2');
+
+  const publish = await requestJson(handler, 'POST', '/v1/publish', { token: accessToken, body: {} });
+  assert.equal(publish.res.status, 201);
+
+  const bySlug = await requestJson(handler, 'GET', '/v1/private/hello-world', { token: accessToken });
+  assert.equal(bySlug.res.status, 200);
+  assert.equal(bySlug.json.releaseId, publish.json.job.releaseId);
+
+  const byLegacyDocId = await requestJson(
+    handler,
+    'GET',
+    `/v1/private/${encodeURIComponent(first.json.document.id)}`,
+    { token: accessToken }
+  );
+  assert.equal(byLegacyDocId.res.status, 200);
+  assert.equal(byLegacyDocId.json.releaseId, publish.json.job.releaseId);
+});

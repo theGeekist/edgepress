@@ -84,12 +84,13 @@ function withUiMeta(item, meta) {
   const entryMeta = meta[item.id] || {};
   const status = normalizeStatus(item);
   const title = item.title || 'Untitled';
+  const canonicalSlug = toSlug(item.slug || '');
   return {
     ...item,
     ui: {
       type: normalizeType(item, entryMeta),
       status,
-      slug: entryMeta.slug || toSlug(title) || 'untitled',
+      slug: canonicalSlug || entryMeta.slug || toSlug(title) || 'untitled',
       excerpt: entryMeta.excerpt || '',
       publishDate: entryMeta.publishDate || '',
       featuredImageUrl: entryMeta.featuredImageUrl || '',
@@ -155,11 +156,15 @@ export function useDocumentsState(shell) {
     if (!documentId) {
       return;
     }
+    const normalizedPatch = { ...patch };
+    if (typeof normalizedPatch.slug === 'string') {
+      normalizedPatch.slug = toSlug(normalizedPatch.slug);
+    }
     const nextMeta = {
       ...contentMeta,
       [documentId]: {
         ...(contentMeta[documentId] || {}),
-        ...patch
+        ...normalizedPatch
       }
     };
     persistMeta(nextMeta);
@@ -210,7 +215,13 @@ export function useDocumentsState(shell) {
   }
 
   async function createDraft({ type = 'page' } = {}) {
-    const created = await shell.createDocument({ title: 'Untitled', content: '', type, status: 'draft' });
+    const created = await shell.createDocument({
+      title: 'Untitled',
+      content: '',
+      type,
+      slug: toSlug('untitled'),
+      status: 'draft'
+    });
     const document = created.document;
     const nextMeta = {
       ...contentMeta,
@@ -242,6 +253,7 @@ export function useDocumentsState(shell) {
         await shell.updateDocument(row.id, {
         title: row.title,
         content: row.content,
+        slug: row.slug || row.ui?.slug || '',
         blocks: Array.isArray(row.blocks) ? row.blocks : [],
         status
       });
@@ -302,6 +314,7 @@ export function useDocumentsState(shell) {
     await shell.updateDocument(row.id, {
       title: row.title,
       content: row.content,
+      slug: row.slug || row.ui?.slug || '',
       blocks: Array.isArray(row.blocks) ? row.blocks : [],
       status
     });
