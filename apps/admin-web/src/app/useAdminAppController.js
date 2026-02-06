@@ -184,7 +184,11 @@ export function useAdminAppController() {
   }
 
   async function onLogout() {
-    await auth.logout();
+    try {
+      await auth.logout();
+    } catch (nextError) {
+      setError(asErrorMessage(nextError));
+    }
     docs.setSelectedId(null);
     docs.setTitle('');
     editor.setBlocks([]);
@@ -281,20 +285,12 @@ export function useAdminAppController() {
       let updatedCount = 0;
       if (action === 'draft' || action === 'published' || action === 'trash') {
         if (action === 'trash') {
-          const rows = docs.docs.filter((doc) => docs.selectedRowIds.includes(doc.id));
-          for (const row of rows) {
-            await docs.deleteDocument(row.id, { permanent: false });
-          }
-          updatedCount = rows.length;
+          updatedCount = await docs.bulkDeleteSelected({ permanent: false });
         } else {
           updatedCount = await docs.bulkSetStatus(action);
         }
       } else if (action === 'delete') {
-        const rows = docs.docs.filter((doc) => docs.selectedRowIds.includes(doc.id));
-        for (const row of rows) {
-          await docs.deleteDocument(row.id, { permanent: true });
-        }
-        updatedCount = rows.length;
+        updatedCount = await docs.bulkDeleteSelected({ permanent: true });
       }
       if (updatedCount > 0) {
         setStatus(`Updated ${updatedCount} item${updatedCount === 1 ? '' : 's'} with ${action}.`);

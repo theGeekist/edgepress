@@ -1,4 +1,4 @@
-import { Text, View, Pressable, Platform } from 'react-native';
+import { Text, View, Pressable } from 'react-native';
 import { layoutStyles } from './styles.js';
 
 const SECTIONS = [
@@ -10,8 +10,7 @@ const SECTIONS = [
 ];
 
 function MenuButton({ label, active, onPress, palette }) {
-  // WP Active state: Blue left border (or background) + White text
-  // WP Inactive: Light grey text
+  // Sidebar keeps WordPress-like fixed contrast, independent from content surface palette.
   const textColor = active ? '#ffffff' : '#f0f0f1';
   const bgColor = active ? palette.accent : 'transparent';
   const fontWeight = active ? '600' : '400';

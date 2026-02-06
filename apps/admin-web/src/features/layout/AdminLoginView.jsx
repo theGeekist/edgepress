@@ -16,6 +16,9 @@ export function AdminLoginView({ palette, auth, status, error, onLogin }) {
             value={auth.username}
             onChangeText={auth.setUsername}
             placeholder="username"
+            autoCapitalize="none"
+            autoCorrect={false}
+            returnKeyType="next"
           />
           <ThemedTextInput
             palette={palette}
@@ -23,6 +26,10 @@ export function AdminLoginView({ palette, auth, status, error, onLogin }) {
             onChangeText={auth.setPassword}
             placeholder="password"
             secureTextEntry
+            autoCapitalize="none"
+            autoCorrect={false}
+            returnKeyType="go"
+            onSubmitEditing={onLogin}
           />
           <ActionButton label="Sign In" onPress={onLogin} palette={palette} />
         </View>

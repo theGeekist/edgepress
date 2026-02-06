@@ -4,6 +4,12 @@ import { error, json, readJson } from '../http.js';
 import { normalizeBlocksForWrite } from '../request-validation.js';
 import { doAction, HOOK_NAMES } from '../hooks.js';
 
+const ALLOWED_DOCUMENT_SORT_BY = new Set(['updatedAt', 'createdAt', 'title', 'type', 'status']);
+
+function normalizeDocumentSortBy(input) {
+  return ALLOWED_DOCUMENT_SORT_BY.has(input) ? input : 'updatedAt';
+}
+
 export function createDocumentRoutes({ runtime, store, hooks, route, authzErrorResponse }) {
   return [
     route('GET', '/v1/documents', async (request) => {
@@ -14,7 +20,7 @@ export function createDocumentRoutes({ runtime, store, hooks, route, authzErrorR
           q: url.searchParams.get('q') || '',
           type: url.searchParams.get('type') || 'all',
           status: url.searchParams.get('status') || 'all',
-          sortBy: url.searchParams.get('sortBy') || 'updatedAt',
+          sortBy: normalizeDocumentSortBy(url.searchParams.get('sortBy') || 'updatedAt'),
           sortDir: url.searchParams.get('sortDir') || 'desc',
           page: Number(url.searchParams.get('page') || '1'),
           pageSize: Number(url.searchParams.get('pageSize') || '20')
@@ -127,6 +133,7 @@ export function createDocumentRoutes({ runtime, store, hooks, route, authzErrorR
           return json({ ok: true, deleted: true });
         }
 
+        // DELETE soft-trash intentionally avoids revision creation; PATCH keeps the auditable revision path.
         const trashed = await store.updateDocument(params.id, { status: 'trash' });
         if (!trashed) return error('DOCUMENT_NOT_FOUND', 'Document not found', 404);
         doAction(runtime, hooks, HOOK_NAMES.documentTrashedAction, {

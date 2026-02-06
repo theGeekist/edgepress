@@ -41,12 +41,15 @@ export function useEditorState(shell) {
     if (!selectedId) return null;
     const persistedBlocks = normalizePersistedBlocks(blocks);
     const content = serialize(persistedBlocks);
-    const updated = await shell.updateDocument(selectedId, {
+    const payload = {
       title,
-      type: options.type,
       blocks: persistedBlocks,
       content
-    });
+    };
+    if (options.type !== undefined) {
+      payload.type = options.type;
+    }
+    const updated = await shell.updateDocument(selectedId, payload);
     return updated.document;
   }
 

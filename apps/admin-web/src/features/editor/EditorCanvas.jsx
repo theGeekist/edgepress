@@ -186,7 +186,7 @@ export function EditorCanvas({ blocks, setBlocks, palette }) {
       </View>
 
       {/* Document Canvas Container */}
-      <View style={[styles.canvasContainer, { backgroundColor: '#f0f0f1' }]}>
+      <View style={[styles.canvasContainer, { backgroundColor: palette.surfaceMuted }]}>
         {mode === 'source' ? (
           <FallbackEditor blocks={blocks} setBlocks={setBlocks} palette={palette} />
         ) : (

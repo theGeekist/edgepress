@@ -374,6 +374,8 @@ export function createAppStores({
         }
         if (kv.delete) {
           await kv.delete(appKey('document', id));
+        } else {
+          await kvPutJson(appKey('document', id), null);
         }
         const docIds = (await kvGetJson(appKey('documents'))) || [];
         await kvPutJson(appKey('documents'), docIds.filter((entryId) => entryId !== id));

@@ -109,10 +109,8 @@ export function createClient({
     listDocuments: (query) => request('GET', withQuery('/v1/documents', query)),
     createDocument: (body) => request('POST', '/v1/documents', body),
     updateDocument: (id, body) => request('PATCH', `/v1/documents/${id}`, body),
-    deleteDocument: (id, options = {}) => {
-      const permanent = options?.permanent ? '?permanent=1' : '';
-      return request('DELETE', `/v1/documents/${id}${permanent}`);
-    },
+    deleteDocument: (id, options = {}) =>
+      request('DELETE', withQuery(`/v1/documents/${id}`, { permanent: options?.permanent ? 1 : undefined })),
     listRevisions: (id) => request('GET', `/v1/documents/${id}/revisions`),
     initMedia: (body) => request('POST', '/v1/media', body),
     finalizeMedia: (id, body) => request('POST', `/v1/media/${id}/finalize`, body),

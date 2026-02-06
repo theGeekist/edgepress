@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { ActionButton } from './ActionButton.jsx';
 
 export function DropdownButton({ label, items, palette }) {
@@ -25,7 +25,9 @@ export function DropdownButton({ label, items, palette }) {
                             key={index}
                             onPress={() => {
                                 setIsOpen(false);
-                                item.onPress();
+                                if (typeof item.onPress === 'function') {
+                                    item.onPress();
+                                }
                             }}
                             style={({ hovered, pressed }) => [
                                 styles.item,

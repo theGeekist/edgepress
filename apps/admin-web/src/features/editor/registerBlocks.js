@@ -6,8 +6,14 @@ const REGISTERED_KEY = '__edgepress_foundational_blocks_registered__';
 
 export function registerFoundationalBlocks() {
   if (globalThis[REGISTERED_KEY]) return;
-  initParagraph();
-  initImage();
-  initEmbed();
   globalThis[REGISTERED_KEY] = true;
+  try {
+    initParagraph();
+    initImage();
+    initEmbed();
+  } catch (error) {
+    // Allow retry on next call if registration failed part-way.
+    globalThis[REGISTERED_KEY] = false;
+    throw error;
+  }
 }

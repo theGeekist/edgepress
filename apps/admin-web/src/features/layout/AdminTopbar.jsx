@@ -3,6 +3,14 @@ import { ActionButton } from '../../components/ui/ActionButton.jsx';
 import { layoutStyles } from './styles.js';
 
 export function AdminTopbar({ palette, mode, username, onToggleTheme, onLogout, onToggleMenu }) {
+  const transparentActionPalette = {
+    ...palette,
+    surface: 'transparent',
+    surfaceMuted: 'transparent',
+    text: palette.topbarText,
+    border: 'transparent'
+  };
+
   return (
     <View style={[layoutStyles.topbar, { backgroundColor: palette.topbar }]}>
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -21,12 +29,12 @@ export function AdminTopbar({ palette, mode, username, onToggleTheme, onLogout, 
         <ActionButton
           label={mode === 'dark' ? '☀' : '☾'}
           onPress={onToggleTheme}
-          palette={{ ...palette, surface: 'transparent', surfaceMuted: 'transparent', text: palette.topbarText, border: 'transparent' }}
+          palette={transparentActionPalette}
         />
         <ActionButton
           label="Log Out"
           onPress={onLogout}
-          palette={{ ...palette, surface: 'transparent', surfaceMuted: 'transparent', text: palette.topbarText, border: 'transparent' }}
+          palette={transparentActionPalette}
         />
       </View>
     </View>

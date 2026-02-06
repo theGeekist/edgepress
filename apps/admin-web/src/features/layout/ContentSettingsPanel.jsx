@@ -4,7 +4,7 @@ import { ActionButton } from '../../components/ui/ActionButton.jsx';
 import { ThemedTextInput } from '../../components/ui/ThemedTextInput.jsx';
 import { MetaBox } from '../../components/ui/MetaBox.jsx';
 
-export function ContentSettingsPanel({ palette, hasSelection, selectedDoc, meta, onUpdateMeta, onCreatePage, onCreatePost }) {
+export function ContentSettingsPanel({ palette, hasSelection, meta, onUpdateMeta }) {
   return (
     <View style={{ gap: 20 }}>
       <MetaBox title="Post Settings" palette={palette}>

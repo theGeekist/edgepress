@@ -14,8 +14,7 @@ export function FilterTabs({ filters, currentFilter, onFilterChange, palette }) 
                                 style={{
                                     color: isActive ? palette.accent : palette.textMuted,
                                     fontWeight: isActive ? '700' : '400',
-                                    fontSize: 13,
-                                    textDecorationLine: isActive ? 'none' : 'none'
+                                    fontSize: 13
                                 }}
                             >
                                 {filter.label}

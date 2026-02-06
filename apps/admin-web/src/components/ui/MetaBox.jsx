@@ -46,7 +46,6 @@ const styles = StyleSheet.create({
     panel: {
         borderWidth: 1,
         borderRadius: 3,
-        marginBottom: 20,
         overflow: 'hidden'
     },
     panelHeader: {

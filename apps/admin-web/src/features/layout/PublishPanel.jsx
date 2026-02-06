@@ -4,15 +4,8 @@ import { ActionButton } from '../../components/ui/ActionButton.jsx';
 import { MetaBox } from '../../components/ui/MetaBox.jsx';
 import { layoutStyles } from './styles.js';
 
-function shortReleaseId(releaseId) {
-  if (!releaseId) {
-    return 'None';
-  }
-  return releaseId.length > 12 ? `${releaseId.slice(0, 12)}...` : releaseId;
-}
-
 export function PublishPanel({ palette, hasSelection, loop, previewLink, actions }) {
-  const isLive = Boolean(loop.activeRelease);
+  const isLive = Boolean(loop?.activeRelease);
 
   function openPreview() {
     if (!previewLink?.url || typeof window === 'undefined') {
