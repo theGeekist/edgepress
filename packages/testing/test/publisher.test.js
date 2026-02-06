@@ -104,3 +104,41 @@ test('createRelease throws when releaseStore.writeArtifact is missing', async ()
     /Missing required port method: writeArtifact/
   );
 });
+
+test('createRelease logs and falls back to content when block serialization fails', async () => {
+  const logs = [];
+  const runtime = {
+    ...createRuntime(),
+    log(level, event, meta) {
+      logs.push({ level, event, meta });
+    }
+  };
+  const store = {
+    async listDocuments() {
+      return [{ id: 'doc_1', title: 'Hello', content: '<p>fallback</p>', blocks: [{}] }];
+    }
+  };
+  const calls = [];
+  const releaseStore = {
+    async writeArtifact(releaseId, route, bytes, contentType) {
+      calls.push({ releaseId, route, bytes, contentType });
+      return { path: `${releaseId}/${route}.html`, contentType };
+    },
+    async getManifest() {
+      return null;
+    },
+    async writeManifest() {}
+  };
+
+  await createRelease({
+    runtime,
+    store,
+    releaseStore,
+    sourceRevisionId: 'rev_1',
+    publishedBy: 'u_admin'
+  });
+
+  assert.equal(calls.length, 1);
+  assert.ok(calls[0].bytes.includes('<p>fallback</p>'));
+  assert.ok(logs.some((entry) => entry.level === 'warn' && entry.event === 'publish_blocks_serialize_failed'));
+});
