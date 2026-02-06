@@ -9,6 +9,7 @@ export function DataTable({
     pagination,
     sort
 }) {
+    const safeData = Array.isArray(data) ? data : [];
     return (
         <View style={[styles.tableWrap, { borderColor: palette.border, backgroundColor: palette.surface }]}>
             {/* Header */}
@@ -36,7 +37,7 @@ export function DataTable({
             </View>
 
             {/* Rows */}
-            {data.map((item, index) => {
+            {safeData.map((item, index) => {
                 const key = keyExtractor ? keyExtractor(item) : index;
                 return (
                     <View key={key} style={[styles.row, { borderBottomColor: palette.borderSoft }]}>

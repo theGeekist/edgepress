@@ -113,8 +113,6 @@ export function useDocumentsState(shell) {
   const [pageSize] = useState(20);
   const [pagination, setPagination] = useState({ page: 1, pageSize: 20, totalItems: 0, totalPages: 1 });
 
-  const filteredDocs = docs;
-
   function setSelectedId(nextId) {
     setSelectedIdRaw(nextId);
   }
@@ -264,16 +262,36 @@ export function useDocumentsState(shell) {
     if (rows.length === 0) {
       return 0;
     }
-    for (const row of rows) {
-      await shell.deleteDocument(row.id, { permanent });
-      if (selectedId === row.id) {
-        setSelectedId(null);
-        setTitle('');
-      }
-    }
-    clearSelectedRows();
-    await refresh();
-    return rows.length;
+   const failures = [];
+   try {
+     await Promise.all(
+       rows.map(async (row) => {
+         try {
+           await shell.deleteDocument(row.id, { permanent });
+           if (selectedId === row.id) {
+             setSelectedId(null);
+             setTitle('');
+           }
+         } catch (error) {
+           failures.push({ id: row.id, error });
+           console.error('bulkDeleteSelected row delete failed', { id: row.id, error });
+         }
+       })
+     );
+   } finally {
+     clearSelectedRows();
+     try {
+       await refresh();
+     } catch (refreshError) {
+       console.error('bulkDeleteSelected refresh failed', refreshError);
+     }
+   }
+   // Choose one:
+   // Option A: mirror bulkSetStatus and throw if any failures
+   if (failures.length > 0) {
+     throw new Error(`Failed to delete ${failures.length} document(s).`);
+   }
+   return rows.length;
   }
 
   async function setDocumentStatus(documentId, status) {
@@ -310,7 +328,6 @@ export function useDocumentsState(shell) {
 
   return {
     docs,
-    filteredDocs,
     selectedId,
     setSelectedId,
     title,

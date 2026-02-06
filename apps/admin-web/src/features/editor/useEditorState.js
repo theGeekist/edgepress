@@ -46,6 +46,9 @@ export function useEditorState(shell) {
       blocks: persistedBlocks,
       content
     };
+    if (options.slug !== undefined) {
+      payload.slug = options.slug;
+    }
     if (options.type !== undefined) {
       payload.type = options.type;
     }

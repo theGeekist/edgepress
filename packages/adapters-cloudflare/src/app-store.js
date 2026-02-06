@@ -363,11 +363,10 @@ export function createAppStores({
 
         const revisionIds = (await kvGetJson(appKey('revisions_by_doc', id))) || [];
         if (kv.delete) {
-          for (const revisionId of revisionIds) {
-            await kv.delete(appKey('revision', revisionId));
-          }
+          await Promise.all(revisionIds.map((revisionId) => kv.delete(appKey('revision', revisionId))));
           await kv.delete(appKey('revisions_by_doc', id));
         } else {
+          await Promise.all(revisionIds.map((revisionId) => kvPutJson(appKey('revision', revisionId), null)));
           await kvPutJson(appKey('revisions_by_doc', id), []);
         }
         return { id };

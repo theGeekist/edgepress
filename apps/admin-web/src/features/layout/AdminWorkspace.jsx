@@ -1,4 +1,4 @@
-import { Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
 import { ThemedTextInput } from '../../components/ui/ThemedTextInput.jsx';
 import { EditorCanvas } from '../editor/EditorCanvas.jsx';
@@ -107,7 +107,7 @@ export function AdminWorkspace({
           ) : (
             <ContentListTable
               palette={palette}
-              docs={docs.filteredDocs}
+              docs={docs.docs}
               selectedRowIds={docs.selectedRowIds}
               contentSearch={docs.contentSearch}
               onSearch={docs.setContentSearch}
@@ -179,8 +179,10 @@ export function AdminWorkspace({
 
 function ActionHint({ palette, label, onPress }) {
   return (
-    <Text style={{ color: palette.accent, textDecorationLine: 'underline' }} onPress={onPress}>
-      {label}
-    </Text>
+    <Pressable accessibilityRole="link" onPress={onPress}>
+      <Text style={{ color: palette.accent, textDecorationLine: 'underline' }}>
+        {label}
+      </Text>
+    </Pressable>
   );
 }
