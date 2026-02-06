@@ -4,7 +4,7 @@ title: Concepts
 
 # Concepts
 
-GCMS is organized around a few ideas:
+EdgePress is organized around a few ideas:
 
 - The API edge handler is platform-agnostic; infra details sit behind `ports` and adapters.
 - The security model is capability-based. Endpoints require a specific capability string.

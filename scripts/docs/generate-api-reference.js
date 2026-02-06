@@ -6,12 +6,25 @@ function asList(keys) {
 }
 
 function normalizeRouteName(routeName) {
-  const [method, path] = routeName.split(" ");
+  if (typeof routeName !== "string") {
+    throw new Error(`Invalid route key type: ${typeof routeName}`);
+  }
+
+  const parts = routeName.trim().split(/\s+/);
+  if (parts.length < 2) {
+    throw new Error(`Invalid route key: '${routeName}' (expected 'METHOD /path')`);
+  }
+
+  const method = parts[0];
+  const path = parts.slice(1).join(" ");
   return { method, path };
 }
 
 const rows = Object.entries(routes)
   .map(([routeName, def]) => {
+    if (!def || typeof def !== "object") {
+      throw new Error(`Invalid route definition for '${routeName}'`);
+    }
     const { method, path } = normalizeRouteName(routeName);
     return {
       routeName,

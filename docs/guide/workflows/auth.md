@@ -38,7 +38,16 @@ Refresh:
 
 ## Error behavior
 
-All API errors return the canonical envelope `{"error":{"code","message"}}`.
+All API errors return the canonical envelope:
+
+```json
+{
+  "error": {
+    "code": "SOME_CODE",
+    "message": "Human-readable message"
+  }
+}
+```
 
 Common auth errors:
 
