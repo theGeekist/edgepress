@@ -34,12 +34,18 @@ test('createDocument and normalization', () => {
     });
     assert.equal(doc.status, 'draft');
     assert.deepEqual(doc.blocks, []);
+    assert.equal(doc.type, 'page');
 
     const docWithBlocks = createDocument({
         id: 'd2',
         title: 'Title',
-        blocks: [{ name: 'core/paragraph', attributes: { content: 'hello' } }]
+        content: 'Body',
+        createdBy: 'u1',
+        type: 'post',
+        blocks: [{ name: 'core/paragraph', attributes: { content: 'hello' } }],
+        now: '2025-01-01'
     });
+    assert.equal(docWithBlocks.type, 'post');
     assert.equal(docWithBlocks.blocks[0].name, 'core/paragraph');
 });
 

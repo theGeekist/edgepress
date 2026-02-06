@@ -11,6 +11,17 @@ import {
 import { createBlock, parse, serialize } from '@wordpress/blocks';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
+const EDITOR_SETTINGS = {};
+const DEFAULT_PALETTE = {
+  accent: '#2271b1',
+  border: '#d5dbe8',
+  surface: '#ffffff',
+  surfaceMuted: '#f7fafc',
+  text: '#0f172a',
+  textMuted: '#475569',
+  onAccent: '#ffffff'
+};
+
 function BlockEditorCanvas({ blocks, setBlocks }) {
   return (
     <SlotFillProvider>
@@ -18,7 +29,7 @@ function BlockEditorCanvas({ blocks, setBlocks }) {
         value={blocks}
         onInput={(next) => setBlocks(next)}
         onChange={(next) => setBlocks(next)}
-        settings={{}}
+        settings={EDITOR_SETTINGS}
       >
         <div className="editor-styles-wrapper" style={{ minHeight: 680, width: '100%', pointerEvents: 'auto' }}>
           <BlockEditorKeyboardShortcuts />
@@ -133,6 +144,7 @@ export function EditorCanvas({ blocks, setBlocks, palette }) {
   const [mode, setMode] = useState('visual');
   const [visualFailed, setVisualFailed] = useState(false);
   const canUseVisual = !visualFailed;
+  const p = palette || DEFAULT_PALETTE;
 
   function appendParagraphBlock() {
     setBlocks([...(Array.isArray(blocks) ? blocks : []), createBlock('core/paragraph')]);
@@ -146,28 +158,34 @@ export function EditorCanvas({ blocks, setBlocks, palette }) {
           style={({ pressed }) => [
             styles.modeBtn,
             {
-              backgroundColor: mode === 'source' ? palette.accent : 'transparent',
-              borderColor: palette.border,
+              backgroundColor: mode === 'source' ? p.accent : 'transparent',
+              borderColor: p.border,
               opacity: pressed ? 0.8 : 1
             }
           ]}
         >
-          <Text style={{ color: mode === 'source' ? palette.onAccent : palette.text, fontWeight: '500' }}>
+          <Text style={{ color: mode === 'source' ? p.onAccent : p.text, fontWeight: '500' }}>
             Source
           </Text>
         </Pressable>
         <Pressable
-          onPress={() => canUseVisual && setMode('visual')}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: !canUseVisual }}
+          aria-disabled={!canUseVisual}
+          onPress={() => {
+            if (!canUseVisual) return;
+            setMode('visual');
+          }}
           style={({ pressed }) => [
             styles.modeBtn,
             {
-              backgroundColor: mode === 'visual' ? palette.accent : 'transparent',
-              borderColor: palette.border,
+              backgroundColor: mode === 'visual' ? p.accent : 'transparent',
+              borderColor: p.border,
               opacity: canUseVisual ? (pressed ? 0.8 : 1) : 0.5
             }
           ]}
         >
-          <Text style={{ color: mode === 'visual' ? palette.onAccent : palette.text, fontWeight: '500' }}>
+          <Text style={{ color: mode === 'visual' ? p.onAccent : p.text, fontWeight: '500' }}>
             Visual
           </Text>
         </Pressable>
@@ -178,17 +196,17 @@ export function EditorCanvas({ blocks, setBlocks, palette }) {
           onPress={appendParagraphBlock}
           style={({ pressed }) => [
             styles.modeBtn,
-            { backgroundColor: pressed ? palette.surfaceMuted : 'transparent', borderColor: palette.accent }
+            { backgroundColor: pressed ? p.surfaceMuted : 'transparent', borderColor: p.accent }
           ]}
         >
-          <Text style={{ color: palette.accent, fontWeight: '600' }}>+ Paragraph</Text>
+          <Text style={{ color: p.accent, fontWeight: '600' }}>+ Paragraph</Text>
         </Pressable>
       </View>
 
       {/* Document Canvas Container */}
-      <View style={[styles.canvasContainer, { backgroundColor: palette.surfaceMuted }]}>
+      <View style={[styles.canvasContainer, { backgroundColor: p.surfaceMuted }]}>
         {mode === 'source' ? (
-          <FallbackEditor blocks={blocks} setBlocks={setBlocks} palette={palette} />
+          <FallbackEditor blocks={blocks} setBlocks={setBlocks} palette={p} />
         ) : (
           <CanvasErrorBoundary
             onError={() => {
@@ -196,10 +214,10 @@ export function EditorCanvas({ blocks, setBlocks, palette }) {
               setMode('source');
             }}
             fallback={
-              <FallbackEditor blocks={blocks} setBlocks={setBlocks} palette={palette} />
+              <FallbackEditor blocks={blocks} setBlocks={setBlocks} palette={p} />
             }
           >
-            <View style={[styles.paperSheet, { backgroundColor: palette.surface, shadowColor: palette.text }]}>
+            <View style={[styles.paperSheet, { backgroundColor: p.surface, shadowColor: p.text }]}>
               <BlockEditorCanvas blocks={blocks} setBlocks={setBlocks} />
             </View>
           </CanvasErrorBoundary>
@@ -207,7 +225,7 @@ export function EditorCanvas({ blocks, setBlocks, palette }) {
       </View>
 
       {!canUseVisual ? (
-        <Text style={{ color: palette?.textMuted || '#475569', marginTop: 6 }}>
+        <Text style={{ color: p.textMuted, marginTop: 6 }}>
           Visual mode unavailable in this session; continue in Source mode.
         </Text>
       ) : null}

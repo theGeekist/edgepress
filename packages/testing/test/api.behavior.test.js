@@ -71,7 +71,7 @@ test('release activation and publish job errors use canonical envelopes', async 
     body: {}
   });
   assert.equal(missingActivation.res.status, 404);
-  assert.equal(missingActivation.json.error.code, 'RELEASE_ACTIVATE_FAILED');
+  assert.equal(missingActivation.json.error.code, 'RELEASE_NOT_FOUND');
 
   const missingJob = await requestJson(handler, 'GET', '/v1/publish/job_missing', { token: accessToken });
   assert.equal(missingJob.res.status, 404);

@@ -300,6 +300,9 @@ export function useAdminAppController() {
     } catch (nextError) {
       setError(asErrorMessage(nextError));
       setStatus('');
+    } finally {
+      docs.clearSelectedRows();
+      await docs.refresh();
     }
   }
 

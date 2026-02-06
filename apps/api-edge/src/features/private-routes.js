@@ -1,19 +1,13 @@
-import { requireCapability, verifyAccessToken } from '../auth.js';
-import { error, getBearerToken, json } from '../http.js';
+import { requireCapability } from '../auth.js';
+import { error, json } from '../http.js';
 import { buildPrivateCacheScope, parseTtlSeconds } from '../runtime-utils.js';
-
-async function authUserFromRequest(runtime, store, request) {
-  const token = getBearerToken(request);
-  return verifyAccessToken(runtime, token, store);
-}
 
 export function createPrivateRoutes({ runtime, store, cacheStore, blobStore, releaseStore, route, authzErrorResponse }) {
   return [
     route('GET', '/v1/private/:route', async (request, params) => {
       try {
-        await requireCapability({ runtime, store, request, capability: 'private:read' });
+        const user = await requireCapability({ runtime, store, request, capability: 'private:read' });
         const routeId = decodeURIComponent(params.route);
-        const user = await authUserFromRequest(runtime, store, request);
         const activeRelease = await releaseStore.getActiveRelease();
         if (!activeRelease) return error('RELEASE_NOT_ACTIVE', 'No active release', 404);
 

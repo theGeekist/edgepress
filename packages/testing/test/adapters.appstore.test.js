@@ -93,7 +93,7 @@ test('app-store KV mode covers bootstrap + CRUD paths', async () => {
   const updatedDoc = await store.updateDocument(createdDoc.id, { title: 'Doc 1b' });
   assert.equal(updatedDoc.title, 'Doc 1b');
   assert.equal(await store.updateDocument('missing', { title: 'x' }), null);
-  assert.equal((await store.listDocuments()).length, 1);
+  assert.equal((await store.listDocuments()).items.length, 1);
   assert.equal((await store.getDocument(createdDoc.id)).id, createdDoc.id);
 
   const revision = await store.createRevision({
@@ -198,7 +198,7 @@ test('app-store D1 mode covers schema setup + CRUD paths', async () => {
 
   const doc = await store.createDocument({ title: 'Doc', content: '<p>x</p>' });
   assert.equal((await store.getDocument(doc.id)).id, doc.id);
-  assert.equal((await store.listDocuments()).length, 1);
+  assert.equal((await store.listDocuments()).items.length, 1);
   assert.equal((await store.updateDocument(doc.id, { title: 'Doc2' })).title, 'Doc2');
   assert.equal(await store.updateDocument('missing', { title: 'x' }), null);
 

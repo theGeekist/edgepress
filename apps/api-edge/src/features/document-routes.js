@@ -10,6 +10,27 @@ function normalizeDocumentSortBy(input) {
   return ALLOWED_DOCUMENT_SORT_BY.has(input) ? input : 'updatedAt';
 }
 
+function parsePositiveInt(input, fallback) {
+  const parsed = Number.parseInt(String(input ?? ''), 10);
+  if (!Number.isFinite(parsed) || parsed < 1) {
+    return fallback;
+  }
+  return parsed;
+}
+
+function latestRevisionFromList(revisions) {
+  if (!Array.isArray(revisions) || revisions.length === 0) {
+    return null;
+  }
+  let latest = revisions[0];
+  for (const revision of revisions) {
+    if (String(revision?.createdAt || '') > String(latest?.createdAt || '')) {
+      latest = revision;
+    }
+  }
+  return latest || null;
+}
+
 export function createDocumentRoutes({ runtime, store, hooks, route, authzErrorResponse }) {
   return [
     route('GET', '/v1/documents', async (request) => {
@@ -22,8 +43,8 @@ export function createDocumentRoutes({ runtime, store, hooks, route, authzErrorR
           status: url.searchParams.get('status') || 'all',
           sortBy: normalizeDocumentSortBy(url.searchParams.get('sortBy') || 'updatedAt'),
           sortDir: url.searchParams.get('sortDir') || 'desc',
-          page: Number(url.searchParams.get('page') || '1'),
-          pageSize: Number(url.searchParams.get('pageSize') || '20')
+          page: parsePositiveInt(url.searchParams.get('page'), 1),
+          pageSize: Math.min(100, parsePositiveInt(url.searchParams.get('pageSize'), 20))
         };
         const payload = await store.listDocuments(query);
         if (Array.isArray(payload)) {
@@ -88,7 +109,7 @@ export function createDocumentRoutes({ runtime, store, hooks, route, authzErrorR
           status: body.status ?? existing.status
         });
         const revisions = await store.listRevisions(params.id);
-        const latest = revisions.at(-1) || null;
+        const latest = latestRevisionFromList(revisions);
         const revision = await store.createRevision({
           id: `rev_${runtime.uuid()}`,
           documentId: params.id,
@@ -163,7 +184,7 @@ export function createDocumentRoutes({ runtime, store, hooks, route, authzErrorR
         const document = await store.getDocument(params.id);
         if (!document) return error('DOCUMENT_NOT_FOUND', 'Document not found', 404);
         const revisions = await store.listRevisions(params.id);
-        const latest = revisions.at(-1) || null;
+        const latest = latestRevisionFromList(revisions);
         const revision = await store.createRevision({
           id: `rev_${runtime.uuid()}`,
           documentId: params.id,
