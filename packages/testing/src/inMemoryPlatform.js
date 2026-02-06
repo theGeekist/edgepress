@@ -235,8 +235,68 @@ export function createInMemoryPlatform() {
       state.media.set(id, finalized);
       return finalized;
     },
+    async listMedia(query = {}) {
+      const all = Array.from(state.media.values());
+      const q = String(query.q || '').trim().toLowerCase();
+      const mimeType = String(query.mimeType || '').trim().toLowerCase();
+      const sortBy = query.sortBy === 'createdAt' ? 'createdAt' : 'updatedAt';
+      const sortDir = query.sortDir === 'asc' ? 'asc' : 'desc';
+      const page = Math.max(1, Number(query.page) || 1);
+      const pageSize = Math.min(100, Math.max(1, Number(query.pageSize) || 20));
+
+      const filtered = all.filter((item) => {
+        if (item.status && item.status !== 'ready') return false;
+        if (q) {
+          const haystack = `${item.filename || ''} ${item.alt || ''} ${item.caption || ''} ${item.description || ''}`.toLowerCase();
+          if (!haystack.includes(q)) return false;
+        }
+        if (mimeType && String(item.mimeType || '').toLowerCase() !== mimeType) return false;
+        return true;
+      });
+
+      filtered.sort((a, b) => {
+        const av = String(a?.[sortBy] || '');
+        const bv = String(b?.[sortBy] || '');
+        return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+      });
+
+      const totalItems = filtered.length;
+      const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+      const safePage = Math.min(page, totalPages);
+      const start = (safePage - 1) * pageSize;
+      const items = filtered.slice(start, start + pageSize);
+
+      return {
+        items,
+        pagination: {
+          page: safePage,
+          pageSize,
+          totalItems,
+          totalPages
+        }
+      };
+    },
     async getMedia(id) {
       return state.media.get(id) || null;
+    },
+    async updateMedia(id, patch) {
+      const existing = state.media.get(id);
+      if (!existing) return null;
+      const updated = {
+        ...existing,
+        alt: patch.alt !== undefined ? String(patch.alt || '').trim() : existing.alt || '',
+        caption: patch.caption !== undefined ? String(patch.caption || '').trim() : existing.caption || '',
+        description: patch.description !== undefined ? String(patch.description || '').trim() : existing.description || '',
+        updatedAt: runtime.now().toISOString()
+      };
+      state.media.set(id, updated);
+      return updated;
+    },
+    async deleteMedia(id) {
+      const existing = state.media.get(id);
+      if (!existing) return null;
+      state.media.delete(id);
+      return { id };
     },
     async createPublishJob(input) {
       const now = runtime.now().toISOString();

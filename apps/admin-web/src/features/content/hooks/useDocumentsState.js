@@ -94,7 +94,7 @@ function withUiMeta(item, meta) {
       slug: draftSlug || canonicalSlug || toSlug(title) || 'untitled',
       excerpt: entryMeta.excerpt || '',
       publishDate: entryMeta.publishDate || '',
-      featuredImageUrl: entryMeta.featuredImageUrl || '',
+      featuredImageId: String(entryMeta.featuredImageId || item.featuredImageId || '').trim(),
       updatedAtLabel: item.updatedAt || item.createdAt || ''
     }
   };
@@ -160,6 +160,9 @@ export function useDocumentsState(shell) {
     const normalizedPatch = { ...patch };
     if (typeof normalizedPatch.slug === 'string') {
       normalizedPatch.slug = toSlug(normalizedPatch.slug);
+    }
+    if (typeof normalizedPatch.featuredImageId === 'string') {
+      normalizedPatch.featuredImageId = normalizedPatch.featuredImageId.trim();
     }
     const nextMeta = {
       ...contentMeta,
@@ -231,7 +234,7 @@ export function useDocumentsState(shell) {
         slug: toSlug(document.title || 'untitled'),
         excerpt: '',
         publishDate: '',
-        featuredImageUrl: ''
+        featuredImageId: ''
       }
     };
     persistMeta(nextMeta);

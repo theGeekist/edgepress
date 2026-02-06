@@ -52,6 +52,9 @@ export function useEditorState(shell) {
     if (options.type !== undefined) {
       payload.type = options.type;
     }
+    if (options.featuredImageId !== undefined) {
+      payload.featuredImageId = String(options.featuredImageId || '').trim();
+    }
     const updated = await shell.updateDocument(selectedId, payload);
     return updated.document;
   }

@@ -22,6 +22,7 @@ export function createDocument({
   content,
   type = 'page',
   slug = '',
+  featuredImageId = '',
   blocks = [],
   blocksSchemaVersion = BLOCKS_SCHEMA_VERSION,
   createdBy,
@@ -34,6 +35,7 @@ export function createDocument({
     content,
     type,
     slug,
+    featuredImageId: String(featuredImageId || '').trim(),
     blocks: normalizeBlocksInput(blocks),
     blocksSchemaVersion,
     status,
@@ -94,13 +96,28 @@ export function createMediaAssetSession({ id, createdBy, uploadToken, now }) {
   };
 }
 
-export function finalizeMediaAsset(session, { filename, mimeType, size, url }, now) {
+export function finalizeMediaAsset(session, {
+  filename,
+  mimeType,
+  size,
+  url,
+  width = null,
+  height = null,
+  alt = '',
+  caption = '',
+  description = ''
+}, now) {
   return {
     ...session,
     filename,
     mimeType,
     size,
     url,
+    width: Number.isFinite(Number(width)) ? Number(width) : null,
+    height: Number.isFinite(Number(height)) ? Number(height) : null,
+    alt: String(alt || '').trim(),
+    caption: String(caption || '').trim(),
+    description: String(description || '').trim(),
     status: 'ready',
     updatedAt: now
   };

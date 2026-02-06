@@ -65,21 +65,45 @@ test('canonical API contracts return required response keys', async () => {
   assert.equal(mediaInit.res.status, 201);
   assertResponseShape('POST /v1/media', mediaInit.json);
 
+  const mediaInitAlias = await requestJson(handler, 'POST', '/v1/media/init', { token, body: {} });
+  assert.equal(mediaInitAlias.res.status, 201);
+  assertResponseShape('POST /v1/media/init', mediaInitAlias.json);
+
   const mediaFinalize = await requestJson(handler, 'POST', `/v1/media/${mediaInit.json.mediaId}/finalize`, {
     token,
     body: {
       uploadToken: mediaInit.json.uploadToken,
       filename: 'hero.jpg',
       mimeType: 'image/jpeg',
-      size: 1234
+      size: 1234,
+      width: 800,
+      height: 600,
+      alt: 'Hero',
+      caption: 'Cover image',
+      description: 'A hero image'
     }
   });
   assert.equal(mediaFinalize.res.status, 200);
   assertResponseShape('POST /v1/media/:id/finalize', mediaFinalize.json);
 
+  const mediaList = await requestJson(handler, 'GET', '/v1/media', { token });
+  assert.equal(mediaList.res.status, 200);
+  assertResponseShape('GET /v1/media', mediaList.json);
+
   const mediaGet = await requestJson(handler, 'GET', `/v1/media/${mediaInit.json.mediaId}`, { token });
   assert.equal(mediaGet.res.status, 200);
   assertResponseShape('GET /v1/media/:id', mediaGet.json);
+
+  const mediaPatch = await requestJson(handler, 'PATCH', `/v1/media/${mediaInit.json.mediaId}`, {
+    token,
+    body: { alt: 'Updated alt', caption: 'Updated caption', description: 'Updated description' }
+  });
+  assert.equal(mediaPatch.res.status, 200);
+  assertResponseShape('PATCH /v1/media/:id', mediaPatch.json);
+
+  const mediaDelete = await requestJson(handler, 'DELETE', `/v1/media/${mediaInit.json.mediaId}`, { token });
+  assert.equal(mediaDelete.res.status, 200);
+  assertResponseShape('DELETE /v1/media/:id', mediaDelete.json);
 
   const publish = await requestJson(handler, 'POST', '/v1/publish', { token, body: {} });
   assert.equal(publish.res.status, 201);

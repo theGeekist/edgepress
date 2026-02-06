@@ -4,6 +4,7 @@ import { ActionButton } from './ActionButton.jsx';
 
 export function DropdownButton({ label, items, palette }) {
     const [isOpen, setIsOpen] = useState(false);
+    const menuBackground = palette.surface === 'transparent' ? palette.surfaceMuted : palette.surface;
 
     return (
         <View style={styles.container}>
@@ -17,7 +18,7 @@ export function DropdownButton({ label, items, palette }) {
             {isOpen && (
                 <View style={[styles.menu, {
                     borderColor: palette.border,
-                    backgroundColor: palette.surface,
+                    backgroundColor: menuBackground,
                     shadowColor: palette.shadow || '#000'
                 }]}>
                     {items.map((item, index) => (
@@ -31,7 +32,7 @@ export function DropdownButton({ label, items, palette }) {
                             }}
                             style={({ hovered, pressed }) => [
                                 styles.item,
-                                { backgroundColor: hovered || pressed ? palette.surfaceMuted : 'transparent' }
+                                { backgroundColor: hovered || pressed ? palette.surfaceMuted : menuBackground }
                             ]}
                         >
                             <Text style={[styles.itemText, { color: palette.text }]}>{item.label}</Text>

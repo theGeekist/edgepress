@@ -2,7 +2,7 @@ import { createRelease } from '../../../../packages/publish/src/publisher.js';
 import { requireCapability } from '../auth.js';
 import { error, json, readJson } from '../http.js';
 import { normalizePublishProvenance } from '../request-validation.js';
-import { applyFilters, doAction, HOOK_NAMES } from '@hooks.js';
+import { applyFilters, doAction, HOOK_NAMES } from '../hooks.js';
 
 export function createPublishRoutes({ runtime, store, releaseStore, hooks, route, authzErrorResponse }) {
   return [

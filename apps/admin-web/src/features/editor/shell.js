@@ -130,6 +130,43 @@ export function createAdminShell({ baseUrl, fetchImpl = fetch }) {
     async deleteDocument(id, options) {
       return store.deleteDocument(id, options);
     },
+    async initMedia(input) {
+      return store.initMedia(input);
+    },
+    async finalizeMedia(id, input) {
+      return store.finalizeMedia(id, input);
+    },
+    async listMedia(query) {
+      return store.listMedia(query);
+    },
+    async getMedia(id) {
+      return store.getMedia(id);
+    },
+    async updateMedia(id, input) {
+      return store.updateMedia(id, input);
+    },
+    async deleteMedia(id) {
+      return store.deleteMedia(id);
+    },
+    async uploadMediaBinary(uploadUrl, { uploadToken, file, mimeType }) {
+      const headers = {
+        'x-upload-token': uploadToken,
+        'content-type': mimeType || file?.type || 'application/octet-stream'
+      };
+      if (session.accessToken) {
+        headers.authorization = `Bearer ${session.accessToken}`;
+      }
+      const response = await fetchImpl(uploadUrl, {
+        method: 'PUT',
+        headers,
+        body: file
+      });
+      if (!response.ok) {
+        const payload = await response.text();
+        throw new Error(payload || `Upload failed with status ${response.status}`);
+      }
+      return response;
+    },
     async preview(documentId) {
       return store.getPreview(documentId);
     },
