@@ -222,8 +222,11 @@ This keeps private reads cheap and avoids introducing runtime rendering as a dep
 4. **Ship publishing as immutable releases.**
    Make the public site independent of CMS runtime. This is the “free beats WP” economic lever.
 
-5. **Add the WP REST façade and `wp.*` compatibility surfaces.**
+5. **Lock the platform contract before broad compatibility work.**
+   Publish an explicit `createPlatform()` contract and adapter conformance profile so parity expectations are testable across in-memory and Cloudflare runtimes.
+
+6. **Add the WP REST façade and `wp.*` compatibility surfaces.**
    Do this as a layer over the canonical API to reduce ecosystem friction and make dual-support cheap for plugin/theme authors.
 
-6. **Expand into themes/templates and capability-scoped plugins.**
+7. **Expand into themes/templates and capability-scoped plugins.**
    Treat site editing and plugin execution phases (editor/build/edge) as explicit platform features.
