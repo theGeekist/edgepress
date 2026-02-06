@@ -32,11 +32,11 @@ bun run start:api
 ```
 
 > [!TIP]
-> **Default Credentials**
+> **Admin Access**
 >
-> Username: `admin`
+> On first run, the system is secure by default (no admin).
 >
-> Password: `admin`
+> To bootstrap a local admin user for testing, set `EDGE_BOOTSTRAP_ADMIN=1` or check `packages/testing` for in-memory defaults.
 
 ### 2. Start the Admin Interface
 

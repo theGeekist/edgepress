@@ -53,7 +53,7 @@ Capabilities are strings like `cap_read_document`, `cap_write_document`, `cap_pu
     ```js
     // Internal Domain Logic Example
     if (!user.hasCapability('cap_publish')) {
-      throw new Error("Unauthorized");
+      throw authError("AUTH_FORBIDDEN", "Missing capability: cap_publish");
     }
     ```
 
