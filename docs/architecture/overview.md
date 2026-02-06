@@ -19,7 +19,7 @@ At the center lies the Business Logic. This layer defines what a "Document" is, 
 - **Location**: `packages/domain`
 
 ### 2. The Ports (Contracts)
-Surrounding the core are the Ports. these are strict interfaces that the Core uses to interact with the outside world. The Core doesn't know *how* to save a file, it just knows it has a `BlobStore` port with a `put()` method.
+Surrounding the core are the Ports. These are strict interfaces that the Core uses to interact with the outside world. The Core doesn't know *how* to save a file, it just knows it has a `BlobStore` port with a `put()` method.
 - **Location**: `packages/ports`
 
 ### 3. The Adapters (Infrastructure)

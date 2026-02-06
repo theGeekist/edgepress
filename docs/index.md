@@ -29,8 +29,11 @@ features:
 import mermaid from 'mermaid'
 import { onMounted } from 'vue'
 
-onMounted(() => {
-  mermaid.initialize({ startOnLoad: true })
+onMounted(async () => {
+  mermaid.initialize({ startOnLoad: false })
+  await mermaid.run({
+    querySelector: '.mermaid'
+  })
 })
 </script>
 
