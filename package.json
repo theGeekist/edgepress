@@ -4,17 +4,18 @@
   "type": "module",
   "workspaces": [
     "apps/*",
-    "packages/*"
+    "packages/*",
+    "docs"
   ],
   "scripts": {
     "test": "bun test",
     "start:api": "bun apps/api-edge/src/server.js",
     "start:api:worker": "wrangler dev",
     "check:boundaries": "bun scripts/check-boundaries.js",
-    "docs:dev": "vitepress dev docs",
+    "docs:dev": "bun run --filter docs dev",
     "docs:gen": "bun scripts/docs/generate-api-reference.js",
-    "docs:build": "vitepress build docs",
-    "docs:preview": "vitepress preview docs",
+    "docs:build": "bun run --filter docs build",
+    "docs:preview": "bun run --filter docs preview",
     "docs:check": "bunx tsc -p docs/snippets/tsconfig.json --noEmit",
     "test:unit": "bun test packages/testing/test/*.test.js",
     "test:coverage": "bun test --coverage && bun scripts/check-coverage-thresholds.js",
@@ -59,7 +60,6 @@
     "@wordpress/data": "^10.39.0",
     "@wordpress/dom-ready": "^4.39.0",
     "@wordpress/element": "^6.39.0",
-    "mermaid": "^11.12.2",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "react-native": "0.74.5",

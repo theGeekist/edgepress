@@ -18,7 +18,7 @@ hero:
 
 features:
   - title: Client-Agnostic
-    details: The editor and admin shell work across web, React Native, and desktop. The backend assumes nothing about the client.
+    details: Designed for web-first, with React Native portability as an explicit goal. The backend assumes nothing about the client.
   - title: Edge-First API
     details: A strongly designed API layer with explicit contracts. Deploy to Cloudflare Workers, or any edge runtime.
   - title: Static Releases
@@ -66,4 +66,4 @@ By moving the CMS logic to the edge and serving content as static artifacts, Edg
 No more SQL injection vulnerabilities or "database surgery". Publish produces immutable releases. Rollback is as simple as switching a pointer.
 
 ### 💻 Developer Experience
-Typescript-first, with a strong focus on developer ergonomics. Use the tools you love, like `wrangler` and `bun`.
+JS-first core with optional TS tooling for contracts and editor integration. Use the tools you love, like `wrangler` and `bun`.

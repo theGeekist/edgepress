@@ -4,7 +4,7 @@ title: Architecture Overview
 
 # Architecture Overview
 
-EdgePress is completely redesigned to solve the "WordPress at scale" problem by removing the biggest bottleneck: the runtime monolith.
+EdgePress is a platform-agnostic CMS core that decouples the Gutenberg editor from its legacy PHP roots.
 
 ## Core Design Philosophy
 
