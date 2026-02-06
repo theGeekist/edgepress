@@ -1,3 +1,5 @@
+import { BLOCKS_SCHEMA_VERSION, normalizeBlocksInput } from './blocks.js';
+
 export const ROLE_CAPABILITIES = {
   admin: ['document:read', 'document:write', 'publish:write', 'media:write', 'private:read'],
   editor: ['document:read', 'document:write', 'media:write'],
@@ -14,11 +16,22 @@ export function createUser({ id, username, password, role = 'admin' }) {
   };
 }
 
-export function createDocument({ id, title, content, createdBy, status = 'draft', now }) {
+export function createDocument({
+  id,
+  title,
+  content,
+  blocks = [],
+  blocksSchemaVersion = BLOCKS_SCHEMA_VERSION,
+  createdBy,
+  status = 'draft',
+  now
+}) {
   return {
     id,
     title,
     content,
+    blocks: normalizeBlocksInput(blocks),
+    blocksSchemaVersion,
     status,
     createdBy,
     createdAt: now,
@@ -26,12 +39,24 @@ export function createDocument({ id, title, content, createdBy, status = 'draft'
   };
 }
 
-export function createRevision({ id, documentId, title, content, sourceRevisionId = null, authorId, now }) {
+export function createRevision({
+  id,
+  documentId,
+  title,
+  content,
+  blocks = [],
+  blocksSchemaVersion = BLOCKS_SCHEMA_VERSION,
+  sourceRevisionId = null,
+  authorId,
+  now
+}) {
   return {
     id,
     documentId,
     title,
     content,
+    blocks: normalizeBlocksInput(blocks),
+    blocksSchemaVersion,
     sourceRevisionId,
     authorId,
     createdAt: now

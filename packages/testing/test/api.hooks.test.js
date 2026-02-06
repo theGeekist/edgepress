@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { EDGEPRESS_HOOK_NAMES } from '../../../apps/api-edge/src/hooks.js';
-import { createEdgepressHooks } from '../../hooks/src/index.js';
+import { HOOK_NAMES, resolveHooks } from '../../../apps/api-edge/src/hooks.js';
+import { createHooksRegistry } from '../../hooks/src/index.js';
 import { createInMemoryPlatform } from '../src/inMemoryPlatform.js';
 import { authAsAdmin, requestJson } from '../src/testUtils.js';
 
@@ -16,9 +16,9 @@ async function createDoc(handler, token, suffix = 'hook') {
 
 test('beforePublish hook can veto publish with canonical envelope', async () => {
   const platform = createInMemoryPlatform();
-  const hooks = createEdgepressHooks();
+  const hooks = createHooksRegistry();
   hooks.addFilter(
-    EDGEPRESS_HOOK_NAMES.publishProvenanceFilter,
+    HOOK_NAMES.publishProvenanceFilter,
     'edgepress/tests/veto',
     () => {
       const err = new Error('Publish blocked by policy');
@@ -41,9 +41,9 @@ test('beforePublish hook can veto publish with canonical envelope', async () => 
 
 test('beforePublish hook can transform provenance before publish', async () => {
   const platform = createInMemoryPlatform();
-  const hooks = createEdgepressHooks();
+  const hooks = createHooksRegistry();
   hooks.addFilter(
-    EDGEPRESS_HOOK_NAMES.publishProvenanceFilter,
+    HOOK_NAMES.publishProvenanceFilter,
     'edgepress/tests/provenance_transform',
     (payload) => ({
       ...payload,
@@ -79,30 +79,30 @@ test('async hooks run for document/revision/publish/activate lifecycle', async (
   };
 
   const events = [];
-  const hooks = createEdgepressHooks();
+  const hooks = createHooksRegistry();
   hooks.addAction(
-    EDGEPRESS_HOOK_NAMES.documentWrittenAction,
+    HOOK_NAMES.documentWrittenAction,
     'edgepress/tests/document_written',
     (payload) => {
       events.push({ type: 'document.written', mode: payload.mode, documentId: payload.document?.id });
     }
   );
   hooks.addAction(
-    EDGEPRESS_HOOK_NAMES.revisionCreatedAction,
+    HOOK_NAMES.revisionCreatedAction,
     'edgepress/tests/revision_created',
     (payload) => {
       events.push({ type: 'revision.created', mode: payload.mode, revisionId: payload.revision?.id });
     }
   );
   hooks.addAction(
-    EDGEPRESS_HOOK_NAMES.publishStartedAction,
+    HOOK_NAMES.publishStartedAction,
     'edgepress/tests/publish_started',
     (payload) => {
       events.push({ type: 'publish.started', jobId: payload.job?.id });
     }
   );
   hooks.addAction(
-    EDGEPRESS_HOOK_NAMES.publishCompletedAction,
+    HOOK_NAMES.publishCompletedAction,
     'edgepress/tests/publish_completed',
     (payload) => {
       events.push({
@@ -113,7 +113,7 @@ test('async hooks run for document/revision/publish/activate lifecycle', async (
     }
   );
   hooks.addAction(
-    EDGEPRESS_HOOK_NAMES.releaseActivatedAction,
+    HOOK_NAMES.releaseActivatedAction,
     'edgepress/tests/release_activated',
     (payload) => {
       events.push({ type: 'release.activated', releaseId: payload.releaseId, source: payload.source });
@@ -173,4 +173,21 @@ test('partial hook registry falls back to shared edgepress hooks', async () => {
   });
   assert.equal(publish.res.status, 201);
   assert.equal(publish.json.job.status, 'completed');
+});
+
+test('resolveHooks requires the broader WordPress-compatible method surface', () => {
+  const minimal = {
+    addAction() {},
+    doAction() {},
+    addFilter() {},
+    applyFilters(_name, payload) {
+      return payload;
+    }
+  };
+  const minimalResolved = resolveHooks({ hooks: minimal });
+  assert.notEqual(minimalResolved, minimal);
+
+  const full = createHooksRegistry();
+  const fullResolved = resolveHooks({ hooks: full });
+  assert.equal(fullResolved, full);
 });
