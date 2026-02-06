@@ -1,8 +1,8 @@
 import { Text, View } from 'react-native';
 
-import { ActionButton } from '../../../components/ui/ActionButton.jsx';
-import { ThemedTextInput } from '../../../components/ui/ThemedTextInput.jsx';
-import { MetaBox } from '../../../components/ui/MetaBox.jsx';
+import { ActionButton } from '@components/ui/ActionButton.jsx';
+import { ThemedTextInput } from '@components/ui/ThemedTextInput.jsx';
+import { MetaBox } from '@components/ui/MetaBox.jsx';
 
 export function ContentSettingsPanel({ palette, hasSelection, meta, onUpdateMeta }) {
   return (

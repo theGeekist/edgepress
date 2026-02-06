@@ -1,9 +1,9 @@
 import { Pressable, Text, View } from 'react-native';
 
-import { ThemedTextInput } from '../../components/ui/ThemedTextInput.jsx';
-import { ContentListTable, PublishPanel, ContentSettingsPanel } from '../../features/content';
-import { EditorCanvas } from '../../features/editor';
-import { layoutStyles } from '../../components/styles.js';
+import { ThemedTextInput } from '@components/ui/ThemedTextInput.jsx';
+import { ContentListTable, PublishPanel, ContentSettingsPanel } from '@features/content';
+import { EditorCanvas } from '@features/editor';
+import { layoutStyles } from '@components/styles.js';
 
 export function ContentScene({
   palette,

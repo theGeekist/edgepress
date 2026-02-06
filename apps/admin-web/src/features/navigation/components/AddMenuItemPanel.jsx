@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
-import { ThemedTextInput } from '../../../components/ui/ThemedTextInput.jsx';
-import { MetaBox } from '../../../components/ui/MetaBox.jsx';
+import { ThemedTextInput } from '@components/ui/ThemedTextInput.jsx';
+import { MetaBox } from '@components/ui/MetaBox.jsx';
 
 export function AddMenuItemPanel({ palette, docs, onAdd }) {
     const [customLabel, setCustomLabel] = useState('');

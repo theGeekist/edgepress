@@ -1,6 +1,6 @@
 import { View } from 'react-native';
-import { Sidebar } from '../../components/ui/Sidebar.jsx';
-import { layoutStyles } from '../../components/styles.js';
+import { Sidebar } from '@components/ui/Sidebar.jsx';
+import { layoutStyles } from '@components/styles.js';
 import { ContentScene } from './ContentScene.jsx';
 import { SettingsScene } from './SettingsScene.jsx';
 import { AppearanceScene } from './AppearanceScene.jsx';

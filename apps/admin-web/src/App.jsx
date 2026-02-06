@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { registerFoundationalBlocks } from './features/editor';
-import { AdminLoginView } from './features/auth';
-import { useAdminAppController } from './hooks/useAdminAppController.js';
-import { TopBar } from './components/ui/TopBar.jsx';
-import { Feedback } from './components/ui/Feedback.jsx';
+import { registerFoundationalBlocks } from '@features/editor';
+import { AdminLoginView } from '@features/auth';
+import { useAdminAppController } from '@hooks/useAdminAppController.js';
+import { TopBar } from '@components/ui/TopBar.jsx';
+import { Feedback } from '@components/ui/Feedback.jsx';
 import { AdminScene } from './scenes/web';
-import { layoutStyles } from './components/styles.js';
+import { layoutStyles } from '@components/styles.js';
 import { View, useWindowDimensions } from 'react-native';
 
 registerFoundationalBlocks();

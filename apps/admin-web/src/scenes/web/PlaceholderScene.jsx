@@ -1,6 +1,6 @@
 import { Text, View } from 'react-native';
 
-import { layoutStyles } from '../../components/styles.js';
+import { layoutStyles } from '@components/styles.js';
 
 const placeholderBySection = {
   dashboard: 'Dashboard will aggregate publishing and content metrics.',

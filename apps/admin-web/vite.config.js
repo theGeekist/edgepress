@@ -39,7 +39,10 @@ export default defineConfig({
       { find: /^fs$/, replacement: path.resolve(__dirname, 'src/shims/fs.js') },
       { find: /^path$/, replacement: path.resolve(__dirname, 'src/shims/path.js') },
       { find: /^url$/, replacement: path.resolve(__dirname, 'src/shims/url.js') },
-      { find: /^source-map-js$/, replacement: path.resolve(__dirname, 'src/shims/source-map-js.js') }
+      { find: /^source-map-js$/, replacement: path.resolve(__dirname, 'src/shims/source-map-js.js') },
+      { find: /^@hooks\/(.*)$/, replacement: path.resolve(__dirname, 'src/hooks/$1') },
+      { find: /^@features\/(.*)$/, replacement: path.resolve(__dirname, 'src/features/$1') },
+      { find: /^@components\/(.*)$/, replacement: path.resolve(__dirname, 'src/components/$1') }
     ]
   },
   server: {
