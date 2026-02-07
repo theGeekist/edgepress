@@ -3,7 +3,10 @@ import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { configureApiFetch, createApiFetchMiddlewares } from '../../../apps/admin-web/src/gutenberg-integration.js';
+import {
+  configureApiFetch,
+  createApiFetchMiddlewares
+} from '../../../apps/admin-web/src/features/editor/gutenberg-integration.js';
 
 const require = createRequire(import.meta.url);
 let moduleVersion = 0;

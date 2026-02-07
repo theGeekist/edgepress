@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createCanonicalSdkStore } from '../../../apps/admin-web/src/gutenberg-integration.js';
+import { createCanonicalSdkStore } from '../../../apps/admin-web/src/features/editor/gutenberg-integration.js';
 import { createInMemoryPlatform } from '../src/inMemoryPlatform.js';
 import { createApiHandler } from '../../../apps/api-edge/src/app.js';
 import { authAsAdmin } from '../src/testUtils.js';
