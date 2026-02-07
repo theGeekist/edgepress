@@ -1,0 +1,221 @@
+.ep-editor-canvas-root {
+  background: var(--wp-components-color-background, #fff);
+  color: var(--wp-components-color-foreground, #1e1e1e);
+  min-height: 680px;
+  position: relative;
+}
+
+.ep-editor-canvas-root .editor-styles-wrapper {
+  background: var(--wp-components-color-background, #fff);
+  color: var(--wp-components-color-foreground, #1e1e1e);
+  min-height: 680px;
+}
+
+.ep-editor-canvas-root .ep-editor-title-wrap {
+  max-width: 760px;
+  margin: 0 auto 12px;
+  padding: 0 20px;
+}
+
+.ep-editor-canvas-root .ep-editor-title-input {
+  width: 100%;
+  background: transparent;
+  border: 0;
+  outline: none;
+  box-shadow: none;
+  color: var(--wp-components-color-foreground, #1e1e1e);
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  line-height: 1.1;
+  font-weight: 600;
+  padding: 4px 0 0;
+}
+
+.ep-editor-canvas-root .ep-editor-title-input::placeholder {
+  color: var(--wp-components-color-gray-700, #6b7280);
+  opacity: 1;
+}
+
+.ep-editor-canvas-root .block-editor-writing-flow,
+.ep-editor-canvas-root .is-root-container {
+  background: var(--wp-components-color-background, #fff);
+  color: var(--wp-components-color-foreground, #1e1e1e);
+}
+
+.ep-editor-canvas-root .block-editor-block-list__layout,
+.ep-editor-canvas-root .block-editor-block-list__layout.is-root-container {
+  padding: 16px 20px 24px;
+}
+
+.ep-editor-canvas-root .editor-styles-wrapper .is-root-container {
+  max-width: 760px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.ep-editor-canvas-root .block-editor-writing-flow {
+  padding-top: 0;
+}
+
+.ep-editor-canvas-root .block-editor-button-block-appender {
+  display: none !important;
+}
+
+.ep-editor-canvas-root .block-editor-default-block-appender {
+  margin-top: 0;
+  margin-left: 0;
+}
+
+.ep-editor-canvas-root .components-popover__content,
+.ep-editor-canvas-root .block-editor-inserter__menu {
+  background: var(--wp-components-color-background, #fff);
+  color: var(--wp-components-color-foreground, #1e1e1e);
+  border-color: var(--wp-components-color-border, #d5dbe8);
+}
+
+.ep-editor-canvas-root .components-popover {
+  z-index: 1000;
+}
+
+#ep-editor-popovers {
+  position: relative;
+  z-index: 1000;
+}
+
+.ep-editor-canvas-root .components-popover__content *,
+.ep-editor-canvas-root .block-editor-inserter__menu *,
+.ep-editor-canvas-root .block-editor-inserter__panel-content *,
+.ep-editor-canvas-root .block-editor-inserter__search-input *,
+.ep-editor-canvas-root .components-search-control__input {
+  color: var(--wp-components-color-foreground, #1e1e1e);
+}
+
+.ep-editor-canvas-root .components-button svg,
+.ep-editor-canvas-root .block-editor-inserter__menu svg,
+.ep-editor-canvas-root .block-editor-inserter__panel-content svg {
+  fill: currentColor;
+  color: var(--wp-components-color-foreground, #1e1e1e);
+}
+
+.ep-editor-canvas-root .components-search-control__input {
+  background: var(--wp-components-color-background, #fff);
+  border-color: var(--wp-components-color-border, #d5dbe8);
+}
+
+.ep-editor-canvas-root .components-button.is-primary {
+  background: var(--wp-components-color-accent, #2271b1);
+  border-color: var(--wp-components-color-accent, #2271b1);
+}
+
+/* Keep Gutenberg controls legible inside themed canvas */
+.ep-editor-canvas-root .block-editor-block-toolbar,
+.ep-editor-canvas-root .components-toolbar {
+  background: var(--wp-components-color-background, #fff);
+  border-color: var(--wp-components-color-border, #d5dbe8);
+}
+
+.ep-editor-canvas-root .components-toolbar .components-button,
+.ep-editor-canvas-root .block-editor-block-toolbar .components-button {
+  color: var(--wp-components-color-foreground, #1e1e1e);
+}
+
+.ep-editor-canvas-root .components-toolbar .components-button.is-pressed,
+.ep-editor-canvas-root .components-toolbar .components-button.is-primary {
+  color: var(--wp-components-color-accent, #2271b1);
+}
+
+.ep-editor-canvas-root .block-editor-block-contextual-toolbar,
+.ep-editor-canvas-root .block-editor-block-toolbar,
+.ep-editor-canvas-root .block-editor-block-toolbar__slot {
+  background: var(--wp-components-color-background, #fff) !important;
+  border-color: var(--wp-components-color-border, #d5dbe8) !important;
+  color: var(--wp-components-color-foreground, #1e1e1e) !important;
+}
+
+.ep-editor-canvas-root .block-editor-block-toolbar .components-button,
+.ep-editor-canvas-root .block-editor-block-contextual-toolbar .components-button {
+  color: var(--wp-components-color-foreground, #1e1e1e) !important;
+}
+
+.ep-editor-canvas-root .block-editor-block-toolbar .components-button svg,
+.ep-editor-canvas-root .block-editor-block-contextual-toolbar .components-button svg {
+  color: currentColor !important;
+  fill: currentColor !important;
+}
+
+.ep-editor-canvas-root .wp-block-paragraph {
+  color: var(--wp-components-color-foreground, #1e1e1e);
+}
+
+.ep-editor-canvas-root .block-editor-rich-text__editable,
+.ep-editor-canvas-root [contenteditable="true"] {
+  color: var(--wp-components-color-foreground, #1e1e1e);
+  caret-color: var(--wp-components-color-foreground, #1e1e1e);
+}
+
+.ep-editor-canvas-root .block-editor-rich-text__editable[placeholder]:before,
+.ep-editor-canvas-root .block-editor-default-block-appender__content,
+.ep-editor-canvas-root .block-editor-rich-text__editable[data-rich-text-placeholder]:before,
+.ep-editor-canvas-root .block-editor-rich-text__editable[data-rich-text-placeholder]:after,
+.ep-editor-canvas-root .block-editor-default-block-appender p {
+  color: var(--wp-components-color-gray-700, #6b7280) !important;
+  opacity: 1 !important;
+}
+
+@media (max-width: 1100px) {
+  .ep-editor-inspector-panel {
+    max-height: 320px;
+  }
+}
+
+.ep-editor-inspector-panel {
+  border: 1px solid var(--wp-components-color-border, #d5dbe8);
+  border-radius: 4px;
+  background: var(--wp-components-color-background, #fff);
+  color: var(--wp-components-color-foreground, #1e1e1e);
+  min-height: 420px;
+  overflow: auto;
+}
+
+.ep-editor-inspector-panel .block-editor-block-inspector {
+  padding: 8px 0;
+}
+
+.ep-editor-inspector-panel .components-panel,
+.ep-editor-inspector-panel .components-panel__body,
+.ep-editor-inspector-panel .components-card {
+  background: var(--wp-components-color-background, #fff);
+  color: var(--wp-components-color-foreground, #1e1e1e) !important;
+  border-color: var(--wp-components-color-border, #d5dbe8);
+}
+
+.ep-editor-inspector-panel .components-panel__body-toggle,
+.ep-editor-inspector-panel .components-base-control__label,
+.ep-editor-inspector-panel .components-input-control__label,
+.ep-editor-inspector-panel .components-toggle-control__label,
+.ep-editor-inspector-panel .components-select-control__label,
+.ep-editor-inspector-panel .block-editor-block-card__title,
+.ep-editor-inspector-panel .block-editor-block-card__description,
+.ep-editor-inspector-panel .block-editor-block-inspector__no-blocks,
+.ep-editor-inspector-panel .block-editor-inspector-panel-header,
+.ep-editor-inspector-panel .components-button {
+  color: var(--wp-components-color-foreground, #1e1e1e) !important;
+}
+
+.ep-editor-inspector-panel .components-text-control__input,
+.ep-editor-inspector-panel .components-input-control__input,
+.ep-editor-inspector-panel .components-select-control__input,
+.ep-editor-inspector-panel .components-textarea-control__input {
+  background: var(--wp-components-color-background, #fff);
+  color: var(--wp-components-color-foreground, #1e1e1e) !important;
+  border-color: var(--wp-components-color-border, #d5dbe8);
+}
+
+.ep-editor-inspector-panel svg {
+  color: var(--wp-components-color-foreground, #1e1e1e) !important;
+  fill: currentColor;
+}
+
+.ep-editor-inspector-panel .components-panel__body-toggle:hover,
+.ep-editor-inspector-panel .components-button:hover {
+  background: color-mix(in srgb, var(--wp-components-color-background, #fff) 86%, var(--wp-components-color-accent, #2271b1) 14%);
+}

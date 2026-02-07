@@ -107,6 +107,10 @@ export function toUiPalette(theme) {
     error: firstNonEmpty(color.error, '#d63638'),
     sidebar: firstNonEmpty(surfaces.sidebar, '#1d2327'),
     sidebarText: firstNonEmpty(surfaces.sidebarText, '#f0f0f1'),
+    sidebarSubmenu: firstNonEmpty(surfaces.sidebarSubmenu, '#2c3338'),
+    sidebarBorder: firstNonEmpty(surfaces.sidebarBorder, 'rgba(255, 255, 255, 0.1)'),
+    sidebarHover: firstNonEmpty(surfaces.sidebarHover, 'rgba(255, 255, 255, 0.05)'),
+    sidebarActiveBg: firstNonEmpty(surfaces.sidebarActiveBg, accent),
     topbar: firstNonEmpty(surfaces.topbar, '#1d2327'),
     topbarText: firstNonEmpty(surfaces.topbarText, '#f0f0f1')
   };

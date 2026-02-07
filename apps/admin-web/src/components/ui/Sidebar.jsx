@@ -1,42 +1,75 @@
-import { Text, View, Pressable } from 'react-native';
-
+import { View } from 'react-native';
+import { useRef, useEffect } from 'react';
 import { layoutStyles } from '../styles.js';
+import { useSidebarNavigation, DEFAULT_MENU_ITEMS } from '@hooks/useSidebarNavigation.js';
+import { SidebarHeader } from './SidebarHeader.jsx';
+import { SidebarItem } from './SidebarItem.jsx';
+import { SidebarSubmenu } from './SidebarSubmenu.jsx';
 
-function SidebarItem({ palette, item, activeId, onSelect, depth = 0 }) {
-  const isActive = activeId === item.id;
-  const textColor = isActive ? '#ffffff' : '#f0f0f1';
-  const bgColor = isActive ? palette.accent : 'transparent';
-  const fontWeight = isActive ? '600' : '400';
-  const buttonStyle = depth > 0 ? layoutStyles.navSubButton : layoutStyles.navButton;
+function renderSidebarItems({
+  items,
+  palette,
+  activeId,
+  expandedItems,
+  focusedItemId,
+  itemRefs,
+  onToggleExpand,
+  onSelect,
+  onKeyDown,
+  getFocusableItemIds,
+  getFocusedIndex,
+  depth = 0
+}) {
+  return items.map((item) => {
+    const hasChildren = Array.isArray(item.children) && item.children.length > 0;
+    const isExpanded = expandedItems.has(item.id);
+    const isActive = activeId === item.id;
+    const hasActiveChild = item.children?.some(child => child.id === activeId);
 
-  return (
-    <>
-      <Pressable
-        onPress={() => onSelect(item.id)}
-        style={({ pressed }) => [
-          buttonStyle,
-          { backgroundColor: pressed ? '#2c3338' : bgColor },
-          isActive && { backgroundColor: palette.accent }
-        ]}
+    const focusableIds = getFocusableItemIds(items);
+    const focusedIndex = getFocusedIndex(focusableIds);
+
+    return (
+      <SidebarItem
+        key={item.id}
+        ref={(ref) => {
+          if (ref) itemRefs.current.set(item.id, ref);
+        }}
+        palette={palette}
+        item={item}
+        isActive={isActive}
+        isExpanded={isExpanded}
+        hasActiveChild={hasActiveChild}
+        depth={depth}
+        onPress={() => {
+          if (hasChildren) {
+            onToggleExpand(item.id);
+          }
+          onSelect(item.id);
+        }}
+        onKeyDown={(e) => onKeyDown(e, item.id, focusableIds, focusedIndex)}
       >
-        <Text style={[layoutStyles.navButtonText, { color: textColor, fontWeight }]}>
-          {item.label}
-        </Text>
-      </Pressable>
-      {Array.isArray(item.children) && item.children.length > 0
-        ? item.children.map((child) => (
-          <SidebarItem
-            key={child.id}
-            palette={palette}
-            item={child}
-            activeId={activeId}
-            onSelect={onSelect}
-            depth={depth + 1}
-          />
-        ))
-        : null}
-    </>
-  );
+        {hasChildren && isExpanded && (
+          <SidebarSubmenu palette={palette}>
+            {renderSidebarItems({
+              items: item.children,
+              palette,
+              activeId,
+              expandedItems,
+              focusedItemId,
+              itemRefs,
+              onToggleExpand,
+              onSelect,
+              onKeyDown,
+              getFocusableItemIds,
+              getFocusedIndex,
+              depth: depth + 1
+            })}
+          </SidebarSubmenu>
+        )}
+      </SidebarItem>
+    );
+  });
 }
 
 export function Sidebar({
@@ -45,8 +78,32 @@ export function Sidebar({
   activeItemId,
   onSelectItem,
   isMobile,
-  isOpen
+  isOpen,
+  menuItems: customMenuItems
 }) {
+  const {
+    expandedItems,
+    focusedItemId,
+    setFocusedItemId,
+    handleToggleExpand,
+    handleKeyDown,
+    getFocusableItemIds,
+    getFocusedIndex,
+  } = useSidebarNavigation({ activeItemId, onSelectItem });
+
+  const itemRefs = useRef(new Map());
+
+  // Use custom menu items or default
+  const menuStructure = customMenuItems || items || DEFAULT_MENU_ITEMS;
+
+  // Focus the focused item when it changes
+  useEffect(() => {
+    if (focusedItemId) {
+      const ref = itemRefs.current.get(focusedItemId);
+      ref?.focus();
+    }
+  }, [focusedItemId]);
+
   if (isMobile && !isOpen) {
     return null;
   }
@@ -54,17 +111,29 @@ export function Sidebar({
   const containerStyle = isMobile ? layoutStyles.sidebarMobile : layoutStyles.sidebar;
 
   return (
-    <View style={[containerStyle, { backgroundColor: palette.sidebar }]}>
+    <View
+      style={[containerStyle, {
+        backgroundColor: palette.sidebar,
+        borderRightColor: palette.sidebarBorder,
+      }]}
+      role="navigation"
+      aria-label="Main navigation"
+    >
       <View style={layoutStyles.adminNavButtons}>
-        {items.map((item) => (
-          <SidebarItem
-            key={item.id}
-            palette={palette}
-            item={item}
-            activeId={activeItemId}
-            onSelect={onSelectItem}
-          />
-        ))}
+        <SidebarHeader title="EdgePress" palette={palette} />
+        {renderSidebarItems({
+          items: menuStructure,
+          palette,
+          activeId: activeItemId,
+          expandedItems,
+          focusedItemId,
+          itemRefs,
+          onToggleExpand: handleToggleExpand,
+          onSelect: onSelectItem,
+          onKeyDown: handleKeyDown,
+          getFocusableItemIds,
+          getFocusedIndex,
+        })}
       </View>
     </View>
   );

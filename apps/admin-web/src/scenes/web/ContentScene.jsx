@@ -1,12 +1,15 @@
-import { Pressable, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Text, View, Pressable } from 'react-native';
 
-import { ThemedTextInput } from '@components/ui/ThemedTextInput.jsx';
 import { ContentListTable, PublishPanel, ContentSettingsPanel } from '@features/content';
-import { EditorCanvas } from '@features/editor';
+import { BlockInspectorPanel, EditorCanvas, EditorWorkspaceProvider } from '@features/editor';
 import { layoutStyles } from '@components/styles.js';
+import { AdminPage, PageHeader, PageToolbar, PageRail, Card } from '@components/ui/AdminLayout.jsx';
+import { DropdownButton } from '@components/ui/DropdownButton.jsx';
 
 export function ContentScene({
   palette,
+  theme,
   contentView,
   onOpenContentList,
   docs,
@@ -15,8 +18,9 @@ export function ContentScene({
   previewLink,
   saveState,
   actions,
-  isMobile
+  isMobile,
 }) {
+  const [rightRailTab, setRightRailTab] = useState('post');
   const isEditorView = contentView === 'editor';
   const hasSelection = Boolean(docs.selectedId);
   const selectedDoc = docs.getSelectedDoc();
@@ -35,89 +39,145 @@ export function ContentScene({
       ? 'Unsaved changes'
       : 'Saved';
 
+  const contentTypeLabel = 'Content';
+
+  // List view - unified toolbar with title, original filters, search, and new button
   if (!isEditorView) {
     return (
-      <ContentListTable
-        palette={palette}
-        docs={docs.docs}
-        selectedRowIds={docs.selectedRowIds}
-        contentSearch={docs.contentSearch}
-        onSearch={docs.setContentSearch}
-        contentTypeFilter={docs.contentTypeFilter}
-        onTypeFilter={docs.setContentTypeFilter}
-        contentStatusFilter={docs.contentStatusFilter}
-        onStatusFilter={docs.setContentStatusFilter}
-        onToggleRow={docs.toggleRowSelection}
-        onBulkApply={actions.onBulkApply}
-        onClearSelected={docs.clearSelectedRows}
-        onEdit={actions.onEditContent}
-        onRowTrash={actions.onTrashContent}
-        onRowDelete={actions.onDeleteContent}
-        onNewPage={() => actions.onCreate('page')}
-        onNewPost={() => actions.onCreate('post')}
-        sortBy={docs.sortBy}
-        sortDir={docs.sortDir}
-        onSort={docs.setSortBy}
-        paginationState={docs.pagination}
-        onPageChange={docs.setPage}
-      />
+      <AdminPage palette={palette} compact>
+        <PageToolbar
+          palette={palette}
+          compact
+          left={
+            <Text style={[styles.pageTitle, { color: palette.text }]}>{contentTypeLabel}</Text>
+          }
+          right={
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <DropdownButton
+                label="+ New"
+                palette={palette}
+                items={[
+                  { label: 'Page', onPress: () => actions.onCreate('page') },
+                  { label: 'Post', onPress: () => actions.onCreate('post') }
+                ]}
+              />
+            </View>
+          }
+        />
+        <ContentListTable
+          palette={palette}
+          docs={docs.docs}
+          selectedRowIds={docs.selectedRowIds}
+          contentSearch={docs.contentSearch}
+          onSearch={docs.setContentSearch}
+          contentTypeFilter={docs.contentTypeFilter}
+          onTypeFilter={docs.setContentTypeFilter}
+          contentStatusFilter={docs.contentStatusFilter}
+          onStatusFilter={docs.setContentStatusFilter}
+          onToggleRow={docs.toggleRowSelection}
+          onBulkApply={actions.onBulkApply}
+          onClearSelected={docs.clearSelectedRows}
+          onEdit={actions.onEditContent}
+          onRowTrash={actions.onTrashContent}
+          onRowDelete={actions.onDeleteContent}
+          onNewPage={() => actions.onCreate('page')}
+          onNewPost={() => actions.onCreate('post')}
+          sortBy={docs.sortBy}
+          sortDir={docs.sortDir}
+          onSort={docs.setSortBy}
+          paginationState={docs.pagination}
+          onPageChange={docs.setPage}
+          hideHeader
+        />
+      </AdminPage>
     );
   }
 
-  return (
-    <View style={{ flex: 1, flexDirection: isMobile ? 'column' : 'row', gap: 20 }}>
-      <View style={layoutStyles.contentEditorPane}>
-        <View style={layoutStyles.filterRow}>
-          <ThemedTextInput
-            palette={palette}
-            value={docs.title}
-            onChangeText={docs.setTitle}
-            placeholder="Add title"
-            editable={hasSelection}
-            style={[layoutStyles.titleInput, { backgroundColor: 'transparent', paddingLeft: 0, borderWidth: 0 }]}
-          />
-        </View>
-        <View style={layoutStyles.filterRow}>
-          <Text style={[layoutStyles.sectionHint, { color: palette.textMuted }]}>{saveHint}</Text>
-          <Text style={[layoutStyles.sectionHint, { color: palette.textMuted }]}>|</Text>
-          <ActionHint palette={palette} label="Back to list" onPress={onOpenContentList} />
-        </View>
+  // Editor view - use AdminPage with rail
+  const rightRailTabs = [
+    { id: 'post', label: selectedMeta.type === 'post' ? 'Post' : 'Page' },
+    { id: 'block', label: 'Block' },
+  ];
 
-        <View style={[layoutStyles.canvasWrap, { borderColor: palette.border, backgroundColor: palette.surface }]}>
+  return (
+    <EditorWorkspaceProvider
+      key={docs.selectedId || 'editor-workspace'}
+      blocks={editor.blocks}
+      setBlocks={editor.setBlocks}
+    >
+      <AdminPage
+        palette={palette}
+        compact
+        header={
+          <PageHeader
+            palette={palette}
+            title={docs.title || 'Untitled'}
+            breadcrumb="Editing"
+            actions={
+              <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
+                <Text style={{ fontSize: 12, color: palette.textMuted }}>{saveHint}</Text>
+                <BackButton palette={palette} onPress={onOpenContentList} />
+              </View>
+            }
+          />
+        }
+        rightRail={
+          <PageRail
+            palette={palette}
+            tabs={rightRailTabs}
+            activeTab={rightRailTab}
+            onTabChange={setRightRailTab}
+          >
+            {rightRailTab === 'block' ? (
+              <BlockInspectorPanel palette={palette} />
+            ) : (
+              <>
+                <PublishPanel
+                  palette={palette}
+                  hasSelection={hasSelection}
+                  loop={loop}
+                  previewLink={previewLink}
+                  actions={actions}
+                />
+                <ContentSettingsPanel
+                  palette={palette}
+                  hasSelection={hasSelection}
+                  meta={selectedMeta}
+                  onUpdateMeta={(patch) => docs.updateMeta(docs.selectedId, patch)}
+                />
+              </>
+            )}
+          </PageRail>
+        }
+      >
+        <Card palette={palette} noPadding>
           <EditorCanvas
-            key={docs.selectedId || 'editor-canvas'}
             blocks={editor.blocks}
             setBlocks={editor.setBlocks}
             palette={palette}
+            theme={theme}
+            title={docs.title}
+            onTitleChange={docs.setTitle}
           />
-        </View>
-      </View>
-
-      <View style={[layoutStyles.publishRail, { borderLeftColor: palette.border, width: isMobile ? '100%' : 280, borderLeftWidth: isMobile ? 0 : 1, paddingLeft: isMobile ? 0 : 12 }]}>
-        <PublishPanel
-          palette={palette}
-          hasSelection={hasSelection}
-          loop={loop}
-          previewLink={previewLink}
-          actions={actions}
-        />
-        <ContentSettingsPanel
-          palette={palette}
-          hasSelection={hasSelection}
-          meta={selectedMeta}
-          onUpdateMeta={(patch) => docs.updateMeta(docs.selectedId, patch)}
-        />
-      </View>
-    </View>
+        </Card>
+      </AdminPage>
+    </EditorWorkspaceProvider>
   );
 }
 
-function ActionHint({ palette, label, onPress }) {
+function BackButton({ palette, onPress }) {
   return (
-    <Pressable accessibilityRole="link" onPress={onPress}>
-      <Text style={{ color: palette.accent, textDecorationLine: 'underline' }}>
-        {label}
+    <Pressable onPress={onPress}>
+      <Text style={{ color: palette.accent, fontSize: 12, textDecorationLine: 'underline' }}>
+        ← Back
       </Text>
     </Pressable>
   );
 }
+
+const styles = {
+  pageTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+  },
+};

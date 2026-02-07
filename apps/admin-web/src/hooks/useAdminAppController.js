@@ -6,6 +6,7 @@ import { useDocumentsState, useReleaseLoopState } from '@features/content';
 import { createAdminShell, configureApiFetch, useEditorState } from '@features/editor';
 import { useMediaState } from '@features/media';
 import { useThemeMode } from '@components/theme.js';
+import { toCssVars } from '@features/theme';
 
 function asErrorMessage(error) {
   return error instanceof Error ? error.message : String(error);
@@ -35,6 +36,7 @@ function parseNavFromHash() {
   if (!raw) return null;
   const [sectionRaw, viewRaw] = raw.split('/').filter(Boolean);
   const section = normalizeAppSection(sectionRaw);
+
   return {
     appSection: section,
     contentView: section === 'content' ? normalizeContentView(viewRaw) : 'list',
@@ -131,7 +133,7 @@ export function useAdminAppController() {
   const hydratedRef = useRef(false);
   const applyHashWithReplaceRef = useRef(false);
   const hasSyncedNavRef = useRef(false);
-  const { palette, mode, setMode } = useThemeMode();
+  const { palette, theme, mode, setMode } = useThemeMode();
 
   const auth = useAuthState(shell);
   const docs = useDocumentsState(shell);
@@ -406,7 +408,9 @@ export function useAdminAppController() {
     setStatus('Generating draft preview...');
     setPreviewLink(null);
     try {
-      const payload = await loop.generatePreview(docs.selectedId);
+      const payload = await loop.generatePreview(docs.selectedId, {
+        themeVars: toCssVars(theme, { prefix: '--ep' })
+      });
       const rawPreviewUrl = payload.previewUrl || '';
       let resolvedPreviewUrl = rawPreviewUrl;
       if (rawPreviewUrl && !/^https?:\/\//i.test(rawPreviewUrl)) {
@@ -659,6 +663,7 @@ export function useAdminAppController() {
 
   return {
     palette,
+    theme,
     mode,
     appSection,
     contentView,

@@ -40,6 +40,10 @@ export const defaultLightTheme = {
     surfaceMuted: '#f7fafc',
     sidebar: '#1d2327',
     sidebarText: '#f0f0f1',
+    sidebarSubmenu: '#2c3338',
+    sidebarBorder: 'rgba(255, 255, 255, 0.1)',
+    sidebarHover: 'rgba(255, 255, 255, 0.05)',
+    sidebarActiveBg: '#2271b1',
     topbar: '#1d2327',
     topbarText: '#f0f0f1'
   }
@@ -87,6 +91,10 @@ export const defaultDarkTheme = {
     surfaceMuted: '#2c3338',
     sidebar: '#141414',
     sidebarText: '#f0f0f1',
+    sidebarSubmenu: '#1a1a1a',
+    sidebarBorder: 'rgba(255, 255, 255, 0.08)',
+    sidebarHover: 'rgba(255, 255, 255, 0.04)',
+    sidebarActiveBg: '#72aee6',
     topbar: '#141414',
     topbarText: '#f0f0f1'
   }

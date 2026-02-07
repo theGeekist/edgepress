@@ -125,7 +125,7 @@ export function createClient({
     listNavigationMenus: () => request('GET', '/v1/navigation/menus'),
     getNavigationMenu: (key) => request('GET', `/v1/navigation/menus/${encodeURIComponent(key)}`),
     upsertNavigationMenu: (key, body) => request('PUT', `/v1/navigation/menus/${encodeURIComponent(key)}`, body),
-    preview: (documentId) => request('GET', `/v1/preview/${documentId}`),
+    preview: (documentId, query) => request('GET', withQuery(`/v1/preview/${documentId}`, query)),
     getPrivateRoute: (routeId) => request('GET', `/v1/private/${encodeURIComponent(routeId)}`)
   };
 }

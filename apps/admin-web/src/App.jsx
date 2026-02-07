@@ -12,7 +12,7 @@ registerFoundationalBlocks();
 
 export function App() {
   const controller = useAdminAppController();
-  const { palette, mode, appSection, contentView, mediaView, saveState, settings, auth, docs, media, editor, loop, navigation, status, error, previewLink, actions } = controller;
+  const { palette, theme, mode, appSection, contentView, mediaView, saveState, settings, auth, docs, media, editor, loop, navigation, status, error, previewLink, actions } = controller;
 
   const { width } = useWindowDimensions();
   const isMobile = width < 768;
@@ -74,6 +74,7 @@ export function App() {
 
       <AdminScene
         palette={palette}
+        theme={theme}
         appSection={appSection}
         contentView={contentView}
         mediaView={mediaView}

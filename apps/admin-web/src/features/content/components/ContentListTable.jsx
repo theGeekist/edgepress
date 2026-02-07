@@ -53,7 +53,8 @@ export function ContentListTable({
   sortDir,
   onSort,
   paginationState,
-  onPageChange
+  onPageChange,
+  hideHeader = false,
 }) {
   const [bulkAction, setBulkAction] = useState('none');
   const bulkActionLabels = {
@@ -144,28 +145,30 @@ export function ContentListTable({
 
   return (
     <View style={layoutStyles.contentListWrap}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20, justifyContent: 'space-between' }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-          <Text style={[layoutStyles.sectionTitle, { color: palette.text, marginBottom: 0, paddingVertical: 0, paddingHorizontal: 0 }]}>Content</Text>
-          <DropdownButton
-            label="+ New"
+      {!hideHeader && (
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20, justifyContent: 'space-between' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <Text style={[layoutStyles.sectionTitle, { color: palette.text, marginBottom: 0, paddingVertical: 0, paddingHorizontal: 0 }]}>Content</Text>
+            <DropdownButton
+              label="+ New"
+              palette={palette}
+              items={[
+                { label: 'Page', onPress: onNewPage },
+                { label: 'Post', onPress: onNewPost }
+              ]}
+            />
+          </View>
+          <ThemedTextInput
             palette={palette}
-            items={[
-              { label: 'Page', onPress: onNewPage },
-              { label: 'Post', onPress: onNewPost }
-            ]}
+            value={contentSearch}
+            onChangeText={onSearch}
+            placeholder="Search..."
+            style={{ width: 200 }}
           />
         </View>
-        <ThemedTextInput
-          palette={palette}
-          value={contentSearch}
-          onChangeText={onSearch}
-          placeholder="Search..."
-          style={{ width: 200 }}
-        />
-      </View>
+      )}
 
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 16, marginBottom: 16 }}>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 16, marginBottom: hideHeader ? 20 : 16 }}>
         <FilterTabs
           palette={palette}
           currentFilter={contentTypeFilter}
