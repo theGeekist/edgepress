@@ -1,3 +1,5 @@
+import { makeStyleRef, makeStyleValue, resolveEnumStyleValue, resolveSpacingStyleValue } from '../styleRefs.js';
+
 function escapeHtml(input) {
   return String(input ?? '')
     .replaceAll('&', '&amp;')
@@ -30,10 +32,10 @@ function resolveImageData(node, context = {}) {
     linkClass: String(props.linkClass || '').trim(),
     linkTarget: String(props.linkTarget || '').trim(),
     title: String(props.title || '').trim(),
-    width: String(props.width || '').trim(),
-    height: String(props.height || '').trim(),
+    width: resolveSpacingStyleValue(props?.style?.size?.width),
+    height: resolveSpacingStyleValue(props?.style?.size?.height),
     sizeSlug: String(props.sizeSlug || '').trim(),
-    align: String(props.align || '').trim()
+    align: resolveEnumStyleValue(props?.style?.layout?.align)
   };
 }
 
@@ -68,10 +70,16 @@ export const imageImportTransform = {
         linkClass: String(attrs.linkClass || ''),
         linkTarget: String(attrs.linkTarget || ''),
         title: String(attrs.title || ''),
-        width: String(attrs.width || ''),
-        height: String(attrs.height || ''),
+        style: {
+          size: {
+            width: makeStyleValue(attrs.width || ''),
+            height: makeStyleValue(attrs.height || '')
+          },
+          layout: {
+            align: attrs.align ? makeStyleRef(`layout.align.${String(attrs.align)}`) : null
+          }
+        },
         sizeSlug: String(attrs.sizeSlug || ''),
-        align: String(attrs.align || ''),
         hasCaptionBinding: Boolean(attrs?.metadata?.bindings?.caption || attrs?.metadata?.bindings?.__default?.source === 'core/pattern-overrides')
       },
       origin: {

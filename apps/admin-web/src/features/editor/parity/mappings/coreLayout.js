@@ -1,3 +1,5 @@
+import { makeSpacingStyleValue, makeStyleRef, resolveEnumStyleValue, resolveSpacingStyleValue } from '../styleRefs.js';
+
 function escapeHtml(input) {
   return String(input ?? '')
     .replaceAll('&', '&amp;')
@@ -33,8 +35,14 @@ export const layoutImportTransform = {
         blockKind: 'ep/layout-item',
         props: {
           sourceBlock: wpBlockName,
-          width: String(attrs.width || ''),
-          verticalAlignment: String(attrs.verticalAlignment || '')
+          style: {
+            layout: {
+              flexBasis: makeSpacingStyleValue(attrs.width || ''),
+              verticalAlignment: attrs.verticalAlignment
+                ? makeStyleRef(`layout.verticalAlignment.${String(attrs.verticalAlignment)}`)
+                : null
+            }
+          }
         },
         origin: {
           wpBlockName,
@@ -52,7 +60,13 @@ export const layoutImportTransform = {
         sourceBlock: wpBlockName,
         layoutType: normalizeLayoutType(wpBlockName, attrs),
         tagName,
-        verticalAlignment: String(attrs.verticalAlignment || ''),
+        style: {
+          layout: {
+            verticalAlignment: attrs.verticalAlignment
+              ? makeStyleRef(`layout.verticalAlignment.${String(attrs.verticalAlignment)}`)
+              : null
+          }
+        },
         stackOnMobile: attrs.isStackedOnMobile === undefined ? true : Boolean(attrs.isStackedOnMobile)
       },
       origin: {
@@ -75,12 +89,13 @@ const layoutContainerRenderer = {
     const props = node?.props && typeof node.props === 'object' ? node.props : {};
     const renderedChildren = Array.isArray(context?.renderedChildren) ? context.renderedChildren : [];
     if (target === 'editor') {
+      const verticalAlignment = resolveEnumStyleValue(props?.style?.layout?.verticalAlignment);
       return {
         kind: 'layout-container',
         layoutType: String(props.layoutType || 'group'),
         tagName: String(props.tagName || 'div'),
         stackOnMobile: props.stackOnMobile !== false,
-        verticalAlignment: String(props.verticalAlignment || ''),
+        verticalAlignment,
         children: renderedChildren
       };
     }
@@ -90,7 +105,9 @@ const layoutContainerRenderer = {
     const classNames = [
       'ep-layout',
       `ep-layout--${escapeHtml(props.layoutType || 'group')}`,
-      props.verticalAlignment ? `are-vertically-aligned-${escapeHtml(props.verticalAlignment)}` : '',
+      resolveEnumStyleValue(props?.style?.layout?.verticalAlignment)
+        ? `are-vertically-aligned-${escapeHtml(resolveEnumStyleValue(props?.style?.layout?.verticalAlignment))}`
+        : '',
       props.stackOnMobile === false ? 'is-not-stacked-on-mobile' : ''
     ].filter(Boolean);
     return `<${safeTag} class="${classNames.join(' ')}">${renderedChildren.join('')}</${safeTag}>`;
@@ -107,19 +124,23 @@ const layoutItemRenderer = {
     const props = node?.props && typeof node.props === 'object' ? node.props : {};
     const renderedChildren = Array.isArray(context?.renderedChildren) ? context.renderedChildren : [];
     if (target === 'editor') {
+      const width = resolveSpacingStyleValue(props?.style?.layout?.flexBasis);
+      const verticalAlignment = resolveEnumStyleValue(props?.style?.layout?.verticalAlignment);
       return {
         kind: 'layout-item',
-        width: String(props.width || ''),
-        verticalAlignment: String(props.verticalAlignment || ''),
+        width,
+        verticalAlignment,
         children: renderedChildren
       };
     }
 
+    const verticalAlignment = resolveEnumStyleValue(props?.style?.layout?.verticalAlignment);
+    const width = resolveSpacingStyleValue(props?.style?.layout?.flexBasis);
     const classNames = [
       'ep-layout-item',
-      props.verticalAlignment ? `is-vertically-aligned-${escapeHtml(props.verticalAlignment)}` : ''
+      verticalAlignment ? `is-vertically-aligned-${escapeHtml(verticalAlignment)}` : ''
     ].filter(Boolean);
-    const style = props.width ? ` style="flex-basis:${escapeHtml(props.width)}"` : '';
+    const style = width ? ` style="flex-basis:${escapeHtml(width)}"` : '';
     return `<div class="${classNames.join(' ')}"${style}>${renderedChildren.join('')}</div>`;
   }
 };

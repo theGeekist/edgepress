@@ -30,7 +30,7 @@ test('core paragraph transform imports and renders publish output', () => {
   assert.equal(nodes[0].props.content, 'Hello <em>world</em>');
   assert.equal(nodes[0].props.dropCap, true);
   assert.equal(nodes[0].props.direction, 'rtl');
-  assert.equal(nodes[0].props.textAlign, 'left');
+  assert.deepEqual(nodes[0].props.style.typography.textAlign, { ref: 'typography.textAlign.left' });
   assert.equal(diagnostics.counts.transformed, 1);
 
   const rendered = renderCanonicalNodes({ nodes, rendererRegistry, target: 'publish' });
@@ -213,7 +213,7 @@ test('content mappings cover spacer/heading/quote/separator/embed', () => {
         attributes: { value: '<p>Legacy <em>value</em></p>', citation: 'Author <a href="#">Link</a>', textAlign: 'right' },
         innerBlocks: []
       },
-      { name: 'core/separator', attributes: { tagName: 'div', opacity: 'css', backgroundColor: '#ff0000' }, innerBlocks: [] },
+      { name: 'core/separator', attributes: { tagName: 'div', opacity: 'css', style: { color: { background: '#ff0000' } } }, innerBlocks: [] },
       { name: 'core/embed', attributes: { url: 'https://www.youtube.com/watch?v=abc', type: 'video', providerNameSlug: 'youtube', caption: 'Watch <em>this</em>' }, innerBlocks: [] }
     ],
     importRegistry
@@ -236,6 +236,9 @@ test('content mappings cover spacer/heading/quote/separator/embed', () => {
   assert.ok(publish.output.includes('wp-block-embed__wrapper'));
   assert.ok(publish.output.includes('<figcaption>Watch <em>this</em></figcaption>'));
   assert.ok(publish.output.includes('is-provider-youtube'));
+  assert.deepEqual(nodes[0].props.style.spacing.height, { value: '72px' });
+  assert.deepEqual(nodes[2].props.style.typography.textAlign, { ref: 'typography.textAlign.right' });
+  assert.deepEqual(nodes[3].props.style.color.background, { value: '#ff0000' });
 
   const editor = renderCanonicalNodes({ nodes, rendererRegistry, target: 'editor' });
   assert.equal(editor.output[0].kind, 'spacer');
@@ -260,4 +263,5 @@ test('spacer follows WP selfStretch and spacing preset behavior', () => {
   const publish = renderCanonicalNodes({ nodes, rendererRegistry, target: 'publish' });
   assert.ok(publish.output.includes('height:var(--wp--preset--spacing--50);width:var(--wp--preset--spacing--40)'));
   assert.ok(publish.output.includes('<div class="ep-spacer" aria-hidden="true"></div>'));
+  assert.deepEqual(nodes[0].props.style.spacing.height, { ref: 'spacing.preset.50' });
 });

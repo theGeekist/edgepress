@@ -1,3 +1,11 @@
+import {
+  makeSpacingStyleValue,
+  makeStyleRef,
+  makeStyleValue,
+  resolveEnumStyleValue,
+  resolveSpacingStyleValue
+} from '../styleRefs.js';
+
 function escapeHtml(input) {
   return String(input ?? '')
     .replaceAll('&', '&amp;')
@@ -21,13 +29,6 @@ function toPresetSlug(value) {
   return /^[a-z0-9-]+$/.test(raw) ? raw : '';
 }
 
-function spacingPresetToCssVar(value) {
-  const raw = String(value || '').trim();
-  const match = raw.match(/^var:preset\|spacing\|(.+)$/);
-  if (!match) return raw;
-  return `var(--wp--preset--spacing--${match[1]})`;
-}
-
 export const contentImportTransform = {
   id: 'core.content.import.v1',
   priority: 100,
@@ -44,9 +45,15 @@ export const contentImportTransform = {
       return {
         blockKind: 'ep/spacer',
         props: {
-          height: computedHeight,
-          width: String(attrs.width || ''),
-          selfStretch
+          style: {
+            spacing: {
+              height: makeSpacingStyleValue(computedHeight),
+              width: makeSpacingStyleValue(attrs.width || '')
+            },
+            layout: {
+              selfStretch: selfStretch ? makeStyleRef(`layout.selfStretch.${selfStretch}`) : null
+            }
+          }
         },
         origin: { wpBlockName, attrs },
         lossiness: 'none',
@@ -73,7 +80,11 @@ export const contentImportTransform = {
         props: {
           value: String(attrs.value || ''),
           citation: String(attrs.citation || ''),
-          textAlign: String(attrs.textAlign || '')
+          style: {
+            typography: {
+              textAlign: attrs.textAlign ? makeStyleRef(`typography.textAlign.${String(attrs.textAlign)}`) : null
+            }
+          }
         },
         origin: { wpBlockName, attrs },
         lossiness: 'none',
@@ -83,13 +94,20 @@ export const contentImportTransform = {
 
     if (wpBlockName === 'core/separator') {
       const hasCustomColor = Boolean(attrs?.style?.color?.background);
+      const backgroundColorAttr = String(attrs.backgroundColor || '');
+      const backgroundColorSlug = toPresetSlug(backgroundColorAttr);
       return {
         blockKind: 'ep/separator',
         props: {
-          opacity: String(attrs.opacity || 'alpha-channel'),
+          opacity: attrs.opacity ? makeStyleRef(`effects.opacity.${String(attrs.opacity)}`) : makeStyleRef('effects.opacity.alpha-channel'),
           tagName: attrs.tagName === 'div' ? 'div' : 'hr',
-          backgroundColor: String(attrs.backgroundColor || ''),
-          customBackgroundColor: String(attrs?.style?.color?.background || ''),
+          style: {
+            color: {
+              background: backgroundColorSlug
+                ? makeStyleRef(`color.palette.${backgroundColorSlug}`)
+                : makeStyleValue(attrs?.style?.color?.background || '')
+            }
+          },
           hasCustomColor
         },
         origin: { wpBlockName, attrs },
@@ -122,13 +140,15 @@ const spacerRenderer = {
   canHandle: () => true,
   render({ target, node }) {
     const props = node?.props && typeof node.props === 'object' ? node.props : {};
+    const height = resolveSpacingStyleValue(props?.style?.spacing?.height);
+    const width = resolveSpacingStyleValue(props?.style?.spacing?.width);
     if (target === 'editor') {
-      return { kind: 'spacer', height: String(props.height || '100px'), width: String(props.width || '') };
+      return { kind: 'spacer', height: String(height || '100px'), width: String(width || '') };
     }
-    const hasHeight = Boolean(String(props.height || '').trim());
-    const height = hasHeight ? `height:${escapeHtml(spacingPresetToCssVar(props.height || ''))}` : '';
-    const width = props.width ? `${hasHeight ? ';' : ''}width:${escapeHtml(spacingPresetToCssVar(props.width))}` : '';
-    const styleAttr = height || width ? ` style="${height}${width}"` : '';
+    const hasHeight = Boolean(String(height || '').trim());
+    const heightStyle = hasHeight ? `height:${escapeHtml(height)}` : '';
+    const widthStyle = width ? `${hasHeight ? ';' : ''}width:${escapeHtml(width)}` : '';
+    const styleAttr = heightStyle || widthStyle ? ` style="${heightStyle}${widthStyle}"` : '';
     return `<div class="ep-spacer" aria-hidden="true"${styleAttr}></div>`;
   }
 };
@@ -160,15 +180,17 @@ const quoteRenderer = {
     const props = node?.props && typeof node.props === 'object' ? node.props : {};
     const renderedChildren = Array.isArray(context?.renderedChildren) ? context.renderedChildren : [];
     if (target === 'editor') {
+      const textAlign = resolveEnumStyleValue(props?.style?.typography?.textAlign);
       return {
         kind: 'quote',
         value: String(props.value || ''),
         citation: String(props.citation || ''),
-        textAlign: String(props.textAlign || ''),
+        textAlign,
         children: renderedChildren
       };
     }
-    const className = props.textAlign ? ` class="has-text-align-${escapeHtml(props.textAlign)}"` : '';
+    const textAlign = resolveEnumStyleValue(props?.style?.typography?.textAlign);
+    const className = textAlign ? ` class="has-text-align-${escapeHtml(textAlign)}"` : '';
     const rawValue = normalizeRichTextHtml(props.value);
     const fallbackValueMarkup = rawValue
       ? (/<p[\s>]/i.test(rawValue) ? rawValue : `<p>${rawValue}</p>`)
@@ -187,24 +209,28 @@ const separatorRenderer = {
   canHandle: () => true,
   render({ target, node }) {
     const props = node?.props && typeof node.props === 'object' ? node.props : {};
+    const opacity = resolveEnumStyleValue(props.opacity) || 'alpha-channel';
     if (target === 'editor') {
       return {
         kind: 'separator',
         tagName: props.tagName === 'div' ? 'div' : 'hr',
-        opacity: String(props.opacity || 'alpha-channel')
+        opacity
       };
     }
     const tagName = props.tagName === 'div' ? 'div' : 'hr';
-    const colorSlug = toPresetSlug(props.backgroundColor);
+    const bgColor = props?.style?.color?.background;
+    const bgRef = bgColor && typeof bgColor === 'object' ? String(bgColor.ref || '') : '';
+    const colorSlug = toPresetSlug(bgRef.startsWith('color.palette.') ? bgRef.slice('color.palette.'.length) : '');
+    const customColor = bgColor && typeof bgColor === 'object' && typeof bgColor.value === 'string' ? bgColor.value : '';
     const classes = classList([
       'ep-separator',
-      props.opacity === 'css' ? 'has-css-opacity' : '',
-      props.opacity === 'alpha-channel' ? 'has-alpha-channel-opacity' : '',
+      opacity === 'css' ? 'has-css-opacity' : '',
+      opacity === 'alpha-channel' ? 'has-alpha-channel-opacity' : '',
       colorSlug ? `has-${escapeHtml(colorSlug)}-color` : '',
-      props.backgroundColor || props.customBackgroundColor ? 'has-text-color' : ''
+      bgRef || customColor ? 'has-text-color' : ''
     ]);
-    const styleColor = props.customBackgroundColor
-      ? `color:${escapeHtml(props.customBackgroundColor)}`
+    const styleColor = customColor
+      ? `color:${escapeHtml(customColor)}`
       : '';
     const styleAttr = styleColor ? ` style="${styleColor}"` : '';
     return `<${tagName} class="${classes}"${styleAttr}></${tagName}>`;

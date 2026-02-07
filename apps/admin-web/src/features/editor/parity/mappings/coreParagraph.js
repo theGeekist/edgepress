@@ -1,3 +1,5 @@
+import { makeStyleRef, resolveEnumStyleValue } from '../styleRefs.js';
+
 function escapeHtml(input) {
   return String(input ?? '')
     .replaceAll('&', '&amp;')
@@ -25,7 +27,11 @@ export const paragraphImportTransform = {
         content: String(attrs.content || ''),
         dropCap: Boolean(attrs.dropCap),
         direction: attrs.direction ? String(attrs.direction) : '',
-        textAlign
+        style: {
+          typography: {
+            textAlign: textAlign ? makeStyleRef(`typography.textAlign.${textAlign}`) : null
+          }
+        }
       },
       origin: {
         wpBlockName,
@@ -48,15 +54,16 @@ const paragraphRenderer = {
     const props = node?.props && typeof node.props === 'object' ? node.props : {};
     const richContent = normalizeRichTextHtml(props.content || '');
     if (target === 'editor') {
+      const textAlign = resolveEnumStyleValue(props?.style?.typography?.textAlign);
       return {
         kind: 'paragraph',
         text: String(props.content || ''),
         dropCap: Boolean(props.dropCap),
         direction: String(props.direction || ''),
-        textAlign: String(props.textAlign || '')
+        textAlign
       };
     }
-    const textAlign = String(props.textAlign || '');
+    const textAlign = resolveEnumStyleValue(props?.style?.typography?.textAlign);
     const hasDropCapClass = Boolean(props.dropCap) && textAlign !== 'right' && textAlign !== 'center';
     const classNames = [
       hasDropCapClass ? 'has-drop-cap' : '',
