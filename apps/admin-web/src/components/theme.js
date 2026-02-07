@@ -1,38 +1,30 @@
 import { useEffect, useMemo, useState } from 'react';
 
-const lightPalette = {
-  page: '#f0f0f1',
-  surface: '#ffffff',
-  surfaceMuted: '#f7fafc',
-  border: '#c3c4c7', // WP Border
-  borderSoft: '#dcdcde',
-  text: '#3c434a', // WP Text
-  textMuted: '#646970',
-  accent: '#2271b1', // WP Blue
-  onAccent: '#ffffff',
-  error: '#d63638',
-  sidebar: '#1d2327',
-  sidebarText: '#f0f0f1',
-  topbar: '#1d2327',
-  topbarText: '#f0f0f1'
-};
+import {
+  applyCssVarsToDocument,
+  defaultDarkTheme,
+  defaultLightTheme,
+  mergeEpThemes,
+  toCssVars,
+  toUiPalette
+} from '@features/theme';
 
-const darkPalette = {
-  page: '#101517', // Darker WP-ish
-  surface: '#1d2327',
-  surfaceMuted: '#2c3338',
-  border: '#454e58',
-  borderSoft: '#50575e',
-  text: '#f0f0f1',
-  textMuted: '#a7aaad',
-  accent: '#72aee6', // WP Blue Dark Mode
-  onAccent: '#101517',
-  error: '#e65054',
-  sidebar: '#141414', // Slightly darker than surface
-  sidebarText: '#f0f0f1',
-  topbar: '#141414',
-  topbarText: '#f0f0f1'
-};
+const THEME_OVERRIDE_STORAGE_KEY = 'edgepress.admin.theme.override.v1';
+
+function readThemeOverride(mode) {
+  if (typeof globalThis === 'undefined' || !globalThis.window || !globalThis.window.localStorage) {
+    return null;
+  }
+  try {
+    const raw = globalThis.window.localStorage.getItem(THEME_OVERRIDE_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    const byMode = parsed && typeof parsed === 'object' ? parsed[mode] : null;
+    return byMode && typeof byMode === 'object' ? byMode : null;
+  } catch {
+    return null;
+  }
+}
 
 export function useThemeMode() {
   const [mode, setMode] = useState(() => {
@@ -51,6 +43,18 @@ export function useThemeMode() {
     return () => media.removeEventListener('change', onChange);
   }, []);
 
-  const palette = useMemo(() => (mode === 'dark' ? darkPalette : lightPalette), [mode]);
-  return { mode, setMode, palette };
+  const theme = useMemo(() => {
+    const base = mode === 'dark' ? defaultDarkTheme : defaultLightTheme;
+    const override = readThemeOverride(mode);
+    return mergeEpThemes(base, override || null);
+  }, [mode]);
+
+  const palette = useMemo(() => toUiPalette(theme), [theme]);
+
+  useEffect(() => {
+    const vars = toCssVars(theme);
+    applyCssVarsToDocument(vars);
+  }, [theme]);
+
+  return { mode, setMode, palette, theme };
 }

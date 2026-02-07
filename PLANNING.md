@@ -173,16 +173,20 @@ Exit criteria:
 - Block-level authoring/render parity work is explicitly tracked in Phase 12B.
 
 ## Phase 12B – Core Blocks and Gutenberg Parity (next)
-- [ ] Port/reuse core WordPress blocks and primitives needed for parity-first authoring.
+- [x] Port/reuse core WordPress blocks and primitives needed for parity-first authoring.
 - [ ] Implement foundational block set end-to-end: rich text, image+caption, embed (with embed validation policy).
 - [ ] Implement Gutenberg navigation block parity and menu rendering semantics (no bespoke parallel pipeline).
 - [ ] Replace transitional featured-image/media-id controls with block-parity media selection primitives.
 - [ ] Ensure media/nav block flows survive revision -> preview -> publish -> live without special cases.
 - [ ] Introduce `theme.json` as first-class design token source for editor/preview/site.
-- [ ] Define token resolution model and fallback policy (theme defaults vs content overrides).
+- [x] Define token resolution model and fallback policy (theme defaults vs content overrides).
 - [ ] Add templates/patterns strategy and lifecycle (registration, versioning, migration).
 - [ ] Apply theme parity across admin editing chrome, preview skin, and published output.
 - [ ] Define WP compatibility profile scope needed for block/editor parity (`wp.*` guaranteed/partial/out-of-scope).
+- `Increment complete (2026-02-07)`: landed canonical parity substrate with versioned canonical nodes/codecs, deterministic transform/renderer registries, fallback node (`ep/unknown`) + diagnostics, and golden transform tests (`apps/admin-web/src/features/editor/parity/{canonical.js,registries.js,resolver.js,pipeline.js,fallback.js,diagnostics.js}`, `packages/testing/test/editor.parity.transforms.test.js`).
+- `Increment complete (2026-02-07)`: ported initial WP block mappings into EP canonical/render pipelines covering paragraph, image, embed, heading, quote, separator, spacer, and layout primitives (group/columns/column/row), with deterministic publish/preview/editor targets (`apps/admin-web/src/features/editor/parity/mappings/{coreParagraph.js,coreImage.js,coreContent.js,coreLayout.js}`, `apps/admin-web/src/features/editor/parity/packs/core.js`).
+- `Increment complete (2026-02-07)`: added theme/token substrate for EP-first styling with semantic style refs, WP `theme.json` adapter origin preservation (presets vs custom), token runtime resolution/fallback behavior, and contract tests (`apps/admin-web/src/features/theme/*`, `packages/testing/test/admin.theme.tokens.test.js`).
+- `Remaining in this phase`: embed validation policy, navigation block parity, replacement of transitional featured-image controls, full media/nav revision->preview->publish->live acceptance coverage, patterns/templates lifecycle, full theme parity across editor/preview/live, and explicit WP compatibility profile publication.
 
 Exit criteria:
 - Core block authoring uses WP-compatible primitives rather than custom transitional controls.
