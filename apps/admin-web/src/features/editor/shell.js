@@ -167,8 +167,8 @@ export function createAdminShell({ baseUrl, fetchImpl = fetch }) {
       }
       return response;
     },
-    async preview(documentId) {
-      return store.getPreview(documentId);
+    async preview(documentId, options = {}) {
+      return store.getPreview(documentId, options);
     },
     async listRevisions(documentId) {
       return store.listRevisions(documentId);

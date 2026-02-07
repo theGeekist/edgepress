@@ -80,8 +80,8 @@ export function useReleaseLoopState(shell) {
     }
   }
 
-  async function generatePreview(documentId) {
-    const payload = await shell.preview(documentId);
+  async function generatePreview(documentId, options = {}) {
+    const payload = await shell.preview(documentId, options);
     setPreviewUrl(payload.previewUrl || '');
     return payload;
   }

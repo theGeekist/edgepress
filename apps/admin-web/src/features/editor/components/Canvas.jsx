@@ -1,17 +1,37 @@
 import { Component, useEffect, useMemo, useRef, useState } from 'react';
 import { SlotFillProvider, Popover } from '@wordpress/components';
 import {
-  BlockCanvas,
   BlockEditorKeyboardShortcuts,
   BlockEditorProvider,
+  BlockInspector,
+  Inserter,
+  BlockList,
   BlockTools,
   ObserveTyping,
   WritingFlow
 } from '@wordpress/block-editor';
 import { createBlock, parse, serialize } from '@wordpress/blocks';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { toCssVars } from '@features/theme';
+import './canvas.web.css';
 
-const EDITOR_SETTINGS = {};
+const SUPPORTED_BLOCK_TYPES = [
+  'core/paragraph',
+  'core/heading',
+  'core/image',
+  'core/embed',
+  'core/group',
+  'core/columns',
+  'core/column',
+  'core/quote',
+  'core/separator',
+  'core/spacer'
+];
+
+const EDITOR_SETTINGS = {
+  hasFixedToolbar: true,
+  allowedBlockTypes: SUPPORTED_BLOCK_TYPES
+};
 const DEFAULT_PALETTE = {
   accent: '#2271b1',
   border: '#d5dbe8',
@@ -22,7 +42,7 @@ const DEFAULT_PALETTE = {
   onAccent: '#ffffff'
 };
 
-function BlockEditorCanvas({ blocks, setBlocks }) {
+export function EditorWorkspaceProvider({ blocks, setBlocks, children }) {
   return (
     <SlotFillProvider>
       <BlockEditorProvider
@@ -31,20 +51,57 @@ function BlockEditorCanvas({ blocks, setBlocks }) {
         onChange={(next) => setBlocks(next)}
         settings={EDITOR_SETTINGS}
       >
-        <div className="editor-styles-wrapper" style={{ minHeight: 680, width: '100%', pointerEvents: 'auto' }}>
-          <BlockEditorKeyboardShortcuts />
-          <BlockTools>
-            <WritingFlow>
-              <ObserveTyping>
-                <BlockCanvas height="680px" />
-              </ObserveTyping>
-            </WritingFlow>
-          </BlockTools>
+        {children}
+        <div id="ep-editor-popovers">
+          <Popover.Slot />
         </div>
-        <Popover.Slot />
       </BlockEditorProvider>
     </SlotFillProvider>
   );
+}
+
+function BlockEditorCanvas({ title, onTitleChange }) {
+  return (
+    <>
+      <BlockEditorKeyboardShortcuts />
+      <BlockTools>
+        <WritingFlow>
+          <ObserveTyping>
+            <div className="editor-styles-wrapper" style={{ minHeight: 680, width: '100%', pointerEvents: 'auto' }}>
+              <div className="ep-editor-title-wrap">
+                <input
+                  className="ep-editor-title-input"
+                  type="text"
+                  value={title || ''}
+                  placeholder="Add title"
+                  onChange={(event) => onTitleChange?.(event.target.value)}
+                />
+              </div>
+              <BlockList />
+            </div>
+          </ObserveTyping>
+        </WritingFlow>
+      </BlockTools>
+    </>
+  );
+}
+
+function toWpThemeVars(palette, themeVars = {}) {
+  const p = palette || DEFAULT_PALETTE;
+  return {
+    ...themeVars,
+    '--wp-admin-theme-color': p.accent,
+    '--wp-admin-theme-color-darker-10': p.accent,
+    '--wp-admin-theme-color-darker-20': p.accent,
+    '--wp-components-color-accent': p.accent,
+    '--wp-components-color-foreground': p.text,
+    '--wp-components-color-background': p.surface,
+    '--wp-components-color-gray-900': p.text,
+    '--wp-components-color-gray-700': p.textMuted,
+    '--wp-components-color-gray-300': p.border,
+    '--wp-components-color-gray-100': p.surfaceMuted,
+    '--wp-components-color-border': p.border
+  };
 }
 
 function toFallbackText(blocks) {
@@ -140,19 +197,37 @@ class CanvasErrorBoundary extends Component {
   }
 }
 
-export function EditorCanvas({ blocks, setBlocks, palette }) {
+export function EditorCanvas({ blocks, setBlocks, palette, theme, title, onTitleChange }) {
   const [mode, setMode] = useState('visual');
   const [visualFailed, setVisualFailed] = useState(false);
   const canUseVisual = !visualFailed;
   const p = palette || DEFAULT_PALETTE;
-
-  function appendParagraphBlock() {
-    setBlocks([...(Array.isArray(blocks) ? blocks : []), createBlock('core/paragraph')]);
-  }
+  const themeVars = useMemo(() => toCssVars(theme || {}, { prefix: '--ep' }), [theme]);
+  useEffect(() => {
+    if (mode !== 'visual') return;
+    if (!Array.isArray(blocks) || blocks.length > 0) return;
+    setBlocks([createBlock('core/paragraph')]);
+  }, [mode, blocks, setBlocks]);
 
   return (
     <View style={styles.container}>
       <View style={styles.modeRow}>
+        <Inserter
+          renderToggle={({ onToggle }) => (
+            <Pressable
+              onPress={onToggle}
+              style={({ pressed }) => [
+                styles.modeBtn,
+                {
+                  backgroundColor: pressed ? p.surfaceMuted : 'transparent',
+                  borderColor: p.accent
+                }
+              ]}
+            >
+              <Text style={{ color: p.accent, fontWeight: '700' }}>+</Text>
+            </Pressable>
+          )}
+        />
         <Pressable
           onPress={() => setMode('source')}
           style={({ pressed }) => [
@@ -189,18 +264,6 @@ export function EditorCanvas({ blocks, setBlocks, palette }) {
             Visual
           </Text>
         </Pressable>
-        {/* Spacer */}
-        <View style={{ flex: 1 }} />
-
-        <Pressable
-          onPress={appendParagraphBlock}
-          style={({ pressed }) => [
-            styles.modeBtn,
-            { backgroundColor: pressed ? p.surfaceMuted : 'transparent', borderColor: p.accent }
-          ]}
-        >
-          <Text style={{ color: p.accent, fontWeight: '600' }}>+ Paragraph</Text>
-        </Pressable>
       </View>
 
       {/* Document Canvas Container */}
@@ -217,8 +280,10 @@ export function EditorCanvas({ blocks, setBlocks, palette }) {
               <FallbackEditor blocks={blocks} setBlocks={setBlocks} palette={p} />
             }
           >
-            <View style={[styles.paperSheet, { backgroundColor: p.surface, shadowColor: p.text }]}>
-              <BlockEditorCanvas blocks={blocks} setBlocks={setBlocks} />
+            <View style={[styles.paperSheet, { backgroundColor: p.surface, shadowColor: p.text, borderColor: p.border }]}>
+              <div className="ep-editor-canvas-root" style={toWpThemeVars(p, themeVars)}>
+                <BlockEditorCanvas title={title} onTitleChange={onTitleChange} />
+              </div>
             </View>
           </CanvasErrorBoundary>
         )}
@@ -230,6 +295,15 @@ export function EditorCanvas({ blocks, setBlocks, palette }) {
         </Text>
       ) : null}
     </View>
+  );
+}
+
+export function BlockInspectorPanel({ palette }) {
+  const p = palette || DEFAULT_PALETTE;
+  return (
+    <div className="ep-editor-inspector-panel" style={toWpThemeVars(p)} aria-label="Block settings">
+      <BlockInspector />
+    </div>
   );
 }
 
@@ -256,18 +330,18 @@ const styles = StyleSheet.create({
   canvasContainer: {
     flex: 1,
     alignItems: 'stretch',
-    paddingVertical: 20
+    paddingVertical: 0
   },
   paperSheet: {
     width: '100%',
     minHeight: 680,
-    padding: 20,
+    padding: 0,
+    borderRadius: BORDER_RADIUS,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.05)'
+    borderWidth: 1
   },
   fallbackWrap: {
     width: '100%',

@@ -1,4 +1,8 @@
-export { EditorCanvas } from './components/Canvas.jsx';
+export {
+  EditorCanvas,
+  EditorWorkspaceProvider,
+  BlockInspectorPanel
+} from './components/Canvas.jsx';
 export { useEditorState } from './hooks/useEditorState.js';
 export { registerFoundationalBlocks } from './registerBlocks.js';
 export { createAdminShell } from './shell.js';

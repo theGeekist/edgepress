@@ -57,10 +57,10 @@ export const layoutStyles = StyleSheet.create({
     flexDirection: 'row'
   },
   sidebar: {
-    width: 160,
-    borderRightWidth: 0,
+    width: 180,
+    borderRightWidth: 1,
     zIndex: 90,
-    paddingVertical: 0
+    paddingVertical: 0,
   },
   // Mobile drawer style would apply absolutely
   sidebarMobile: {
@@ -68,9 +68,9 @@ export const layoutStyles = StyleSheet.create({
     top: 0,
     bottom: 0,
     left: 0,
-    width: 200,
+    width: 240,
     elevation: 10,
-    zIndex: 200
+    zIndex: 200,
   },
   sectionTitle: {
     fontSize: 12,
@@ -88,7 +88,8 @@ export const layoutStyles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 12,
     flexDirection: 'row',
-    alignItems: 'center'
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   navSubButton: {
     paddingVertical: 8,

@@ -41,8 +41,8 @@ export function createCanonicalSdkStore(config) {
     async deleteMedia(id) {
       return client.deleteMedia(id);
     },
-    async getPreview(documentId) {
-      return client.preview(documentId);
+    async getPreview(documentId, options) {
+      return client.preview(documentId, options);
     },
     async listRevisions(documentId) {
       return client.listRevisions(documentId);
