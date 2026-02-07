@@ -189,6 +189,98 @@ Exit criteria:
 - Navigation/media behaviors are owned by block parity and produce deterministic publish/live output.
 - Theme tokens/templates and block primitives resolve consistently across editor, preview, and live.
 
+### Phase 12B Execution Blueprint (locked)
+
+This subsection is the implementation contract for block parity work. Treat it as the source of truth for sequencing and scope.
+
+#### Tracks and ordering
+1. Shell hardening before feature accretion.
+2. Mapping architecture (WP -> EP canonical + EP -> render).
+3. Gutenberg parity UX (chooser, patterns, themes) powered by registries.
+4. Import/extensibility path for future WP -> EP migrations and plugin packs.
+
+#### Non-negotiable architecture invariants
+- Canonical representation is versioned and explicit (not ad-hoc JSON).
+- Import and render concerns are separated (different registries/pipelines).
+- Transform resolution is deterministic and target-scoped.
+- Unknown/unsupported content is preserved with loss-aware fallback nodes.
+- Registry-driven behavior replaces hardcoded per-block conditionals.
+- Codec determinism is mandatory: stable key ordering/normalization, stable defaults, and stable unknown-field policy.
+
+#### Canonical envelope requirements
+- `schemaVersion`: global canonical schema version.
+- `id`: stable per-node identifier (present on every canonical node).
+- `blockKind`: stable EP block identifier (not raw WP name).
+- `props`: canonical block data (not raw WP attrs).
+- `children`: explicit nested canonical nodes array (empty when leaf).
+- `origin`: source metadata (WP name, attrs snapshot, raw fragments as needed).
+- `lossiness`: `none | partial | fallback`.
+
+#### Registry model
+- `importTransforms`: WP block AST -> EP canonical.
+- `renderers`: EP canonical -> target-specific outputs.
+- Optional `postTransforms`: annotation/enrichment only; must not change node identity.
+- Renderer targets are explicit: `publish`, `preview`, `editor`.
+- Renderer resolution keys are `(blockKind, target)` with deterministic fallback policy (for example `editor -> preview` only when explicitly allowed).
+- Resolver contract:
+  - transforms declare explicit target scope (`wpBlockNames` and/or canonical `blockKinds`).
+  - `canHandle()` must stay cheap.
+  - single winning transform per node in select/apply stage.
+  - winner selection policy is fixed: scope match -> `canHandle` -> highest priority -> stable lexical transform id tie-break.
+
+#### Extension model (packs/plugins)
+- Transform packs must be pure data + pure functions.
+- Pack manifest must include:
+  - `name`
+  - `version`
+  - supported WP block names
+  - supported canonical schema version range
+- Registration is explicit; no hidden side-effect behavior.
+
+#### Fallback guarantee
+- Define canonical fallback node kind (for example `ep/unknown`) that preserves:
+  - original WP block name
+  - attrs snapshot
+  - raw source slice when available, else `innerHTML` + `innerContent` fragments
+  - original raw WP `innerBlocks` payload for future re-transform upgrades
+  - lossiness marker and diagnostics context
+
+#### UX policy for parity
+- Block chooser/inserter is capability-driven:
+  - `available` (registered)
+  - `enabled` (theme/site config/permissions)
+  - `context-supported` (post type/location/nesting rules)
+- Patterns and theme application must be registry/config driven.
+
+#### Testing and diagnostics
+- Golden fixture triads are required:
+  - WP input
+  - expected canonical
+  - expected rendered output snippet
+- Diagnostics report must be serializable and include transformed/partial/fallback/unsupported counts and items.
+- Diagnostics items must be node-addressable and include:
+  - stable node path (`root -> ... -> node` by canonical ids)
+  - `origin.wpBlockName`
+  - winning transform id (or `null` for fallback)
+  - lossiness
+- Persist import diagnostics with migrated docs when applicable.
+
+#### Implementation sequence (committed)
+1. Define canonical node schemas + codecs (`schemaVersion` spine).
+2. Build registry scaffolding + deterministic resolver.
+3. Port first mapping pack: `core/paragraph` import+render.
+4. Port media-critical mapping pack: `core/image` import+render (wired to media model).
+5. Add nested-structure validation early (`core/group` or equivalent).
+6. Add `ep/unknown` fallback + diagnostics reporter.
+7. Wire chooser/pattern/theme UX to registries.
+8. Add plugin-pack loader and compatibility manifests.
+- Sequencing note: implement fallback + diagnostics before/with nested validation so nested failures remain non-fatal and explainable.
+
+#### Out-of-scope guardrail for this phase
+- Do not build parallel bespoke editor controls that bypass canonical/registry contracts.
+- Transitional controls are allowed only as temporary compatibility shims and must be tracked for removal.
+- Do not bypass renderer registries: editor visualization must come from renderer outputs (or renderer-selected components), not ad-hoc per-block UI branches.
+
 ## Phase 13 – Theme System and Design Parity (merged into Phase 12B)
 - [x] Theme-system parity backlog moved into Phase 12B to keep Gutenberg/block parity in one execution phase.
 
