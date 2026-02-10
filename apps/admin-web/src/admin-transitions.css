@@ -1,0 +1,133 @@
+/* EdgePress Admin Transitions */
+/* Snappy, fast transitions that feel responsive */
+
+/* ========== Transition Variables ========== */
+:root {
+  --ep-duration-instant: 50ms;
+  --ep-duration-fast: 100ms;
+  --ep-duration-normal: 150ms;
+  --ep-duration-slow: 200ms;
+  --ep-duration-slower: 300ms;
+
+  --ep-easing-default: cubic-bezier(0.4, 0, 0.2, 1);
+  --ep-easing-in: cubic-bezier(0.4, 0, 1, 1);
+  --ep-easing-out: cubic-bezier(0, 0, 0.2, 1);
+  --ep-easing-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+  --ep-transition-fast: all var(--ep-duration-fast) var(--ep-easing-default);
+  --ep-transition-normal: all var(--ep-duration-normal) var(--ep-easing-default);
+  --ep-transition-slow: all var(--ep-duration-slow) var(--ep-easing-default);
+  --ep-transition-fade: opacity var(--ep-duration-normal) var(--ep-easing-default);
+  --ep-transition-transform: transform var(--ep-duration-normal) var(--ep-easing-default);
+  --ep-transition-bg: background-color var(--ep-duration-normal) var(--ep-easing-default);
+  --ep-transition-color: color var(--ep-duration-fast) var(--ep-easing-default);
+}
+
+/* ========== Sidebar Transitions ========== */
+.sidebar-item {
+  transition: var(--ep-transition-fast);
+}
+
+.sidebar-item:hover {
+  transition: var(--ep-transition-fast);
+}
+
+.sidebar-chevron {
+  transition: transform var(--ep-duration-fast) var(--ep-easing-default);
+}
+
+/* ========== Content Transitions ========== */
+.content-fade-in {
+  animation: fadeIn var(--ep-duration-normal) var(--ep-easing-default);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ========== Button Press Effect ========== */
+.pressable-button {
+  transition: var(--ep-transition-fast);
+}
+
+.pressable-button:active {
+  transform: scale(0.98);
+  transition: transform var(--ep-duration-instant) var(--ep-easing-default);
+}
+
+/* ========== Table Row Hover ========== */
+.table-row-hover {
+  transition: var(--ep-transition-bg);
+}
+
+/* ========== Input Focus ========== */
+.input-field {
+  transition: border-color var(--ep-duration-normal) var(--ep-easing-default),
+              box-shadow var(--ep-duration-normal) var(--ep-easing-default);
+}
+
+/* ========== Page Transitions ========== */
+.page-transition {
+  transition: opacity var(--ep-duration-normal) var(--ep-easing-default);
+}
+
+/* ========== Mobile Drawer ========== */
+@media (max-width: 768px) {
+  .sidebar-drawer {
+    transition: transform var(--ep-duration-slow) var(--ep-easing-default);
+  }
+}
+
+/* ========== Loading Skeleton ========== */
+.skeleton-shimmer {
+  animation: shimmer 1.5s infinite;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.5) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* ========== Status Messages ========== */
+.status-message {
+  transition: opacity var(--ep-duration-normal) var(--ep-easing-default),
+              transform var(--ep-duration-normal) var(--ep-easing-default);
+}
+
+/* ========== Modal Backdrop ========== */
+.modal-backdrop {
+  transition: opacity var(--ep-duration-normal) var(--ep-easing-default);
+}
+
+.modal-content {
+  transition: opacity var(--ep-duration-normal) var(--ep-easing-default),
+              transform var(--ep-duration-normal) var(--ep-easing-default);
+}
+
+/* ========== Reduced Motion ========== */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

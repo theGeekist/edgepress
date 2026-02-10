@@ -3,7 +3,10 @@ import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { configureApiFetch, createApiFetchMiddlewares } from '../../../apps/admin-web/src/gutenberg-integration.js';
+import {
+  configureApiFetch,
+  createApiFetchMiddlewares
+} from '../../../apps/admin-web/src/features/editor/gutenberg-integration.js';
 
 const require = createRequire(import.meta.url);
 let moduleVersion = 0;
@@ -36,6 +39,38 @@ test('configureApiFetch registers middleware in deterministic order', () => {
     }
   };
 
+  configureApiFetch(apiFetch, {
+    getAccessToken: () => null,
+    refresh: async () => false,
+    apiRoot: 'http://localhost:8787'
+  });
+
+  assert.deepEqual(used, [
+    'authMiddleware',
+    'traceMiddleware',
+    'root:http://localhost:8787/',
+    'refreshMiddleware'
+  ]);
+});
+
+test('configureApiFetch is idempotent for same apiRoot', () => {
+  const used = [];
+  const apiFetch = {
+    createRootURLMiddleware(root) {
+      const fn = (_options, next) => next(_options);
+      fn._name = `root:${root}`;
+      return fn;
+    },
+    use(fn) {
+      used.push(fn._name || fn.name || 'anonymous');
+    }
+  };
+
+  configureApiFetch(apiFetch, {
+    getAccessToken: () => null,
+    refresh: async () => false,
+    apiRoot: 'http://localhost:8787'
+  });
   configureApiFetch(apiFetch, {
     getAccessToken: () => null,
     refresh: async () => false,

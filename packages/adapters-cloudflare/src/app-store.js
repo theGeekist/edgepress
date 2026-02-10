@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import {
   createDocument,
   createFormSubmission,
@@ -89,6 +90,14 @@ export function createAppStores({
     await kvPutJson(key, items);
   }
 
+  async function kvIndexRemove(key, value) {
+    const items = (await kvGetJson(key)) || [];
+    await kvPutJson(
+      key,
+      items.filter((entry) => entry !== value)
+    );
+  }
+
   async function kvSeedUser(user) {
     await kvPutJson(appKey('user', user.id), user);
     await kvPutString(appKey('user_by_username', user.username), user.id);
@@ -120,9 +129,11 @@ export function createAppStores({
     await d1.exec(D1_SQL.createAppPublishJobs);
     await d1.exec(D1_SQL.createAppFormSubmissions);
     await d1.exec(D1_SQL.createAppPreviews);
+    await d1.exec(D1_SQL.createAppNavigationMenus);
     await d1.exec(D1_SQL.createIdxRevisionsDocument);
     await d1.exec(D1_SQL.createIdxFormsFormId);
     await d1.exec(D1_SQL.createIdxPreviewsExpiresAt);
+    await d1.exec(D1_SQL.createIdxNavigationMenusUpdatedAt);
     if (bootstrapUser) {
       await d1
         .prepare(D1_SQL.upsertUser)
@@ -245,10 +256,74 @@ export function createAppStores({
         await d1.prepare(D1_SQL.upsertMedia).bind(finalized.id, JSON.stringify(finalized), finalized.updatedAt).run();
         return finalized;
       },
+      async listMedia(query = {}) {
+        await ensureD1AppSchema();
+        const rows = await d1.prepare(D1_SQL.selectMedia).all();
+        const all = (rows.results || []).map((entry) => parseJsonSafe(entry.media_json)).filter(Boolean);
+        const q = String(query.q || '').trim().toLowerCase();
+        const mimeType = String(query.mimeType || '').trim().toLowerCase();
+        const sortBy = query.sortBy === 'createdAt' ? 'createdAt' : 'updatedAt';
+        const sortDir = query.sortDir === 'asc' ? 'asc' : 'desc';
+        const page = Math.max(1, Number(query.page) || 1);
+        const pageSize = Math.min(100, Math.max(1, Number(query.pageSize) || 20));
+
+        const filtered = all.filter((item) => {
+          if (item.status && item.status !== 'ready') return false;
+          if (q) {
+            const haystack = `${item.filename || ''} ${item.alt || ''} ${item.caption || ''} ${item.description || ''}`.toLowerCase();
+            if (!haystack.includes(q)) return false;
+          }
+          if (mimeType && String(item.mimeType || '').toLowerCase() !== mimeType) return false;
+          return true;
+        });
+
+        filtered.sort((a, b) => {
+          const av = String(a?.[sortBy] || '');
+          const bv = String(b?.[sortBy] || '');
+          return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+        });
+
+        const totalItems = filtered.length;
+        const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+        const safePage = Math.min(page, totalPages);
+        const start = (safePage - 1) * pageSize;
+        const items = filtered.slice(start, start + pageSize);
+
+        return {
+          items,
+          pagination: {
+            page: safePage,
+            pageSize,
+            totalItems,
+            totalPages
+          }
+        };
+      },
       async getMedia(id) {
         await ensureD1AppSchema();
         const row = await d1.prepare(D1_SQL.selectMediaById).bind(id).first();
         return parseJsonSafe(row?.media_json);
+      },
+      async updateMedia(id, patch) {
+        await ensureD1AppSchema();
+        const existing = await this.getMedia(id);
+        if (!existing) return null;
+        const updated = {
+          ...existing,
+          alt: patch.alt !== undefined ? String(patch.alt || '').trim() : existing.alt || '',
+          caption: patch.caption !== undefined ? String(patch.caption || '').trim() : existing.caption || '',
+          description: patch.description !== undefined ? String(patch.description || '').trim() : existing.description || '',
+          updatedAt: runtime.now().toISOString()
+        };
+        await d1.prepare(D1_SQL.upsertMedia).bind(updated.id, JSON.stringify(updated), updated.updatedAt).run();
+        return updated;
+      },
+      async deleteMedia(id) {
+        await ensureD1AppSchema();
+        const existing = await this.getMedia(id);
+        if (!existing) return null;
+        await d1.prepare(D1_SQL.deleteMediaById).bind(id).run();
+        return { id };
       },
       async createPublishJob(input) {
         await ensureD1AppSchema();
@@ -279,6 +354,23 @@ export function createAppStores({
           .bind(submission.id, submission.formId, JSON.stringify(submission), submission.createdAt)
           .run();
         return submission;
+      },
+      async listNavigationMenus() {
+        await ensureD1AppSchema();
+        const rows = await d1.prepare(D1_SQL.selectNavigationMenus).all();
+        return (rows.results || []).map((entry) => parseJsonSafe(entry.menu_json)).filter(Boolean);
+      },
+      async getNavigationMenu(key) {
+        await ensureD1AppSchema();
+        const row = await d1.prepare(D1_SQL.selectNavigationMenuByKey).bind(key).first();
+        return parseJsonSafe(row?.menu_json);
+      },
+      async upsertNavigationMenu(menu) {
+        await ensureD1AppSchema();
+        const key = String(menu?.key || '').trim();
+        const updated = { ...menu, key, updatedAt: runtime.now().toISOString() };
+        await d1.prepare(D1_SQL.upsertNavigationMenu).bind(key, JSON.stringify(updated), updated.updatedAt).run();
+        return updated;
       }
     };
   }
@@ -394,6 +486,7 @@ export function createAppStores({
         const now = runtime.now().toISOString();
         const media = createMediaAssetSession({ ...input, now });
         await kvPutJson(appKey('media', media.id), media);
+        await kvIndexAdd(appKey('media_ids'), media.id);
         return media;
       },
       async finalizeMedia(id, input) {
@@ -405,9 +498,79 @@ export function createAppStores({
         await kvPutJson(appKey('media', id), finalized);
         return finalized;
       },
+      async listMedia(query = {}) {
+        await ensureKvSeeded();
+        const ids = (await kvGetJson(appKey('media_ids'))) || [];
+        const rows = await Promise.all(ids.map((id) => kvGetJson(appKey('media', id))));
+        const all = rows.filter(Boolean);
+        const q = String(query.q || '').trim().toLowerCase();
+        const mimeType = String(query.mimeType || '').trim().toLowerCase();
+        const sortBy = query.sortBy === 'createdAt' ? 'createdAt' : 'updatedAt';
+        const sortDir = query.sortDir === 'asc' ? 'asc' : 'desc';
+        const page = Math.max(1, Number(query.page) || 1);
+        const pageSize = Math.min(100, Math.max(1, Number(query.pageSize) || 20));
+
+        const filtered = all.filter((item) => {
+          if (item.status && item.status !== 'ready') return false;
+          if (q) {
+            const haystack = `${item.filename || ''} ${item.alt || ''} ${item.caption || ''} ${item.description || ''}`.toLowerCase();
+            if (!haystack.includes(q)) return false;
+          }
+          if (mimeType && String(item.mimeType || '').toLowerCase() !== mimeType) return false;
+          return true;
+        });
+
+        filtered.sort((a, b) => {
+          const av = String(a?.[sortBy] || '');
+          const bv = String(b?.[sortBy] || '');
+          return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+        });
+
+        const totalItems = filtered.length;
+        const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+        const safePage = Math.min(page, totalPages);
+        const start = (safePage - 1) * pageSize;
+        const items = filtered.slice(start, start + pageSize);
+
+        return {
+          items,
+          pagination: {
+            page: safePage,
+            pageSize,
+            totalItems,
+            totalPages
+          }
+        };
+      },
       async getMedia(id) {
         await ensureKvSeeded();
         return kvGetJson(appKey('media', id));
+      },
+      async updateMedia(id, patch) {
+        await ensureKvSeeded();
+        const existing = await kvGetJson(appKey('media', id));
+        if (!existing) return null;
+        const updated = {
+          ...existing,
+          alt: patch.alt !== undefined ? String(patch.alt || '').trim() : existing.alt || '',
+          caption: patch.caption !== undefined ? String(patch.caption || '').trim() : existing.caption || '',
+          description: patch.description !== undefined ? String(patch.description || '').trim() : existing.description || '',
+          updatedAt: runtime.now().toISOString()
+        };
+        await kvPutJson(appKey('media', id), updated);
+        return updated;
+      },
+      async deleteMedia(id) {
+        await ensureKvSeeded();
+        const existing = await kvGetJson(appKey('media', id));
+        if (!existing) return null;
+        if (kv.delete) {
+          await kv.delete(appKey('media', id));
+        } else {
+          await kvPutJson(appKey('media', id), null);
+        }
+        await kvIndexRemove(appKey('media_ids'), id);
+        return { id };
       },
       async createPublishJob(input) {
         await ensureKvSeeded();
@@ -434,6 +597,24 @@ export function createAppStores({
         const submission = createFormSubmission({ ...input, now });
         await kvPutJson(appKey('form_submission', submission.id), submission);
         return submission;
+      },
+      async listNavigationMenus() {
+        await ensureKvSeeded();
+        const keys = (await kvGetJson(appKey('navigation_menu_keys'))) || [];
+        const menus = await Promise.all(keys.map((key) => kvGetJson(appKey('navigation_menu', key))));
+        return menus.filter(Boolean);
+      },
+      async getNavigationMenu(key) {
+        await ensureKvSeeded();
+        return kvGetJson(appKey('navigation_menu', key));
+      },
+      async upsertNavigationMenu(menu) {
+        await ensureKvSeeded();
+        const key = String(menu?.key || '').trim();
+        const updated = { ...menu, key, updatedAt: runtime.now().toISOString() };
+        await kvPutJson(appKey('navigation_menu', key), updated);
+        await kvIndexAdd(appKey('navigation_menu_keys'), key);
+        return updated;
       }
     };
   }

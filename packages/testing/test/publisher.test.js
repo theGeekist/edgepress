@@ -5,7 +5,8 @@ import { createRelease } from '../../publish/src/publisher.js';
 function createRuntime() {
   return {
     now: () => new Date('2026-02-06T00:00:00.000Z'),
-    uuid: () => 'fixeduuid0001'
+    uuid: () => 'fixeduuid0001',
+    log() {}
   };
 }
 
@@ -222,4 +223,55 @@ test('createRelease block hash behavior distinguishes missing vs invalid blocks'
   assert.equal(manifest.blockHashes.length, 1);
   assert.equal(manifest.blockHashes[0], missingArtifact.blocksHash);
   assert.ok(logs.some((entry) => entry.event === 'publish_blocks_hash_failed'));
+});
+
+test('createRelease resolves media URLs for core/image and featured image', async () => {
+  const runtime = createRuntime();
+  const store = {
+    async listDocuments() {
+      return [{
+        id: 'doc_1',
+        title: 'Media Doc',
+        content: '<p>fallback</p>',
+        featuredImageId: 'med_1',
+        blocks: [{
+          name: 'core/image',
+          attributes: { mediaId: 'med_1', url: '' },
+          innerBlocks: []
+        }]
+      }];
+    },
+    async listMedia() {
+      return {
+        items: [{
+          id: 'med_1',
+          url: 'https://cdn.example/media/hero.jpg',
+          alt: 'Hero alt'
+        }]
+      };
+    }
+  };
+  const calls = [];
+  const releaseStore = {
+    async writeArtifact(releaseId, route, bytes, contentType) {
+      calls.push({ releaseId, route, bytes, contentType });
+      return { path: `${releaseId}/${route}.html`, contentType };
+    },
+    async getManifest() {
+      return null;
+    },
+    async writeManifest() {}
+  };
+
+  await createRelease({
+    runtime,
+    store,
+    releaseStore,
+    sourceRevisionId: 'rev_1',
+    publishedBy: 'u_admin'
+  });
+
+  assert.equal(calls.length, 1);
+  assert.ok(calls[0].bytes.includes('https://cdn.example/media/hero.jpg'));
+  assert.ok(calls[0].bytes.includes('Hero alt'));
 });

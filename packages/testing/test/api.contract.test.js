@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { routes, assertKeys } from '../../contracts/src/index.js';
-import { createInMemoryPlatform } from '../src/inMemoryPlatform.js';
+import { routes, assertKeys } from '@geekist/edgepress/contracts/src/index.js';
+import { createInMemoryPlatform } from '../src/store.js';
 import { authAsAdmin, requestJson } from '../src/testUtils.js';
 
 async function createSampleDocument(handler, token, { title = 'Sample', content = '<p>body</p>' } = {}) {
@@ -65,21 +65,57 @@ test('canonical API contracts return required response keys', async () => {
   assert.equal(mediaInit.res.status, 201);
   assertResponseShape('POST /v1/media', mediaInit.json);
 
+  const mediaInitAlias = await requestJson(handler, 'POST', '/v1/media/init', { token, body: {} });
+  assert.equal(mediaInitAlias.res.status, 201);
+  assertResponseShape('POST /v1/media/init', mediaInitAlias.json);
+
+  const uploadReq = new Request(`http://test.local/uploads/${mediaInit.json.mediaId}`, {
+    method: 'PUT',
+    headers: {
+      authorization: `Bearer ${token}`,
+      'x-upload-token': mediaInit.json.uploadToken,
+      'content-type': 'image/jpeg'
+    },
+    body: new Uint8Array([1, 2, 3, 4])
+  });
+  const uploadRes = await handler(uploadReq);
+  assert.equal(uploadRes.status, 200);
+
   const mediaFinalize = await requestJson(handler, 'POST', `/v1/media/${mediaInit.json.mediaId}/finalize`, {
     token,
     body: {
       uploadToken: mediaInit.json.uploadToken,
       filename: 'hero.jpg',
       mimeType: 'image/jpeg',
-      size: 1234
+      size: 1234,
+      width: 800,
+      height: 600,
+      alt: 'Hero',
+      caption: 'Cover image',
+      description: 'A hero image'
     }
   });
   assert.equal(mediaFinalize.res.status, 200);
   assertResponseShape('POST /v1/media/:id/finalize', mediaFinalize.json);
 
+  const mediaList = await requestJson(handler, 'GET', '/v1/media', { token });
+  assert.equal(mediaList.res.status, 200);
+  assertResponseShape('GET /v1/media', mediaList.json);
+
   const mediaGet = await requestJson(handler, 'GET', `/v1/media/${mediaInit.json.mediaId}`, { token });
   assert.equal(mediaGet.res.status, 200);
   assertResponseShape('GET /v1/media/:id', mediaGet.json);
+
+  const mediaPatch = await requestJson(handler, 'PATCH', `/v1/media/${mediaInit.json.mediaId}`, {
+    token,
+    body: { alt: 'Updated alt', caption: 'Updated caption', description: 'Updated description' }
+  });
+  assert.equal(mediaPatch.res.status, 200);
+  assertResponseShape('PATCH /v1/media/:id', mediaPatch.json);
+
+  const mediaDelete = await requestJson(handler, 'DELETE', `/v1/media/${mediaInit.json.mediaId}`, { token });
+  assert.equal(mediaDelete.res.status, 200);
+  assertResponseShape('DELETE /v1/media/:id', mediaDelete.json);
 
   const publish = await requestJson(handler, 'POST', '/v1/publish', { token, body: {} });
   assert.equal(publish.res.status, 201);
@@ -96,6 +132,24 @@ test('canonical API contracts return required response keys', async () => {
   const activate = await requestJson(handler, 'POST', `/v1/releases/${publish.json.job.releaseId}/activate`, { token, body: {} });
   assert.equal(activate.res.status, 200);
   assertResponseShape('POST /v1/releases/:id/activate', activate.json);
+
+  const navMenus = await requestJson(handler, 'GET', '/v1/navigation/menus', { token });
+  assert.equal(navMenus.res.status, 200);
+  assertResponseShape('GET /v1/navigation/menus', navMenus.json);
+
+  const navPrimary = await requestJson(handler, 'GET', '/v1/navigation/menus/primary', { token });
+  assert.equal(navPrimary.res.status, 200);
+  assertResponseShape('GET /v1/navigation/menus/:key', navPrimary.json);
+
+  const navPut = await requestJson(handler, 'PUT', '/v1/navigation/menus/primary', {
+    token,
+    body: {
+      title: 'Primary',
+      items: [{ label: 'Home', kind: 'internal', route: 'home' }]
+    }
+  });
+  assert.equal(navPut.res.status, 200);
+  assertResponseShape('PUT /v1/navigation/menus/:key', navPut.json);
 
   const preview = await requestJson(handler, 'GET', `/v1/preview/${docId}`, { token });
   assert.equal(preview.res.status, 200);

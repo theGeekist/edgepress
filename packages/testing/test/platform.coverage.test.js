@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createInMemoryPlatform } from '../src/inMemoryPlatform.js';
+import { createInMemoryPlatform } from '../src/store.js';
 
 test('in-memory runtime covers log/waitUntil paths and tx passthrough', async () => {
   const platform = createInMemoryPlatform();

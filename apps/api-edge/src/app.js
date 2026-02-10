@@ -8,6 +8,9 @@ import { createPublishRoutes } from './features/publish-routes.js';
 import { createPreviewRoutes } from './features/preview-routes.js';
 import { createFormRoutes } from './features/form-routes.js';
 import { createPrivateRoutes } from './features/private-routes.js';
+import { createNavigationRoutes } from './features/navigation-routes.js';
+import { createWpCoreRoutes } from './features/wp-core-routes.js';
+import { createContentModelRoutes } from './features/content-model-routes.js';
 
 function route(method, path, handler) {
   return { method, path, handler };
@@ -28,7 +31,10 @@ function createFeatureRoutes(context) {
     ...createPublishRoutes(context),
     ...createPreviewRoutes(context),
     ...createFormRoutes(context),
-    ...createPrivateRoutes(context)
+    ...createNavigationRoutes(context),
+    ...createContentModelRoutes(context),
+    ...createPrivateRoutes(context),
+    ...createWpCoreRoutes(context)
   ];
 }
 
