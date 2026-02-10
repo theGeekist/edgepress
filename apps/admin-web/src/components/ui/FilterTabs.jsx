@@ -1,6 +1,31 @@
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet, useWindowDimensions } from 'react-native';
+import { DropdownButton } from './DropdownButton.jsx';
 
-export function FilterTabs({ filters, currentFilter, onFilterChange, palette }) {
+export function FilterTabs({
+    filters,
+    currentFilter,
+    onFilterChange,
+    palette,
+    collapseOnMobile = false,
+    mobileLabel = 'Filter'
+}) {
+    const { width } = useWindowDimensions();
+    const isMobile = width < 768;
+
+    if (collapseOnMobile && isMobile) {
+        const active = filters.find((filter) => filter.value === currentFilter);
+        return (
+            <DropdownButton
+                label={`${mobileLabel}: ${active?.label || 'All'}`}
+                palette={palette}
+                items={filters.map((filter) => ({
+                    label: filter.label,
+                    onPress: () => onFilterChange(filter.value)
+                }))}
+            />
+        );
+    }
+
     return (
         <View style={styles.container}>
             {filters.map((filter, index) => {

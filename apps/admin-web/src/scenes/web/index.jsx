@@ -5,6 +5,7 @@ import { ContentScene } from './ContentScene.jsx';
 import { MediaScene } from './MediaScene.jsx';
 import { SettingsScene } from './SettingsScene.jsx';
 import { AppearanceScene } from './AppearanceScene.jsx';
+import { MenusScene } from './MenusScene.jsx';
 import { PlaceholderScene } from './PlaceholderScene.jsx';
 
 export function AdminScene({
@@ -58,8 +59,19 @@ export function AdminScene({
           <SettingsScene palette={palette} settings={settings} actions={actions} />
         ) : appSection === 'media' ? (
           <MediaScene palette={palette} media={media} mediaView={mediaView} actions={actions} />
-        ) : appSection === 'appearance' ? (
-          <AppearanceScene palette={palette} docs={docs} navigation={navigation} actions={actions} />
+        ) : appSection === 'menus' ? (
+          <MenusScene
+            palette={palette}
+            docs={docs}
+            navigation={navigation}
+            actions={actions}
+          />
+        ) : appSection === 'appearance' || appSection === 'themes' || appSection === 'widgets' ? (
+          <AppearanceScene
+            palette={palette}
+            actions={actions}
+            appearanceSubsection={appSection}
+          />
         ) : (
           <PlaceholderScene palette={palette} appSection={appSection} />
         )}

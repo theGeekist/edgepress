@@ -23,11 +23,11 @@ export function NavigationEditor({ palette, docs, navigation, actions }) {
             palette={palette}
             actions={
                 <ActionButton
-                    label="Save Menu"
+                    label={uiState.isDirty ? 'Save Menu' : 'Saved'}
                     tone="primary"
                     palette={palette}
                     onPress={saveMenu}
-                    disabled={uiState.isSaving}
+                    disabled={uiState.isSaving || !uiState.isDirty}
                 />
             }
         >
@@ -55,6 +55,11 @@ export function NavigationEditor({ palette, docs, navigation, actions }) {
                             </Text>
                             {uiState.isLoading ? (
                                 <Text style={{ color: palette.textMuted, fontSize: 13 }}>Loading menu...</Text>
+                            ) : null}
+                            {!uiState.isLoading && uiState.isDirty ? (
+                                <Text style={{ color: palette.accent, fontSize: 12, marginBottom: 12 }}>
+                                    Unsaved menu changes
+                                </Text>
                             ) : null}
 
                             <MenuItemList
