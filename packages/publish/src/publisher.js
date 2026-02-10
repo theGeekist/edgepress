@@ -72,7 +72,7 @@ export async function createRelease({ runtime, store, releaseStore, sourceRevisi
     throw new Error('Missing required port method: writeArtifact');
   }
   for (const doc of docs) {
-    const route = doc.id;
+    const route = doc.slug || doc.id;
     const blocksHash = hashBlocks(runtime, doc);
     const serializedBlocks = serializeBlocks(runtime, doc);
     const canonicalContent = serializedBlocks || doc.content || '';

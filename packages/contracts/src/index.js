@@ -27,8 +27,8 @@ export const routes = {
     response: ['ok']
   },
   'GET /v1/documents': { response: ['items'] },
-  'POST /v1/documents': { body: ['title', 'content', 'type', 'status', 'blocks'], response: ['document', 'revision'] },
-  'PATCH /v1/documents/:id': { body: ['title', 'content', 'type', 'status', 'blocks'], response: ['document', 'revision'] },
+  'POST /v1/documents': { body: ['title', 'content', 'type', 'slug', 'status', 'blocks'], response: ['document', 'revision'] },
+  'PATCH /v1/documents/:id': { body: ['title', 'content', 'type', 'slug', 'status', 'blocks'], response: ['document', 'revision'] },
   'DELETE /v1/documents/:id': { response: ['ok'] },
   'GET /v1/documents/:id/revisions': { response: ['items'] },
   'POST /v1/documents/:id/revisions': { body: [], response: ['revision'] },

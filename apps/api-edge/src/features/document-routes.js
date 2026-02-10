@@ -22,6 +22,54 @@ function parsePositiveInt(input, fallback) {
   return parsed;
 }
 
+function toSlug(input) {
+  const normalized = String(input || '').trim().toLowerCase();
+  let slug = '';
+  let previousWasDash = false;
+  for (const char of normalized) {
+    const isAlphaNumeric = (char >= 'a' && char <= 'z') || (char >= '0' && char <= '9');
+    if (isAlphaNumeric) {
+      slug += char;
+      previousWasDash = false;
+      continue;
+    }
+    if (!previousWasDash) {
+      slug += '-';
+      previousWasDash = true;
+    }
+  }
+  if (slug.startsWith('-')) slug = slug.slice(1);
+  if (slug.endsWith('-')) slug = slug.slice(0, -1);
+  return slug;
+}
+
+function toDocumentItems(payload) {
+  if (Array.isArray(payload)) {
+    return payload;
+  }
+  return Array.isArray(payload?.items) ? payload.items : [];
+}
+
+async function resolveUniqueSlug(store, { requestedSlug, title, currentId = null }) {
+  const baseSlug = toSlug(requestedSlug || '') || toSlug(title || '') || 'untitled';
+  const listed = await store.listDocuments();
+  const docs = toDocumentItems(listed);
+  const taken = new Set(
+    docs
+      .filter((entry) => entry?.id !== currentId)
+      .map((entry) => toSlug(entry?.slug || ''))
+      .filter(Boolean)
+  );
+  if (!taken.has(baseSlug)) {
+    return baseSlug;
+  }
+  let index = 2;
+  while (taken.has(`${baseSlug}-${index}`)) {
+    index += 1;
+  }
+  return `${baseSlug}-${index}`;
+}
+
 function latestRevisionFromList(revisions) {
   if (!Array.isArray(revisions) || revisions.length === 0) {
     return null;
@@ -67,11 +115,16 @@ export function createDocumentRoutes({ runtime, store, hooks, route, authzErrorR
         const normalizedBlocks = normalizeBlocksForWrite(body.blocks, []);
         if (normalizedBlocks.error) return normalizedBlocks.error;
         const id = `doc_${runtime.uuid()}`;
+        const slug = await resolveUniqueSlug(store, {
+          requestedSlug: body.slug,
+          title: body.title
+        });
         const document = await store.createDocument({
           id,
           title: body.title || 'Untitled',
           content: body.content || '',
           type: body.type || 'page',
+          slug,
           blocks: normalizedBlocks.blocks,
           blocksSchemaVersion: normalizedBlocks.blocksSchemaVersion,
           createdBy: user.id,
@@ -103,11 +156,19 @@ export function createDocumentRoutes({ runtime, store, hooks, route, authzErrorR
         if (!existing) return error('DOCUMENT_NOT_FOUND', 'Document not found', 404);
         const normalizedBlocks = normalizeBlocksForWrite(body.blocks, existing.blocks || []);
         if (normalizedBlocks.error) return normalizedBlocks.error;
+        const slug = body.slug === undefined
+          ? existing.slug ?? ''
+          : await resolveUniqueSlug(store, {
+            requestedSlug: body.slug,
+            title: body.title ?? existing.title,
+            currentId: params.id
+          });
 
         const document = await store.updateDocument(params.id, {
           title: body.title ?? existing.title,
           content: body.content ?? existing.content,
           type: body.type ?? existing.type ?? 'page',
+          slug,
           blocks: normalizedBlocks.blocks,
           blocksSchemaVersion: normalizedBlocks.blocksSchemaVersion,
           status: body.status ?? existing.status
