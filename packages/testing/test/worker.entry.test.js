@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import worker from '../../adapters-cloudflare/src/worker.js';
+import worker from '../../cloudflare/src/worker.js';
 
 function createFakeExecutionContext() {
   return {

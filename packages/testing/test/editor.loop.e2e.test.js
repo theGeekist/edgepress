@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { parse } from '@wordpress/blocks';
-import { createInMemoryPlatform } from '../src/inMemoryPlatform.js';
+import { createInMemoryPlatform } from '../src/store.js';
 import { authAsAdmin, requestJson } from '../src/testUtils.js';
 
 test('editor loop covers update, preview, publish, activate, and private delivery', async () => {

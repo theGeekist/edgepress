@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createInMemoryPlatform } from '../src/inMemoryPlatform.js';
+import { createInMemoryPlatform } from '../src/store.js';
 import { authAsAdmin, requestJson } from '../src/testUtils.js';
-import { createUser } from '../../domain/src/entities.js';
+import { createUser } from '@geekist/edgepress/domain/entities.js';
 
 async function seedDoc(handler, token) {
   const created = await requestJson(handler, 'POST', '/v1/documents', {
@@ -78,7 +78,6 @@ test('publish writes release artifacts through releaseStore and persists blob re
   const platform = createInMemoryPlatform();
   const { handler, accessToken } = await authAsAdmin(platform);
   const doc = await seedDoc(handler, accessToken);
-  const docId = doc.id;
   const docSlug = doc.slug;
 
   const publish = await requestJson(handler, 'POST', '/v1/publish', { token: accessToken, body: {} });
