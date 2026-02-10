@@ -78,11 +78,14 @@ export function normalizeCanonicalNode(input, path = []) {
     origin: normalizeOrigin(origin, unknownTopLevelFields),
     lossiness: normalizeLossiness(lossiness),
     // Keep future compatibility explicit when decoding older payloads.
-    sourceSchemaVersion: Number.isFinite(Number(sourceSchemaVersion))
-      ? Number(sourceSchemaVersion)
-      : Number.isFinite(Number(schemaVersion))
-        ? Number(schemaVersion)
-        : CANONICAL_SCHEMA_VERSION
+    sourceSchemaVersion: (() => {
+      const parsedSourceSchema = Number(sourceSchemaVersion);
+      if (Number.isFinite(parsedSourceSchema)) {
+        return parsedSourceSchema;
+      }
+      const parsedSchema = Number(schemaVersion);
+      return Number.isFinite(parsedSchema) ? parsedSchema : CANONICAL_SCHEMA_VERSION;
+    })()
   };
 }
 

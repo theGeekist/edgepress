@@ -139,10 +139,8 @@ export function createMediaRoutes({ runtime, store, blobStore, route, authzError
       }
       const contentType = blob?.metadata?.contentType || 'application/octet-stream';
       const bytes = blob?.bytes;
-      let body = bytes;
-      if (bytes instanceof Uint8Array || bytes instanceof ArrayBuffer) {
-        body = bytes;
-      } else if (typeof bytes === 'string') {
+      let body;
+      if (bytes instanceof Uint8Array || bytes instanceof ArrayBuffer || typeof bytes === 'string') {
         body = bytes;
       } else if (bytes == null) {
         body = '';
