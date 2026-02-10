@@ -78,7 +78,6 @@ test('publish writes release artifacts through releaseStore and persists blob re
   const platform = createInMemoryPlatform();
   const { handler, accessToken } = await authAsAdmin(platform);
   const doc = await seedDoc(handler, accessToken);
-  const docId = doc.id;
   const docSlug = doc.slug;
 
   const publish = await requestJson(handler, 'POST', '/v1/publish', { token: accessToken, body: {} });
