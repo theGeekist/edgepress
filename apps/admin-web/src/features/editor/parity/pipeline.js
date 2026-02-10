@@ -13,6 +13,12 @@ function normalizeWpNode(node) {
   };
 }
 
+function statusFromLossiness(lossiness) {
+  if (lossiness === 'fallback') return 'fallback';
+  if (lossiness === 'partial') return 'partial';
+  return 'transformed';
+}
+
 function importOne({ node, importRegistry, context, path, report }) {
   const wpNode = normalizeWpNode(node);
   const result = applyImportTransform(
@@ -34,12 +40,14 @@ function importOne({ node, importRegistry, context, path, report }) {
     children: importedChildren
   }, path);
 
+  const status = statusFromLossiness(normalized.lossiness);
+
   addDiagnostic(report, {
     nodePath: [normalized.id],
     originWpBlockName: wpNode.name,
     transformId: result.transformId,
     lossiness: normalized.lossiness,
-    status: normalized.lossiness === 'fallback' ? 'fallback' : normalized.lossiness === 'partial' ? 'partial' : 'transformed'
+    status
   });
 
   return normalized;
@@ -117,9 +125,7 @@ export function renderCanonicalNodes({ nodes, rendererRegistry, target = 'publis
     path: [node?.id || `epn_${index}`]
   }));
 
-  const output = target === 'editor'
-    ? outputs
-    : outputs.join('');
+  const output = target === 'editor' ? outputs : outputs.join('');
 
   return {
     output,

@@ -24,6 +24,7 @@ export function AdminPage({
   rightRail,
   scrollToTop,
   compact = false,
+  flushContent = false,
 }) {
   const hasRightRail = Boolean(rightRail);
   const hasToolbar = Boolean(toolbar);
@@ -58,6 +59,7 @@ export function AdminPage({
           contentContainerStyle={[
             styles.pageContent,
             compact && styles.pageContentCompact,
+            flushContent && styles.pageContentFlush,
             hasRightRail && styles.pageContentWithRail,
           ]}
           keyboardDismissMode="interactive"
@@ -262,8 +264,8 @@ const styles = StyleSheet.create({
 
   // Header
   pageHeader: {
-    paddingHorizontal: 32,
-    paddingVertical: 24,
+    paddingHorizontal: 24,
+    paddingVertical: 16,
     borderBottomWidth: 1,
   },
   pageHeaderCompact: {
@@ -295,8 +297,8 @@ const styles = StyleSheet.create({
 
   // Toolbar
   pageToolbar: {
-    paddingHorizontal: 32,
-    paddingVertical: 16,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
     borderBottomWidth: 1,
   },
   pageToolbarCompact: {
@@ -332,9 +334,13 @@ const styles = StyleSheet.create({
   },
   pageContent: {
     flex: 1,
-    paddingHorizontal: 32,
-    paddingVertical: 24,
-    maxWidth: 1200,
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    maxWidth: 'none',
+  },
+  pageContentFlush: {
+    paddingHorizontal: 0,
+    paddingVertical: 0,
   },
   pageContentCompact: {
     paddingHorizontal: 20,
@@ -347,10 +353,10 @@ const styles = StyleSheet.create({
 
   // Right Rail
   pageRail: {
-    width: 280,
-    paddingLeft: 16,
-    paddingRight: 32,
-    paddingVertical: 24,
+    width: 300,
+    paddingLeft: 12,
+    paddingRight: 20,
+    paddingVertical: 16,
     borderLeftWidth: 1,
   },
   pageRailCompact: {

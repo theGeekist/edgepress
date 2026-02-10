@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { registerFoundationalBlocks } from '@features/editor';
 import { AdminLoginView } from '@features/auth';
 import { useAdminAppController } from '@hooks/useAdminAppController.js';
 import { TopBar } from '@components/ui/TopBar.jsx';
@@ -7,8 +6,6 @@ import { Feedback } from '@components/ui/Feedback.jsx';
 import { AdminScene } from './scenes/web';
 import { layoutStyles } from '@components/styles.js';
 import { View, useWindowDimensions } from 'react-native';
-
-registerFoundationalBlocks();
 
 export function App() {
   const controller = useAdminAppController();
@@ -26,6 +23,8 @@ export function App() {
       setIsSidebarOpen(false);
     }
   }, [isMobile]);
+
+  const isMobileEditor = isMobile && appSection === 'content' && contentView === 'editor';
 
   if (!auth.user) {
     return (
@@ -59,18 +58,20 @@ export function App() {
   return (
     // <GestureHandlerRootView style={{ flex: 1 }}>
     <View style={[layoutStyles.page, { backgroundColor: palette.page }]}>
-      <TopBar
-        palette={palette}
-        title="GCMS Admin"
-        metaText={`Howdy, ${auth.user.username}`}
-        onPressLeft={() => setIsSidebarOpen(!isSidebarOpen)}
-        actions={[
-          { key: 'theme', label: mode === 'dark' ? '☀' : '☾', onPress: actions.toggleTheme },
-          { key: 'logout', label: 'Log Out', onPress: actions.onLogout }
-        ]}
-      />
+      {!isMobileEditor ? (
+        <TopBar
+          palette={palette}
+          title="GCMS Admin"
+          metaText={`Howdy, ${auth.user.username}`}
+          onPressLeft={() => setIsSidebarOpen(!isSidebarOpen)}
+          actions={[
+            { key: 'theme', label: mode === 'dark' ? '☀' : '☾', onPress: actions.toggleTheme },
+            { key: 'logout', label: 'Log Out', onPress: actions.onLogout }
+          ]}
+        />
+      ) : null}
 
-      <Feedback palette={palette} items={feedbackItems} />
+      {!isMobileEditor ? <Feedback palette={palette} items={feedbackItems} /> : null}
 
       <AdminScene
         palette={palette}

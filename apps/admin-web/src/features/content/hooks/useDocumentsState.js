@@ -68,10 +68,17 @@ function normalizeStatus(item) {
 }
 
 function normalizeType(documentItem, metaItem) {
-  if (documentItem?.type === 'post') {
+  const rawType = String(
+    documentItem?.type ||
+    documentItem?.postType ||
+    documentItem?.contentType ||
+    documentItem?.docType ||
+    ''
+  ).toLowerCase();
+  if (rawType === 'post') {
     return 'post';
   }
-  if (documentItem?.type === 'page') {
+  if (rawType === 'page') {
     return 'page';
   }
   if (metaItem?.type === 'post') {
@@ -93,6 +100,9 @@ function withUiMeta(item, meta) {
       status,
       slug: draftSlug || canonicalSlug || toSlug(title) || 'untitled',
       excerpt: entryMeta.excerpt || '',
+      categories: Array.isArray(entryMeta.categories) ? entryMeta.categories : [],
+      tags: Array.isArray(entryMeta.tags) ? entryMeta.tags : [],
+      taxonomyMode: entryMeta.taxonomyMode === 'hierarchical' ? 'hierarchical' : 'flat',
       publishDate: entryMeta.publishDate || '',
       featuredImageId: String(entryMeta.featuredImageId || item.featuredImageId || '').trim(),
       updatedAtLabel: item.updatedAt || item.createdAt || ''
@@ -164,6 +174,24 @@ export function useDocumentsState(shell) {
     if (typeof normalizedPatch.featuredImageId === 'string') {
       normalizedPatch.featuredImageId = normalizedPatch.featuredImageId.trim();
     }
+    if (typeof normalizedPatch.categories === 'string') {
+      normalizedPatch.categories = normalizedPatch.categories
+        .split(',')
+        .map((entry) => entry.trim())
+        .filter(Boolean);
+    }
+    if (typeof normalizedPatch.tags === 'string') {
+      normalizedPatch.tags = normalizedPatch.tags
+        .split(',')
+        .map((entry) => entry.trim())
+        .filter(Boolean);
+    }
+    if (!Array.isArray(normalizedPatch.categories) && normalizedPatch.categories !== undefined) {
+      normalizedPatch.categories = [];
+    }
+    if (!Array.isArray(normalizedPatch.tags) && normalizedPatch.tags !== undefined) {
+      normalizedPatch.tags = [];
+    }
     const nextMeta = {
       ...contentMeta,
       [documentId]: {
@@ -233,6 +261,9 @@ export function useDocumentsState(shell) {
         type,
         slug: toSlug(document.title || 'untitled'),
         excerpt: '',
+        categories: [],
+        tags: [],
+        taxonomyMode: 'hierarchical',
         publishDate: '',
         featuredImageId: ''
       }
@@ -244,6 +275,24 @@ export function useDocumentsState(shell) {
 
   function getSelectedDoc() {
     return docs.find((doc) => doc.id === selectedId) || null;
+  }
+
+  function getSelectedDocType() {
+    const selected = getSelectedDoc();
+    if (selected?.ui?.type === 'post' || selected?.type === 'post') {
+      return 'post';
+    }
+    if (selected?.ui?.type === 'page' || selected?.type === 'page') {
+      return 'page';
+    }
+    const metaType = contentMeta?.[selectedId || '']?.type;
+    if (metaType === 'post' || metaType === 'page') {
+      return metaType;
+    }
+    if (contentTypeFilter === 'post' || contentTypeFilter === 'page') {
+      return contentTypeFilter;
+    }
+    return 'post';
   }
 
   async function bulkSetStatus(status) {
@@ -352,6 +401,7 @@ export function useDocumentsState(shell) {
     refresh,
     createDraft,
     getSelectedDoc,
+    getSelectedDocType,
     updateMeta,
     selectedRowIds,
     toggleRowSelection,
