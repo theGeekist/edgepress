@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createAppStores } from '../../adapters-cloudflare/src/app-store.js';
-import { D1_SQL } from '../../adapters-cloudflare/src/d1-sql.js';
-import { createInMemoryPlatform } from '../src/inMemoryPlatform.js';
+import { createAppStores } from '../../cloudflare/src/store.js';
+import { D1_SQL } from '../../cloudflare/src/d1-sql.js';
+import { createInMemoryPlatform } from '../src/store.js';
 import { createFakeD1, createFakeKV } from './helpers/cloudflareFakes.js';
 
 function parseJsonSafe(value) {

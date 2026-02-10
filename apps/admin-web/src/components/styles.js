@@ -23,7 +23,7 @@ export const layoutStyles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    zIndex: 100
+    zIndex: 1000
   },
   tableHeaderCell: {
     fontSize: 13,
@@ -59,7 +59,7 @@ export const layoutStyles = StyleSheet.create({
   sidebar: {
     width: 180,
     borderRightWidth: 1,
-    zIndex: 90,
+    zIndex: 100,
     paddingVertical: 0,
   },
   // Mobile drawer style would apply absolutely

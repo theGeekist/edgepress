@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createInMemoryPlatform } from '../src/inMemoryPlatform.js';
+import { createInMemoryPlatform } from '../src/store.js';
 import { authAsAdmin, requestJson } from '../src/testUtils.js';
-import { createUser } from '../../domain/src/entities.js';
+import { createUser } from '@geekist/edgepress/domain/entities.js';
 
 async function seedDoc(handler, token) {
   const created = await requestJson(handler, 'POST', '/v1/documents', {

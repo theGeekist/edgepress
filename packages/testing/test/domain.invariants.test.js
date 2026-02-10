@@ -4,7 +4,7 @@ import {
     assertReleaseManifestImmutable,
     assertHasCapability,
     assertPreviewNotExpired
-} from '../../domain/src/invariants.js';
+} from '@geekist/edgepress/domain/invariants.js';
 
 test('assertReleaseManifestImmutable', () => {
     // Success
