@@ -6,6 +6,16 @@ export const ROLE_CAPABILITIES = {
   viewer: ['document:read']
 };
 
+function normalizeObject(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  return value;
+}
+
+function normalizeStringArray(value) {
+  if (!Array.isArray(value)) return [];
+  return value.map((entry) => String(entry || '').trim()).filter(Boolean);
+}
+
 export function createUser({ id, username, password, role = 'admin' }) {
   return {
     id,
@@ -20,24 +30,36 @@ export function createDocument({
   id,
   title,
   content,
+  legacyHtml,
   type = 'page',
   slug = '',
+  excerpt = '',
   featuredImageId = '',
   blocks = [],
   blocksSchemaVersion = BLOCKS_SCHEMA_VERSION,
+  fields = {},
+  termIds = [],
+  raw = {},
   createdBy,
   status = 'draft',
   now
 }) {
+  const nextLegacyHtml = legacyHtml ?? content ?? '';
+  const nextContent = content ?? legacyHtml ?? '';
   return {
     id,
     title,
-    content,
+    content: nextContent,
+    legacyHtml: String(nextLegacyHtml || ''),
     type,
     slug,
+    excerpt: String(excerpt || ''),
     featuredImageId: String(featuredImageId || '').trim(),
     blocks: normalizeBlocksInput(blocks),
     blocksSchemaVersion,
+    fields: normalizeObject(fields),
+    termIds: normalizeStringArray(termIds),
+    raw: normalizeObject(raw),
     status,
     createdBy,
     createdAt: now,
@@ -50,22 +72,103 @@ export function createRevision({
   documentId,
   title,
   content,
+  legacyHtml,
+  excerpt = '',
+  slug = '',
+  status = 'draft',
+  featuredImageId = '',
   blocks = [],
   blocksSchemaVersion = BLOCKS_SCHEMA_VERSION,
+  fields = {},
+  termIds = [],
   sourceRevisionId = null,
   authorId,
   now
 }) {
+  const nextLegacyHtml = legacyHtml ?? content ?? '';
+  const nextContent = content ?? legacyHtml ?? '';
   return {
     id,
     documentId,
     title,
-    content,
+    content: nextContent,
+    legacyHtml: String(nextLegacyHtml || ''),
+    excerpt: String(excerpt || ''),
+    slug: String(slug || '').trim(),
+    status: String(status || 'draft'),
+    featuredImageId: String(featuredImageId || '').trim(),
     blocks: normalizeBlocksInput(blocks),
     blocksSchemaVersion,
+    fields: normalizeObject(fields),
+    termIds: normalizeStringArray(termIds),
     sourceRevisionId,
     authorId,
     createdAt: now
+  };
+}
+
+export function createContentType({
+  id,
+  slug,
+  label,
+  kind = 'content',
+  supports = {},
+  fields = [],
+  taxonomies = [],
+  statusOptions = ['draft', 'published', 'trash'],
+  now
+}) {
+  return {
+    id,
+    slug: String(slug || '').trim(),
+    label: String(label || '').trim(),
+    kind: String(kind || 'content'),
+    supports: normalizeObject(supports),
+    fields: Array.isArray(fields) ? fields : [],
+    taxonomies: normalizeStringArray(taxonomies),
+    statusOptions: normalizeStringArray(statusOptions),
+    createdAt: now,
+    updatedAt: now
+  };
+}
+
+export function createTaxonomy({
+  id,
+  slug,
+  label,
+  hierarchical = false,
+  objectTypes = [],
+  constraints = {},
+  now
+}) {
+  return {
+    id,
+    slug: String(slug || '').trim(),
+    label: String(label || '').trim(),
+    hierarchical: Boolean(hierarchical),
+    objectTypes: normalizeStringArray(objectTypes),
+    constraints: normalizeObject(constraints),
+    createdAt: now,
+    updatedAt: now
+  };
+}
+
+export function createTerm({
+  id,
+  taxonomySlug,
+  slug,
+  name,
+  parentId = null,
+  now
+}) {
+  return {
+    id,
+    taxonomySlug: String(taxonomySlug || '').trim(),
+    slug: String(slug || '').trim(),
+    name: String(name || '').trim(),
+    parentId: parentId ? String(parentId) : null,
+    createdAt: now,
+    updatedAt: now
   };
 }
 
