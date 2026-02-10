@@ -4,7 +4,9 @@ import { ActionButton } from '@components/ui/ActionButton.jsx';
 import { ThemedTextInput } from '@components/ui/ThemedTextInput.jsx';
 import { DataTable } from '@components/ui/DataTable.jsx';
 import { DropdownButton } from '@components/ui/DropdownButton.jsx';
+import { FilterBar } from '@components/ui/FilterBar.jsx';
 import { FilterTabs } from '@components/ui/FilterTabs.jsx';
+import { SectionTopBar } from '@components/ui/SectionTopBar.jsx';
 import { layoutStyles } from '@components/styles.js';
 
 function labelStatus(value) {
@@ -146,9 +148,10 @@ export function ContentListTable({
   return (
     <View style={layoutStyles.contentListWrap}>
       {!hideHeader && (
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20, justifyContent: 'space-between' }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            <Text style={[layoutStyles.sectionTitle, { color: palette.text, marginBottom: 0, paddingVertical: 0, paddingHorizontal: 0 }]}>Content</Text>
+        <SectionTopBar
+          palette={palette}
+          title="Content"
+          left={(
             <DropdownButton
               label="+ New"
               palette={palette}
@@ -157,33 +160,38 @@ export function ContentListTable({
                 { label: 'Post', onPress: onNewPost }
               ]}
             />
-          </View>
-          <ThemedTextInput
-            palette={palette}
-            value={contentSearch}
-            onChangeText={onSearch}
-            placeholder="Search..."
-            style={{ width: 200 }}
-          />
-        </View>
+          )}
+          right={(
+            <ThemedTextInput
+              palette={palette}
+              value={contentSearch}
+              onChangeText={onSearch}
+              placeholder="Search..."
+              style={{ width: 220 }}
+            />
+          )}
+        />
       )}
 
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 16, marginBottom: hideHeader ? 20 : 16 }}>
+      <FilterBar compact={hideHeader}>
         <FilterTabs
           palette={palette}
           currentFilter={contentTypeFilter}
           onFilterChange={onTypeFilter}
+          collapseOnMobile
+          mobileLabel="Type"
           filters={[
             { label: 'All', value: 'all' },
             { label: 'Pages', value: 'page' },
             { label: 'Posts', value: 'post' }
           ]}
         />
-        <Text style={{ color: palette.textMuted }}>|</Text>
         <FilterTabs
           palette={palette}
           currentFilter={contentStatusFilter}
           onFilterChange={onStatusFilter}
+          collapseOnMobile
+          mobileLabel="Status"
           filters={[
             { label: 'Any status', value: 'all' },
             { label: 'Draft', value: 'draft' },
@@ -191,7 +199,7 @@ export function ContentListTable({
             { label: 'Trash', value: 'trash' }
           ]}
         />
-      </View>
+      </FilterBar>
 
       <View style={[layoutStyles.card, layoutStyles.contentControlBar, { borderColor: palette.border, backgroundColor: palette.surfaceMuted, zIndex: 10, marginBottom: 0, borderBottomWidth: 0, borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }]}>
         <View style={layoutStyles.contentControlGroup}>

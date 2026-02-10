@@ -4,7 +4,9 @@ import { Pressable, Text, View } from 'react-native';
 import { ActionButton } from '@components/ui/ActionButton.jsx';
 import { DataTable } from '@components/ui/DataTable.jsx';
 import { DropdownButton } from '@components/ui/DropdownButton.jsx';
+import { FilterBar } from '@components/ui/FilterBar.jsx';
 import { FilterTabs } from '@components/ui/FilterTabs.jsx';
+import { SectionTopBar } from '@components/ui/SectionTopBar.jsx';
 import { ThemedTextInput } from '@components/ui/ThemedTextInput.jsx';
 import { layoutStyles } from '@components/styles.js';
 
@@ -101,26 +103,27 @@ export function MediaListTable({ palette, media, onEditMedia, onUploadFiles, onD
 
   return (
     <View style={layoutStyles.contentListWrap}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20, justifyContent: 'space-between' }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-          <Text style={[layoutStyles.sectionTitle, { color: palette.text, marginBottom: 0, paddingVertical: 0, paddingHorizontal: 0 }]}>
-            Media
-          </Text>
+      <SectionTopBar
+        palette={palette}
+        title="Media"
+        left={(
           <ActionButton
             label={media.isUploading ? 'Uploading...' : '+ New'}
             onPress={triggerUploadPicker}
             disabled={media.isUploading}
             palette={palette}
           />
-        </View>
-        <ThemedTextInput
-          palette={palette}
-          value={media.search}
-          onChangeText={media.setSearch}
-          placeholder="Search media..."
-          style={{ width: 240 }}
-        />
-      </View>
+        )}
+        right={(
+          <ThemedTextInput
+            palette={palette}
+            value={media.search}
+            onChangeText={media.setSearch}
+            placeholder="Search media..."
+            style={{ width: 240 }}
+          />
+        )}
+      />
 
       {typeof document !== 'undefined' ? (
         <input
@@ -132,11 +135,13 @@ export function MediaListTable({ palette, media, onEditMedia, onUploadFiles, onD
         />
       ) : null}
 
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 16, marginBottom: 16 }}>
+      <FilterBar>
         <FilterTabs
           palette={palette}
           currentFilter={media.mimeTypeFilter}
           onFilterChange={media.setMimeTypeFilter}
+          collapseOnMobile
+          mobileLabel="Type"
           filters={[
             { label: 'All', value: 'all' },
             { label: 'JPEG', value: 'image/jpeg' },
@@ -144,7 +149,7 @@ export function MediaListTable({ palette, media, onEditMedia, onUploadFiles, onD
             { label: 'PDF', value: 'application/pdf' }
           ]}
         />
-      </View>
+      </FilterBar>
 
       <View style={[layoutStyles.card, layoutStyles.contentControlBar, { borderColor: palette.border, backgroundColor: palette.surfaceMuted, zIndex: 10, marginBottom: 0, borderBottomWidth: 0, borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }]}>
         <View style={layoutStyles.contentControlGroup}>
