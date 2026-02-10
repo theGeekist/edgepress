@@ -149,16 +149,28 @@ export function useMediaState(shell) {
   async function bulkDeleteSelected() {
     const ids = [...selectedRowIds];
     if (ids.length === 0) return 0;
-    await Promise.all(ids.map((id) => shell.deleteMedia(id)));
+    const settled = await Promise.allSettled(ids.map((id) => shell.deleteMedia(id)));
+    const successfulIds = [];
+    const failures = [];
+    settled.forEach((result, index) => {
+      if (result.status === 'fulfilled') {
+        successfulIds.push(ids[index]);
+      } else {
+        failures.push({ id: ids[index], error: result.reason });
+      }
+    });
+    if (failures.length > 0) {
+      console.error('bulkDeleteSelected failed for media items', failures);
+    }
     clearSelectedRows();
-    if (selectedId && ids.includes(selectedId)) {
+    if (selectedId && successfulIds.includes(selectedId)) {
       setSelectedId(null);
       setAlt('');
       setCaption('');
       setDescription('');
     }
     await refresh();
-    return ids.length;
+    return successfulIds.length;
   }
 
   return {

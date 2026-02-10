@@ -34,10 +34,11 @@ export function useNavigationMenuEditor({ navigation, actions, menuKey = 'primar
   const [menuTitle, setMenuTitle] = useState('Primary Menu');
   const [items, setItems] = useState([]);
   const [baselineSignature, setBaselineSignature] = useState(stableSignature(normalizeForSave('Primary Menu', [])));
+  const onLoadNavigationMenu = actions?.onLoadNavigationMenu;
 
   useEffect(() => {
-    actions.onLoadNavigationMenu?.(menuKey).catch(() => { });
-  }, [actions, menuKey]);
+    onLoadNavigationMenu?.(menuKey).catch(() => {});
+  }, [onLoadNavigationMenu, menuKey]);
 
   useEffect(() => {
     const menu = navigation?.menu;

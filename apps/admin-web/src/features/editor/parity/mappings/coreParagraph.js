@@ -10,6 +10,8 @@ function escapeHtml(input) {
 }
 
 function normalizeRichTextHtml(input) {
+  // Security note: this assumes trusted Gutenberg-authored content.
+  // Replace with robust HTML sanitization before accepting untrusted sources.
   return String(input ?? '');
 }
 

@@ -99,7 +99,10 @@ export function createMediaRoutes({ runtime, store, blobStore, route, authzError
         const contentType = body.mimeType || uploadedBlob?.metadata?.contentType || 'application/octet-stream';
         const sanitizedFilename = ensureFilenameExtension(body.filename, contentType);
         const path = `media/${params.id}/${sanitizedFilename}`;
-        const bytes = uploadedBlob?.bytes || 'placeholder-bytes';
+        const bytes = uploadedBlob?.bytes;
+        if (!(bytes instanceof Uint8Array) && !(bytes instanceof ArrayBuffer) && typeof bytes !== 'string') {
+          return error('MEDIA_UPLOAD_MISSING_BYTES', 'Uploaded media bytes are missing', 400);
+        }
         await blobStore.putBlob(path, bytes, { contentType });
         const signedUrl = resolveAbsoluteUrl(request, await blobStore.signedReadUrl(path, 3600));
         const media = await store.finalizeMedia(params.id, {
@@ -139,6 +142,11 @@ export function createMediaRoutes({ runtime, store, blobStore, route, authzError
     }),
 
     route('GET', '/blob/:path*', async (request, params) => {
+      try {
+        await requireCapability({ runtime, store, request, capability: 'document:read' });
+      } catch (e) {
+        return authzErrorResponse(e);
+      }
       const path = params.path;
       const blob = await blobStore.getBlob(path);
       if (!blob) {

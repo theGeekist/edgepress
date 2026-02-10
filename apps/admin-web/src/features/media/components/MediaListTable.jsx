@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { ActionButton } from '@components/ui/ActionButton.jsx';
@@ -27,6 +27,7 @@ function formatDate(value) {
 
 export function MediaListTable({ palette, media, onEditMedia, onUploadFiles, onDeleteMedia, onBulkDeleteMedia }) {
   const fileInputRef = useRef(null);
+  const [selectedBulkAction, setSelectedBulkAction] = useState('none');
 
   function triggerUploadPicker() {
     if (fileInputRef.current && typeof fileInputRef.current.click === 'function') {
@@ -156,12 +157,12 @@ export function MediaListTable({ palette, media, onEditMedia, onUploadFiles, onD
           <DropdownButton
             label="Bulk Actions"
             palette={palette}
-            items={[{ label: 'Delete permanently', onPress: onBulkDeleteMedia }]}
+            items={[{ label: 'Delete permanently', onPress: () => setSelectedBulkAction('delete') }]}
           />
           <ActionButton
             label="Apply"
-            onPress={onBulkDeleteMedia}
-            disabled={media.selectedRowIds.length === 0}
+            onPress={handleApplyBulkAction}
+            disabled={media.selectedRowIds.length === 0 || selectedBulkAction === 'none'}
             palette={palette}
           />
         </View>
@@ -201,3 +202,10 @@ function CheckboxCell({ palette, checked, onPress }) {
     </Pressable>
   );
 }
+  async function handleApplyBulkAction() {
+    if (media.selectedRowIds.length === 0) return;
+    if (selectedBulkAction === 'delete') {
+      await onBulkDeleteMedia();
+      setSelectedBulkAction('none');
+    }
+  }

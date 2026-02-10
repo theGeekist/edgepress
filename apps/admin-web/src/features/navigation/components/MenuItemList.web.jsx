@@ -99,7 +99,12 @@ export function MenuItemList({ items, onItemsChange, palette }) {
 
     function isDescendant(itemMap, maybeChildId, maybeAncestorId) {
         let current = itemMap.get(maybeChildId);
+        const visited = new Set();
         while (current?.parentId) {
+            if (visited.has(current.parentId)) {
+                return false;
+            }
+            visited.add(current.parentId);
             if (current.parentId === maybeAncestorId) {
                 return true;
             }
@@ -126,7 +131,14 @@ export function MenuItemList({ items, onItemsChange, palette }) {
         }
         const oldIndex = items.findIndex((entry) => entry.id === active.id);
         const newIndex = items.findIndex((entry) => entry.id === over.id);
-        if (oldIndex === -1 || newIndex === -1) return;
+        if (oldIndex === -1 || newIndex === -1) {
+            activeDragIdRef.current = null;
+            activeDragDeltaXRef.current = 0;
+            setActiveDragId(null);
+            setOverDragId(null);
+            setDragIntent(null);
+            return;
+        }
         const shouldReorder = active.id !== over.id;
         const reordered = shouldReorder ? arrayMove(items, oldIndex, newIndex) : [...items];
         const movedIndex = shouldReorder ? reordered.findIndex((entry) => entry.id === active.id) : oldIndex;

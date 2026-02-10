@@ -107,31 +107,36 @@ export function EditorWorkspaceProvider({
     () => toWpEditorSettings(siteTheme || theme || {}, { allowedBlockTypes: SUPPORTED_BLOCK_TYPES }),
     [siteTheme, theme]
   );
-  const serializedContent = useMemo(
-    () => String(serialize(Array.isArray(blocks) ? blocks : [])),
-    [blocks]
-  );
+  const initialContentRef = useRef({ key: null, value: '' });
+  const editorIdentityKey = `${String(postType || 'post')}:${String(postId || 'editor-local')}`;
+  if (initialContentRef.current.key !== editorIdentityKey) {
+    initialContentRef.current = {
+      key: editorIdentityKey,
+      value: String(serialize(Array.isArray(blocks) ? blocks : []))
+    };
+  }
+  const initialSerializedContent = initialContentRef.current.value;
   const hostContract = useMemo(
     () => buildHostBootstrapContract({
       postId,
       postType,
       title,
-      serializedContent
+      serializedContent: initialSerializedContent
     }),
-    [postId, postType, title, serializedContent]
+    [postId, postType, title, initialSerializedContent]
   );
   const post = useMemo(() => ({
     id: hostContract.postId,
     type: hostContract.postType,
     title: { raw: String(title || '') },
-    content: { raw: serializedContent },
+    content: { raw: initialSerializedContent },
     status: 'draft'
-  }), [hostContract.postId, hostContract.postType, title, serializedContent]);
+  }), [hostContract.postId, hostContract.postType, title, initialSerializedContent]);
 
   useLayoutEffect(() => {
     addEntities(hostContract.entities);
     setEntitiesReady(true);
-  }, [addEntities, hostContract.entities]);
+  }, [addEntities, hostContract.postId, hostContract.postType, hostContract.entities]);
 
   useLayoutEffect(() => {
     if (!entitiesReady) return;
@@ -144,7 +149,8 @@ export function EditorWorkspaceProvider({
     entitiesReady,
     receiveEntityRecords,
     editEntityRecord,
-    hostContract
+    hostContract.postId,
+    hostContract.postType
   ]);
 
   if (!entitiesReady || !recordsReady) {

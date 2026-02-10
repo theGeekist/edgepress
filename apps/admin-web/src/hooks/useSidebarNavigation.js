@@ -29,23 +29,23 @@ export const DEFAULT_MENU_ITEMS = [
   },
 ];
 
-export function useSidebarNavigation({ activeItemId, onSelectItem }) {
+export function useSidebarNavigation({ activeItemId, onSelectItem, menuItems = DEFAULT_MENU_ITEMS }) {
   const [expandedItems, setExpandedItems] = useState(new Set(['content', 'appearance']));
   const [focusedItemId, setFocusedItemId] = useState(null);
 
   // Find all focusable item IDs in order
-  const allItemIds = useCallback((items, parentId = null) => {
+  const allItemIds = useCallback((items, parentId = null, expanded = new Set()) => {
     let ids = [];
     items.forEach(item => {
       ids.push({ id: item.id, parentId });
-      if (item.children) {
-        ids = ids.concat(allItemIds(item.children, item.id));
+      if (item.children && (parentId === null || expanded.has(item.id))) {
+        ids = ids.concat(allItemIds(item.children, item.id, expanded));
       }
     });
     return ids;
   }, []);
 
-  const getFocusableItemIds = (menuItems) => allItemIds(menuItems);
+  const getFocusableItemIds = useCallback(() => allItemIds(menuItems, null, expandedItems), [allItemIds, menuItems, expandedItems]);
   const getFocusedIndex = (focusableIds) => focusableIds.findIndex(item => item.id === focusedItemId);
 
   const handleToggleExpand = useCallback((itemId) => {
@@ -127,13 +127,12 @@ export function useSidebarNavigation({ activeItemId, onSelectItem }) {
         return undefined;
       };
 
-      const menuItems = DEFAULT_MENU_ITEMS; // Or pass in as prop
       const parentId = findParent(menuItems, activeItemId);
       if (parentId) {
         setExpandedItems(prev => new Set([...prev, parentId]));
       }
     }
-  }, [activeItemId]);
+  }, [activeItemId, menuItems]);
 
   return {
     expandedItems,
