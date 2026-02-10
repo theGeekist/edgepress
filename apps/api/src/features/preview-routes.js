@@ -1,4 +1,4 @@
-import { assertPreviewNotExpired } from '../../../../packages/domain/src/index.js';
+import { assertPreviewNotExpired } from '@geekist/edgepress/domain';
 import { requireCapability } from '../auth.js';
 import { error, json } from '../http.js';
 import { parseTtlSeconds, signPreviewToken, verifyPreviewTokenSignature } from '../runtime-utils.js';

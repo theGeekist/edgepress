@@ -1,4 +1,4 @@
-import { assertPlatformPorts } from '../../../packages/ports/src/index.js';
+import { assertPlatformPorts } from '@geekist/edgepress/ports';
 import { resolveHooks } from './hooks.js';
 import { error, getCorsHeaders, matchPath, withCors } from './http.js';
 import { createAuthRoutes } from './features/auth-routes.js';
