@@ -40,14 +40,35 @@ export default defineConfig({
       { find: /^path$/, replacement: path.resolve(__dirname, 'src/shims/path.js') },
       { find: /^url$/, replacement: path.resolve(__dirname, 'src/shims/url.js') },
       { find: /^source-map-js$/, replacement: path.resolve(__dirname, 'src/shims/source-map-js.js') },
+      { find: /^@wp-styles\/edit-post$/, replacement: path.resolve(process.cwd(), 'node_modules/@wordpress/edit-post/build-style/style.css') },
+      { find: /^@wp-styles\/editor$/, replacement: path.resolve(process.cwd(), 'node_modules/@wordpress/editor/build-style/style.css') },
+      { find: /^@wp-styles\/block-editor$/, replacement: path.resolve(process.cwd(), 'node_modules/@wordpress/block-editor/build-style/style.css') },
+      { find: /^@wp-styles\/components$/, replacement: path.resolve(process.cwd(), 'node_modules/@wordpress/components/build-style/style.css') },
+      { find: /^@wp-styles\/interface$/, replacement: path.resolve(process.cwd(), 'node_modules/@wordpress/interface/build-style/style.css') },
       { find: /^@hooks\/(.*)$/, replacement: path.resolve(__dirname, 'src/hooks/$1') },
       { find: /^@features\/(.*)$/, replacement: path.resolve(__dirname, 'src/features/$1') },
-      { find: /^@components\/(.*)$/, replacement: path.resolve(__dirname, 'src/components/$1') }
+      { find: /^@components\/(.*)$/, replacement: path.resolve(__dirname, 'src/components/$1') },
+      { find: /^@geekist\/edgepress\/domain$/, replacement: path.resolve(process.cwd(), 'packages/domain/src') },
+      { find: /^@geekist\/edgepress\/domain\/(.*)$/, replacement: path.resolve(process.cwd(), 'packages/domain/src/$1') },
+      { find: /^@geekist\/edgepress\/contracts$/, replacement: path.resolve(process.cwd(), 'packages/contracts/src') },
+      { find: /^@geekist\/edgepress\/contracts\/(.*)$/, replacement: path.resolve(process.cwd(), 'packages/contracts/src/$1') },
+      { find: /^@geekist\/edgepress\/ports$/, replacement: path.resolve(process.cwd(), 'packages/ports/src') },
+      { find: /^@geekist\/edgepress\/ports\/(.*)$/, replacement: path.resolve(process.cwd(), 'packages/ports/src/$1') },
+      { find: /^@geekist\/edgepress\/hooks$/, replacement: path.resolve(process.cwd(), 'packages/hooks/src') },
+      { find: /^@geekist\/edgepress\/hooks\/(.*)$/, replacement: path.resolve(process.cwd(), 'packages/hooks/src/$1') },
+      { find: /^@geekist\/edgepress\/publish$/, replacement: path.resolve(process.cwd(), 'packages/publish/src') },
+      { find: /^@geekist\/edgepress\/publish\/(.*)$/, replacement: path.resolve(process.cwd(), 'packages/publish/src/$1') },
+      { find: /^@geekist\/edgepress\/sdk$/, replacement: path.resolve(process.cwd(), 'packages/sdk/src') },
+      { find: /^@geekist\/edgepress\/sdk\/(.*)$/, replacement: path.resolve(process.cwd(), 'packages/sdk/src/$1') }
     ]
   },
   server: {
     proxy: {
       '/v1': {
+        target: 'http://localhost:8787',
+        changeOrigin: true
+      },
+      '/wp': {
         target: 'http://localhost:8787',
         changeOrigin: true
       },

@@ -7,7 +7,8 @@ export {
   decodeEpTheme
 } from './canonicalTheme.js';
 
-export { fromWpThemeJson } from './wpThemeAdapter.js';
+export { fromWpThemeJson, toWpThemeJson } from './wpThemeAdapter.js';
+export { toWpEditorSettings } from './wpEditorSettingsAdapter.js';
 
 export {
   mergeEpThemes,

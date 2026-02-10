@@ -49,6 +49,14 @@ function normalizeStyleRecord(input = {}) {
   return out;
 }
 
+function applyTokenRefs(target, tokenGroup, groupName) {
+  for (const key of Object.keys(tokenGroup || {})) {
+    if (!(key in target)) {
+      target[key] = makeTokenRef(`${groupName}.${key}`);
+    }
+  }
+}
+
 function withStylePropDefaults(source = {}, tokens = {}, surfaces = {}) {
   const styleProps = {
     color: normalizeStyleRecord(source?.color),
@@ -59,24 +67,12 @@ function withStylePropDefaults(source = {}, tokens = {}, surfaces = {}) {
     layout: normalizeStyleRecord(source?.layout)
   };
 
-  for (const key of Object.keys(tokens.color || {})) {
-    if (!(key in styleProps.color)) styleProps.color[key] = makeTokenRef(`color.${key}`);
-  }
-  for (const key of Object.keys(tokens.spacing || {})) {
-    if (!(key in styleProps.spacing)) styleProps.spacing[key] = makeTokenRef(`spacing.${key}`);
-  }
-  for (const key of Object.keys(tokens.typography || {})) {
-    if (!(key in styleProps.typography)) styleProps.typography[key] = makeTokenRef(`typography.${key}`);
-  }
-  for (const key of Object.keys(tokens.radius || {})) {
-    if (!(key in styleProps.radius)) styleProps.radius[key] = makeTokenRef(`radius.${key}`);
-  }
-  for (const key of Object.keys(tokens.shadow || {})) {
-    if (!(key in styleProps.shadow)) styleProps.shadow[key] = makeTokenRef(`shadow.${key}`);
-  }
-  for (const key of Object.keys(tokens.layout || {})) {
-    if (!(key in styleProps.layout)) styleProps.layout[key] = makeTokenRef(`layout.${key}`);
-  }
+  applyTokenRefs(styleProps.color, tokens.color, 'color');
+  applyTokenRefs(styleProps.spacing, tokens.spacing, 'spacing');
+  applyTokenRefs(styleProps.typography, tokens.typography, 'typography');
+  applyTokenRefs(styleProps.radius, tokens.radius, 'radius');
+  applyTokenRefs(styleProps.shadow, tokens.shadow, 'shadow');
+  applyTokenRefs(styleProps.layout, tokens.layout, 'layout');
   for (const key of Object.keys(surfaces || {})) {
     if (!(key in styleProps.color)) styleProps.color[key] = String(surfaces[key] || '').trim();
   }

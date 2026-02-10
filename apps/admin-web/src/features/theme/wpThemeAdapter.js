@@ -122,3 +122,86 @@ export function fromWpThemeJson(input = {}, { mode = 'light' } = {}) {
 
   return ep;
 }
+
+export function toWpThemeJson(input = {}) {
+  const theme = normalizeEpTheme(input || {});
+  const typography = theme.tokens.typography || {};
+  const spacing = theme.tokens.spacing || {};
+
+  const fontFamilies = Object.entries(typography)
+    .filter(([key, value]) => key.startsWith('family.') && String(value || '').trim())
+    .map(([key, value]) => ({
+      slug: key.slice('family.'.length),
+      name: key.slice('family.'.length),
+      fontFamily: String(value).trim()
+    }));
+
+  const fontSizes = Object.entries(typography)
+    .filter(([key, value]) => key.startsWith('size.') && String(value || '').trim())
+    .map(([key, value]) => ({
+      slug: key.slice('size.'.length),
+      name: key.slice('size.'.length),
+      size: String(value).trim()
+    }));
+
+  const spacingSizes = Object.entries(spacing)
+    .filter(([key, value]) => !key.startsWith('scale.') && String(value || '').trim())
+    .map(([key, value]) => ({
+      slug: key,
+      name: key,
+      size: String(value).trim()
+    }));
+
+  const palette = Array.isArray(theme.tokens.palette)
+    ? theme.tokens.palette
+      .filter((entry) => String(entry?.slug || '').trim() && String(entry?.value || '').trim())
+      .map((entry) => ({
+        slug: String(entry.slug).trim(),
+        name: String(entry.name || entry.slug).trim(),
+        color: String(entry.value).trim()
+      }))
+    : [];
+
+  const gradients = Array.isArray(theme?.origin?.wp?.presets?.color?.gradients)
+    ? theme.origin.wp.presets.color.gradients
+    : [];
+
+  const background = String(theme.tokens.color?.background || theme.surfaces.page || '').trim();
+  const text = String(theme.tokens.color?.text || '').trim();
+
+  return {
+    $schema: 'https://schemas.wp.org/trunk/theme.json',
+    version: 3,
+    title: theme.name || 'EP Theme',
+    settings: {
+      color: {
+        palette,
+        gradients,
+        custom: true,
+        defaultPalette: true,
+        defaultGradients: true
+      },
+      typography: {
+        fontFamilies,
+        fontSizes,
+        customFontSize: true,
+        lineHeight: true
+      },
+      spacing: {
+        spacingSizes,
+        customSpacingSize: true,
+        units: ['px', 'em', 'rem', '%', 'vw', 'vh']
+      },
+      layout: {
+        contentSize: String(theme.tokens.layout?.contentSize || '840px'),
+        wideSize: String(theme.tokens.layout?.wideSize || '1200px')
+      }
+    },
+    styles: {
+      color: {
+        background,
+        text
+      }
+    }
+  };
+}

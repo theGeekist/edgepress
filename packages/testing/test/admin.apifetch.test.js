@@ -53,6 +53,38 @@ test('configureApiFetch registers middleware in deterministic order', () => {
   ]);
 });
 
+test('configureApiFetch is idempotent for same apiRoot', () => {
+  const used = [];
+  const apiFetch = {
+    createRootURLMiddleware(root) {
+      const fn = (_options, next) => next(_options);
+      fn._name = `root:${root}`;
+      return fn;
+    },
+    use(fn) {
+      used.push(fn._name || fn.name || 'anonymous');
+    }
+  };
+
+  configureApiFetch(apiFetch, {
+    getAccessToken: () => null,
+    refresh: async () => false,
+    apiRoot: 'http://localhost:8787'
+  });
+  configureApiFetch(apiFetch, {
+    getAccessToken: () => null,
+    refresh: async () => false,
+    apiRoot: 'http://localhost:8787'
+  });
+
+  assert.deepEqual(used, [
+    'authMiddleware',
+    'traceMiddleware',
+    'root:http://localhost:8787/',
+    'refreshMiddleware'
+  ]);
+});
+
 test('configureApiFetch uses real apiFetch chain with refresh retry and updated auth header', async () => {
   const apiFetch = await loadFreshApiFetch();
   let token = 'old_token';
