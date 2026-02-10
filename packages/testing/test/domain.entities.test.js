@@ -6,7 +6,7 @@ import {
     createPublishJob,
     createMediaAssetSession,
     finalizeMediaAsset
-} from '../../domain/src/entities.js';
+} from '@geekist/edgepress/domain/entities.js';
 
 test('createUser role-based capabilities', () => {
     const admin = createUser({ id: 'u1', username: 'admin', role: 'admin' });

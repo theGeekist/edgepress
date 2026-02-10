@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createApiHandler } from '../../../apps/api-edge/src/app.js';
-import { createInMemoryPlatform } from '../src/inMemoryPlatform.js';
+import { createInMemoryPlatform } from '../src/store.js';
 
 test('api handler CORS with DEV_CORS_ORIGIN', async () => {
     const platform = createInMemoryPlatform();

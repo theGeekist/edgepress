@@ -33,10 +33,17 @@ export const D1_SQL = {
     'CREATE TABLE IF NOT EXISTS app_previews (preview_token TEXT PRIMARY KEY, preview_json TEXT NOT NULL, expires_at TEXT NOT NULL)',
   createAppNavigationMenus:
     'CREATE TABLE IF NOT EXISTS app_navigation_menus (key TEXT PRIMARY KEY, menu_json TEXT NOT NULL, updated_at TEXT NOT NULL)',
+  createAppContentTypes:
+    'CREATE TABLE IF NOT EXISTS app_content_types (slug TEXT PRIMARY KEY, content_type_json TEXT NOT NULL, updated_at TEXT NOT NULL)',
+  createAppTaxonomies:
+    'CREATE TABLE IF NOT EXISTS app_taxonomies (slug TEXT PRIMARY KEY, taxonomy_json TEXT NOT NULL, updated_at TEXT NOT NULL)',
+  createAppTerms:
+    'CREATE TABLE IF NOT EXISTS app_terms (id TEXT PRIMARY KEY, taxonomy_slug TEXT NOT NULL, term_json TEXT NOT NULL, updated_at TEXT NOT NULL)',
   createIdxRevisionsDocument: 'CREATE INDEX IF NOT EXISTS idx_app_revisions_document ON app_revisions(document_id, created_at)',
   createIdxFormsFormId: 'CREATE INDEX IF NOT EXISTS idx_app_forms_form_id ON app_form_submissions(form_id, created_at)',
   createIdxPreviewsExpiresAt: 'CREATE INDEX IF NOT EXISTS idx_app_previews_expires_at ON app_previews(expires_at)',
   createIdxNavigationMenusUpdatedAt: 'CREATE INDEX IF NOT EXISTS idx_app_navigation_menus_updated_at ON app_navigation_menus(updated_at)',
+  createIdxTermsTaxonomySlug: 'CREATE INDEX IF NOT EXISTS idx_app_terms_taxonomy_slug ON app_terms(taxonomy_slug, updated_at)',
   selectUserById: 'SELECT user_json FROM app_users WHERE id = ?',
   selectUserByUsername: 'SELECT user_json FROM app_users WHERE username = ?',
   upsertUser:
@@ -71,5 +78,18 @@ export const D1_SQL = {
   selectNavigationMenus: 'SELECT menu_json FROM app_navigation_menus ORDER BY updated_at ASC',
   selectNavigationMenuByKey: 'SELECT menu_json FROM app_navigation_menus WHERE key = ?',
   upsertNavigationMenu:
-    'INSERT INTO app_navigation_menus (key, menu_json, updated_at) VALUES (?, ?, ?) ON CONFLICT(key) DO UPDATE SET menu_json = excluded.menu_json, updated_at = excluded.updated_at'
+    'INSERT INTO app_navigation_menus (key, menu_json, updated_at) VALUES (?, ?, ?) ON CONFLICT(key) DO UPDATE SET menu_json = excluded.menu_json, updated_at = excluded.updated_at',
+  selectContentTypes: 'SELECT content_type_json FROM app_content_types ORDER BY updated_at ASC',
+  selectContentTypeBySlug: 'SELECT content_type_json FROM app_content_types WHERE slug = ?',
+  upsertContentType:
+    'INSERT INTO app_content_types (slug, content_type_json, updated_at) VALUES (?, ?, ?) ON CONFLICT(slug) DO UPDATE SET content_type_json = excluded.content_type_json, updated_at = excluded.updated_at',
+  selectTaxonomies: 'SELECT taxonomy_json FROM app_taxonomies ORDER BY updated_at ASC',
+  selectTaxonomyBySlug: 'SELECT taxonomy_json FROM app_taxonomies WHERE slug = ?',
+  upsertTaxonomy:
+    'INSERT INTO app_taxonomies (slug, taxonomy_json, updated_at) VALUES (?, ?, ?) ON CONFLICT(slug) DO UPDATE SET taxonomy_json = excluded.taxonomy_json, updated_at = excluded.updated_at',
+  selectTerms: 'SELECT term_json FROM app_terms ORDER BY updated_at ASC',
+  selectTermsByTaxonomySlug: 'SELECT term_json FROM app_terms WHERE taxonomy_slug = ? ORDER BY updated_at ASC',
+  selectTermById: 'SELECT term_json FROM app_terms WHERE id = ?',
+  upsertTerm:
+    'INSERT INTO app_terms (id, taxonomy_slug, term_json, updated_at) VALUES (?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET taxonomy_slug = excluded.taxonomy_slug, term_json = excluded.term_json, updated_at = excluded.updated_at'
 };

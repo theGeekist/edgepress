@@ -1,7 +1,7 @@
-import { assertReleaseManifestImmutable } from '../../domain/src/invariants.js';
-import { normalizeBlocksInput } from '../../domain/src/blocks.js';
-import { toErrorMessage } from '../../domain/src/errors.js';
-import { normalizePublishProvenanceInput } from '../../domain/src/provenance.js';
+import { assertReleaseManifestImmutable } from '@geekist/edgepress/domain/invariants.js';
+import { normalizeBlocksInput } from '@geekist/edgepress/domain/blocks.js';
+import { toErrorMessage } from '@geekist/edgepress/domain/errors.js';
+import { normalizePublishProvenanceInput } from '@geekist/edgepress/domain/provenance.js';
 import { serialize } from '@wordpress/blocks';
 
 // Non-cryptographic hash for deterministic testable fingerprints only.

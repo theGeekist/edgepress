@@ -35,6 +35,13 @@ function ensureFilenameExtension(filename, mimeType) {
   return ext ? `${safe}.${ext}` : safe;
 }
 
+function normalizeBlobBody(bytes) {
+  if (bytes instanceof Uint8Array || bytes instanceof ArrayBuffer) return bytes;
+  if (typeof bytes === 'string') return bytes;
+  if (bytes == null) return '';
+  return String(bytes);
+}
+
 export function createMediaRoutes({ runtime, store, blobStore, route, authzErrorResponse }) {
   function resolveAbsoluteUrl(request, maybeRelative) {
     if (!maybeRelative) return '';
@@ -139,14 +146,11 @@ export function createMediaRoutes({ runtime, store, blobStore, route, authzError
       }
       const contentType = blob?.metadata?.contentType || 'application/octet-stream';
       const bytes = blob?.bytes;
-      let body;
-      if (bytes instanceof Uint8Array || bytes instanceof ArrayBuffer || typeof bytes === 'string') {
-        body = bytes;
-      } else if (bytes == null) {
-        body = '';
-      } else {
-        body = String(bytes);
-      }
+<<<<<<< HEAD
+      const body = normalizeBlobBody(bytes);
+=======
+      const body = normalizeBlobBody(bytes);
+>>>>>>> 8249750 (feat(platform): add content-model routes and reorganize cloudflare/testing stores)
       return new Response(body, { status: 200, headers: { 'content-type': contentType } });
     }),
 
