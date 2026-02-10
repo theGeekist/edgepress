@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 // Default WordPress-style menu structure
 export const DEFAULT_MENU_ITEMS = [
@@ -62,30 +62,34 @@ export function useSidebarNavigation({ activeItemId, onSelectItem }) {
 
   const handleKeyDown = useCallback((e, itemId, focusableIds, focusedIndex) => {
     switch (e.key) {
-      case 'ArrowDown':
+      case 'ArrowDown': {
         e.preventDefault();
         const nextIndex = Math.min(focusedIndex + 1, focusableIds.length - 1);
         setFocusedItemId(focusableIds[nextIndex]?.id);
         break;
-      case 'ArrowUp':
+      }
+      case 'ArrowUp': {
         e.preventDefault();
         const prevIndex = Math.max(focusedIndex - 1, 0);
         setFocusedItemId(focusableIds[prevIndex]?.id);
         break;
-      case 'ArrowLeft':
+      }
+      case 'ArrowLeft': {
         e.preventDefault();
         const currentItem = focusableIds.find(i => i.id === itemId);
         if (currentItem?.parentId && expandedItems.has(currentItem.parentId)) {
           handleToggleExpand(currentItem.parentId);
         }
         break;
-      case 'ArrowRight':
+      }
+      case 'ArrowRight': {
         e.preventDefault();
         const current = focusableIds.find(i => i.id === itemId);
         if (current?.parentId && !expandedItems.has(current.parentId)) {
           handleToggleExpand(current.parentId);
         }
         break;
+      }
       case 'Enter':
       case ' ':
         e.preventDefault();
