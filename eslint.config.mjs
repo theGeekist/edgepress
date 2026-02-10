@@ -25,10 +25,24 @@ export default [
         ...globals.web
       }
     },
+    settings: {
+      'import/resolver': {
+        typescript: {
+          alwaysTryTypes: true,
+          project: './tsconfig.base.json'
+        },
+        node: true
+      }
+    },
     rules: {
       'no-console': 'off',
       'sonarjs/no-duplicate-string': 'off',
-      'max-lines': ['error', { max: 500, skipBlankLines: true, skipComments: true }]
+      'max-lines': ['error', { max: 500, skipBlankLines: true, skipComments: true }],
+      'no-unused-vars': ['error', {
+        argsIgnorePattern: '^_',
+        varsIgnorePattern: '^_',
+        caughtErrorsIgnorePattern: '^_'
+      }]
     }
   },
   {

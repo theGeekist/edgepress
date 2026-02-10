@@ -16,9 +16,24 @@ function normalizeItems(items) {
   }));
 }
 
+function normalizeForSave(title, items) {
+  return {
+    title: String(title || '').trim() || 'Primary Menu',
+    items: normalizeItems(items).map((entry, index) => ({
+      ...entry,
+      order: index
+    }))
+  };
+}
+
+function stableSignature(value) {
+  return JSON.stringify(value);
+}
+
 export function useNavigationMenuEditor({ navigation, actions, menuKey = 'primary' }) {
   const [menuTitle, setMenuTitle] = useState('Primary Menu');
   const [items, setItems] = useState([]);
+  const [baselineSignature, setBaselineSignature] = useState(stableSignature(normalizeForSave('Primary Menu', [])));
 
   useEffect(() => {
     actions.onLoadNavigationMenu?.(menuKey).catch(() => { });
@@ -27,14 +42,25 @@ export function useNavigationMenuEditor({ navigation, actions, menuKey = 'primar
   useEffect(() => {
     const menu = navigation?.menu;
     if (!menu) return;
-    setMenuTitle(menu.title || 'Primary Menu');
-    setItems(normalizeItems(menu.items));
+    const normalizedTitle = menu.title || 'Primary Menu';
+    const normalizedItems = normalizeItems(menu.items);
+    const normalizedMenu = normalizeForSave(normalizedTitle, normalizedItems);
+    setMenuTitle(normalizedTitle);
+    setItems(normalizedItems);
+    setBaselineSignature(stableSignature(normalizedMenu));
   }, [navigation?.menu?.updatedAt, navigation?.menu?.key]);
+
+  const currentSignature = useMemo(
+    () => stableSignature(normalizeForSave(menuTitle, items)),
+    [menuTitle, items]
+  );
+  const isDirty = currentSignature !== baselineSignature;
 
   const uiState = useMemo(() => ({
     isLoading: Boolean(navigation?.isLoading),
     isSaving: Boolean(navigation?.isSaving),
-  }), [navigation?.isLoading, navigation?.isSaving]);
+    isDirty
+  }), [navigation?.isLoading, navigation?.isSaving, isDirty]);
 
   function addItem(partialItem) {
     const newItem = {
@@ -49,10 +75,9 @@ export function useNavigationMenuEditor({ navigation, actions, menuKey = 'primar
   }
 
   async function saveMenu() {
-    await actions.onSaveNavigationMenu?.({
-      title: menuTitle,
-      items: items.map((entry, index) => ({ ...entry, order: index })),
-    }, menuKey);
+    const payload = normalizeForSave(menuTitle, items);
+    await actions.onSaveNavigationMenu?.(payload, menuKey);
+    setBaselineSignature(stableSignature(payload));
   }
 
   return {

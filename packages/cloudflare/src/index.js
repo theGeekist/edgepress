@@ -1,8 +1,8 @@
-import { createInMemoryPlatform } from '../../testing/src/inMemoryPlatform.js';
+import { createInMemoryPlatform } from '../../testing/src/store.js';
 import { createCloudflareRuntime } from './runtime.js';
 import { createBlobStore, createCacheStore } from './io-stores.js';
 import { createReleaseStore } from './release-store.js';
-import { createAppStores } from './app-store.js';
+import { createAppStores } from './store.js';
 import { D1_SQL } from './d1-sql.js';
 
 export { D1_SQL } from './d1-sql.js';

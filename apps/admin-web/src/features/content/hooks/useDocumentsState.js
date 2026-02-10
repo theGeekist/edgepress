@@ -30,23 +30,20 @@ function writeContentMeta(value) {
 }
 
 function toSlug(input) {
-  const normalized = String(input || '').trim().toLowerCase();
-  let slug = '';
-  let previousWasDash = false;
-  for (const char of normalized) {
-    const isAlphaNumeric = (char >= 'a' && char <= 'z') || (char >= '0' && char <= '9');
-    if (isAlphaNumeric) {
-      slug += char;
-      previousWasDash = false;
-      continue;
-    }
-    if (!previousWasDash) {
-      slug += '-';
-      previousWasDash = true;
-    }
+  let slug = String(input || '')
+    .normalize('NFKC')
+    .trim()
+    .toLocaleLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/['’]+/g, '')
+    .replace(/[^\p{Letter}\p{Number}]+/gu, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-+/, '');
+
+  while (slug.endsWith('-')) {
+    slug = slug.slice(0, -1);
   }
-  if (slug.startsWith('-')) slug = slug.slice(1);
-  if (slug.endsWith('-')) slug = slug.slice(0, -1);
   return slug;
 }
 
@@ -68,10 +65,17 @@ function normalizeStatus(item) {
 }
 
 function normalizeType(documentItem, metaItem) {
-  if (documentItem?.type === 'post') {
+  const rawType = String(
+    documentItem?.type ||
+    documentItem?.postType ||
+    documentItem?.contentType ||
+    documentItem?.docType ||
+    ''
+  ).toLowerCase();
+  if (rawType === 'post') {
     return 'post';
   }
-  if (documentItem?.type === 'page') {
+  if (rawType === 'page') {
     return 'page';
   }
   if (metaItem?.type === 'post') {
@@ -93,6 +97,9 @@ function withUiMeta(item, meta) {
       status,
       slug: draftSlug || canonicalSlug || toSlug(title) || 'untitled',
       excerpt: entryMeta.excerpt || '',
+      categories: Array.isArray(entryMeta.categories) ? entryMeta.categories : [],
+      tags: Array.isArray(entryMeta.tags) ? entryMeta.tags : [],
+      taxonomyMode: entryMeta.taxonomyMode === 'hierarchical' ? 'hierarchical' : 'flat',
       publishDate: entryMeta.publishDate || '',
       featuredImageId: String(entryMeta.featuredImageId || item.featuredImageId || '').trim(),
       updatedAtLabel: item.updatedAt || item.createdAt || ''
@@ -164,6 +171,24 @@ export function useDocumentsState(shell) {
     if (typeof normalizedPatch.featuredImageId === 'string') {
       normalizedPatch.featuredImageId = normalizedPatch.featuredImageId.trim();
     }
+    if (typeof normalizedPatch.categories === 'string') {
+      normalizedPatch.categories = normalizedPatch.categories
+        .split(',')
+        .map((entry) => entry.trim())
+        .filter(Boolean);
+    }
+    if (typeof normalizedPatch.tags === 'string') {
+      normalizedPatch.tags = normalizedPatch.tags
+        .split(',')
+        .map((entry) => entry.trim())
+        .filter(Boolean);
+    }
+    if (!Array.isArray(normalizedPatch.categories) && normalizedPatch.categories !== undefined) {
+      normalizedPatch.categories = [];
+    }
+    if (!Array.isArray(normalizedPatch.tags) && normalizedPatch.tags !== undefined) {
+      normalizedPatch.tags = [];
+    }
     const nextMeta = {
       ...contentMeta,
       [documentId]: {
@@ -233,6 +258,9 @@ export function useDocumentsState(shell) {
         type,
         slug: toSlug(document.title || 'untitled'),
         excerpt: '',
+        categories: [],
+        tags: [],
+        taxonomyMode: 'hierarchical',
         publishDate: '',
         featuredImageId: ''
       }
@@ -246,6 +274,24 @@ export function useDocumentsState(shell) {
     return docs.find((doc) => doc.id === selectedId) || null;
   }
 
+  function getSelectedDocType() {
+    const selected = getSelectedDoc();
+    if (selected?.ui?.type === 'post' || selected?.type === 'post') {
+      return 'post';
+    }
+    if (selected?.ui?.type === 'page' || selected?.type === 'page') {
+      return 'page';
+    }
+    const metaType = contentMeta?.[selectedId || '']?.type;
+    if (metaType === 'post' || metaType === 'page') {
+      return metaType;
+    }
+    if (contentTypeFilter === 'post' || contentTypeFilter === 'page') {
+      return contentTypeFilter;
+    }
+    return 'post';
+  }
+
   async function bulkSetStatus(status) {
     const rows = docs.filter((doc) => selectedRowIds.includes(doc.id));
     if (rows.length === 0) {
@@ -255,12 +301,12 @@ export function useDocumentsState(shell) {
     await Promise.all(rows.map(async (row) => {
       try {
         await shell.updateDocument(row.id, {
-        title: row.title,
-        content: row.content,
-        slug: row.slug || row.ui?.slug || '',
-        blocks: Array.isArray(row.blocks) ? row.blocks : [],
-        status
-      });
+          title: row.title,
+          content: row.content,
+          slug: row.slug || row.ui?.slug || toSlug(row.title) || 'untitled',
+          blocks: Array.isArray(row.blocks) ? row.blocks : [],
+          status
+        });
       } catch (error) {
         failures.push({ id: row.id, error });
         console.error('bulkSetStatus row update failed', { id: row.id, error });
@@ -318,7 +364,7 @@ export function useDocumentsState(shell) {
     await shell.updateDocument(row.id, {
       title: row.title,
       content: row.content,
-      slug: row.slug || row.ui?.slug || '',
+      slug: row.slug || row.ui?.slug || toSlug(row.title) || 'untitled',
       blocks: Array.isArray(row.blocks) ? row.blocks : [],
       status
     });
@@ -352,6 +398,7 @@ export function useDocumentsState(shell) {
     refresh,
     createDraft,
     getSelectedDoc,
+    getSelectedDocType,
     updateMeta,
     selectedRowIds,
     toggleRowSelection,

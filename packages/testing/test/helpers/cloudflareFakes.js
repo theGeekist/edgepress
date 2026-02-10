@@ -1,5 +1,5 @@
 /* c8 ignore file */
-import { D1_SQL } from '../../../adapters-cloudflare/src/d1-sql.js';
+import { D1_SQL } from '../../../cloudflare/src/d1-sql.js';
 
 export function createFakeKV() {
   const map = new Map();

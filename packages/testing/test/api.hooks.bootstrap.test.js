@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createInMemoryPlatform } from '../src/inMemoryPlatform.js';
+import { createInMemoryPlatform } from '../src/store.js';
 import { authAsAdmin, requestJson } from '../src/testUtils.js';
 import {
   attachServerHooks,

@@ -23,23 +23,20 @@ function parsePositiveInt(input, fallback) {
 }
 
 function toSlug(input) {
-  const normalized = String(input || '').trim().toLowerCase();
-  let slug = '';
-  let previousWasDash = false;
-  for (const char of normalized) {
-    const isAlphaNumeric = (char >= 'a' && char <= 'z') || (char >= '0' && char <= '9');
-    if (isAlphaNumeric) {
-      slug += char;
-      previousWasDash = false;
-      continue;
-    }
-    if (!previousWasDash) {
-      slug += '-';
-      previousWasDash = true;
-    }
+  let slug = String(input || '')
+    .normalize('NFKC')
+    .trim()
+    .toLocaleLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/['’]+/g, '')
+    .replace(/[^\p{Letter}\p{Number}]+/gu, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-+/, '');
+
+  while (slug.endsWith('-')) {
+    slug = slug.slice(0, -1);
   }
-  if (slug.startsWith('-')) slug = slug.slice(1);
-  if (slug.endsWith('-')) slug = slug.slice(0, -1);
   return slug;
 }
 
@@ -48,6 +45,18 @@ function toDocumentItems(payload) {
     return payload;
   }
   return Array.isArray(payload?.items) ? payload.items : [];
+}
+
+function normalizeTermIdsInput(value, fallback = []) {
+  if (value === undefined) return fallback;
+  if (!Array.isArray(value)) return [];
+  return value.map((entry) => String(entry || '').trim()).filter(Boolean);
+}
+
+function normalizeObjectInput(value, fallback = {}) {
+  if (value === undefined) return fallback;
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  return value;
 }
 
 async function resolveUniqueSlug(store, { requestedSlug, title, currentId = null }) {
@@ -119,15 +128,21 @@ export function createDocumentRoutes({ runtime, store, hooks, route, authzErrorR
           requestedSlug: body.slug,
           title: body.title
         });
+        const nextLegacyHtml = String(body.legacyHtml ?? body.content ?? '');
         const document = await store.createDocument({
           id,
           title: body.title || 'Untitled',
-          content: body.content || '',
+          content: nextLegacyHtml,
+          legacyHtml: nextLegacyHtml,
           type: body.type || 'page',
           slug,
+          excerpt: body.excerpt || '',
           featuredImageId: body.featuredImageId || '',
           blocks: normalizedBlocks.blocks,
           blocksSchemaVersion: normalizedBlocks.blocksSchemaVersion,
+          fields: normalizeObjectInput(body.fields, {}),
+          termIds: normalizeTermIdsInput(body.termIds, []),
+          raw: normalizeObjectInput(body.raw, {}),
           createdBy: user.id,
           status: body.status || 'draft'
         });
@@ -136,8 +151,15 @@ export function createDocumentRoutes({ runtime, store, hooks, route, authzErrorR
           documentId: id,
           title: document.title,
           content: document.content,
+          legacyHtml: document.legacyHtml,
+          excerpt: document.excerpt,
+          slug: document.slug,
+          status: document.status,
+          featuredImageId: document.featuredImageId,
           blocks: document.blocks,
           blocksSchemaVersion: document.blocksSchemaVersion || BLOCKS_SCHEMA_VERSION,
+          fields: document.fields,
+          termIds: document.termIds,
           sourceRevisionId: null,
           authorId: user.id
         });
@@ -164,15 +186,21 @@ export function createDocumentRoutes({ runtime, store, hooks, route, authzErrorR
             title: body.title ?? existing.title,
             currentId: params.id
           });
+        const nextLegacyHtml = String(body.legacyHtml ?? body.content ?? existing.legacyHtml ?? existing.content ?? '');
 
         const document = await store.updateDocument(params.id, {
           title: body.title ?? existing.title,
-          content: body.content ?? existing.content,
+          content: nextLegacyHtml,
+          legacyHtml: nextLegacyHtml,
           type: body.type ?? existing.type ?? 'page',
           slug,
+          excerpt: body.excerpt ?? existing.excerpt ?? '',
           featuredImageId: body.featuredImageId ?? existing.featuredImageId ?? '',
           blocks: normalizedBlocks.blocks,
           blocksSchemaVersion: normalizedBlocks.blocksSchemaVersion,
+          fields: normalizeObjectInput(body.fields, existing.fields || {}),
+          termIds: normalizeTermIdsInput(body.termIds, existing.termIds || []),
+          raw: normalizeObjectInput(body.raw, existing.raw || {}),
           status: body.status ?? existing.status
         });
         const revisions = await store.listRevisions(params.id);
@@ -182,8 +210,15 @@ export function createDocumentRoutes({ runtime, store, hooks, route, authzErrorR
           documentId: params.id,
           title: document.title,
           content: document.content,
+          legacyHtml: document.legacyHtml,
+          excerpt: document.excerpt,
+          slug: document.slug,
+          status: document.status,
+          featuredImageId: document.featuredImageId,
           blocks: document.blocks,
           blocksSchemaVersion: document.blocksSchemaVersion || BLOCKS_SCHEMA_VERSION,
+          fields: document.fields,
+          termIds: document.termIds,
           sourceRevisionId: latest?.id || null,
           authorId: user.id
         });
@@ -259,8 +294,15 @@ export function createDocumentRoutes({ runtime, store, hooks, route, authzErrorR
           documentId: params.id,
           title: document.title,
           content: document.content,
+          legacyHtml: document.legacyHtml,
+          excerpt: document.excerpt,
+          slug: document.slug,
+          status: document.status,
+          featuredImageId: document.featuredImageId,
           blocks: document.blocks,
           blocksSchemaVersion: document.blocksSchemaVersion || BLOCKS_SCHEMA_VERSION,
+          fields: document.fields,
+          termIds: document.termIds,
           sourceRevisionId: latest?.id || null,
           authorId: user.id
         });
