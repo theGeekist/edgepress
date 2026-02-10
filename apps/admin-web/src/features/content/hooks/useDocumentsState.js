@@ -30,23 +30,19 @@ function writeContentMeta(value) {
 }
 
 function toSlug(input) {
-  const normalized = String(input || '').trim().toLowerCase();
-  let slug = '';
-  let previousWasDash = false;
-  for (const char of normalized) {
-    const isAlphaNumeric = (char >= 'a' && char <= 'z') || (char >= '0' && char <= '9');
-    if (isAlphaNumeric) {
-      slug += char;
-      previousWasDash = false;
-      continue;
-    }
-    if (!previousWasDash) {
-      slug += '-';
-      previousWasDash = true;
-    }
+  let slug = String(input || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase()
+    .replace(/[_\s]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/[^a-z0-9-]/g, '')
+    .replace(/^-+/, '');
+
+  while (slug.endsWith('-')) {
+    slug = slug.slice(0, -1);
   }
-  if (slug.startsWith('-')) slug = slug.slice(1);
-  if (slug.endsWith('-')) slug = slug.slice(0, -1);
   return slug;
 }
 
@@ -304,12 +300,12 @@ export function useDocumentsState(shell) {
     await Promise.all(rows.map(async (row) => {
       try {
         await shell.updateDocument(row.id, {
-        title: row.title,
-        content: row.content,
-        slug: row.slug || row.ui?.slug || '',
-        blocks: Array.isArray(row.blocks) ? row.blocks : [],
-        status
-      });
+          title: row.title,
+          content: row.content,
+          slug: row.slug || row.ui?.slug || toSlug(row.title) || 'untitled',
+          blocks: Array.isArray(row.blocks) ? row.blocks : [],
+          status
+        });
       } catch (error) {
         failures.push({ id: row.id, error });
         console.error('bulkSetStatus row update failed', { id: row.id, error });
@@ -367,7 +363,7 @@ export function useDocumentsState(shell) {
     await shell.updateDocument(row.id, {
       title: row.title,
       content: row.content,
-      slug: row.slug || row.ui?.slug || '',
+      slug: row.slug || row.ui?.slug || toSlug(row.title) || 'untitled',
       blocks: Array.isArray(row.blocks) ? row.blocks : [],
       status
     });
