@@ -24,13 +24,14 @@ function parsePositiveInt(input, fallback) {
 
 function toSlug(input) {
   let slug = String(input || '')
+    .normalize('NFKC')
+    .trim()
+    .toLocaleLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
-    .trim()
-    .toLowerCase()
-    .replace(/[_\s]+/g, '-')
+    .replace(/['’]+/g, '')
+    .replace(/[^\p{Letter}\p{Number}]+/gu, '-')
     .replace(/-+/g, '-')
-    .replace(/[^a-z0-9-]/g, '')
     .replace(/^-+/, '');
 
   while (slug.endsWith('-')) {
