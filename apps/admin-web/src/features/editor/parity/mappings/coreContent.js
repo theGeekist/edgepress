@@ -29,6 +29,101 @@ function toPresetSlug(value) {
   return /^[a-z0-9-]+$/.test(raw) ? raw : '';
 }
 
+function importSpacerBlock(wpBlockName, attrs) {
+  const selfStretch = String(attrs?.style?.layout?.selfStretch || '');
+  const computedHeight = selfStretch === 'fill' || selfStretch === 'fit'
+    ? ''
+    : String(attrs.height || '100px');
+  return {
+    blockKind: 'ep/spacer',
+    props: {
+      style: {
+        spacing: {
+          height: makeSpacingStyleValue(computedHeight),
+          width: makeSpacingStyleValue(attrs.width || '')
+        },
+        layout: {
+          selfStretch: selfStretch ? makeStyleRef(`layout.selfStretch.${selfStretch}`) : null
+        }
+      }
+    },
+    origin: { wpBlockName, attrs },
+    lossiness: 'none',
+    children: []
+  };
+}
+
+function importHeadingBlock(wpBlockName, attrs) {
+  return {
+    blockKind: 'ep/heading',
+    props: {
+      content: String(attrs.content || ''),
+      level: Number.isFinite(Number(attrs.level)) ? Number(attrs.level) : 2
+    },
+    origin: { wpBlockName, attrs },
+    lossiness: 'none',
+    children: []
+  };
+}
+
+function importQuoteBlock(wpBlockName, attrs) {
+  return {
+    blockKind: 'ep/quote',
+    props: {
+      value: String(attrs.value || ''),
+      citation: String(attrs.citation || ''),
+      style: {
+        typography: {
+          textAlign: attrs.textAlign ? makeStyleRef(`typography.textAlign.${String(attrs.textAlign)}`) : null
+        }
+      }
+    },
+    origin: { wpBlockName, attrs },
+    lossiness: 'none',
+    children: []
+  };
+}
+
+function importSeparatorBlock(wpBlockName, attrs) {
+  const hasCustomColor = Boolean(attrs?.style?.color?.background);
+  const backgroundColorAttr = String(attrs.backgroundColor || '');
+  const backgroundColorSlug = toPresetSlug(backgroundColorAttr);
+  const backgroundStyle = backgroundColorSlug
+    ? makeStyleRef(`color.palette.${backgroundColorSlug}`)
+    : makeStyleValue(attrs?.style?.color?.background || '');
+  return {
+    blockKind: 'ep/separator',
+    props: {
+      opacity: attrs.opacity ? makeStyleRef(`effects.opacity.${String(attrs.opacity)}`) : makeStyleRef('effects.opacity.alpha-channel'),
+      tagName: attrs.tagName === 'div' ? 'div' : 'hr',
+      style: {
+        color: {
+          background: backgroundStyle
+        }
+      },
+      hasCustomColor
+    },
+    origin: { wpBlockName, attrs },
+    lossiness: 'none',
+    children: []
+  };
+}
+
+function importEmbedBlock(wpBlockName, attrs) {
+  return {
+    blockKind: 'ep/embed',
+    props: {
+      url: String(attrs.url || ''),
+      caption: String(attrs.caption || ''),
+      type: String(attrs.type || ''),
+      providerNameSlug: String(attrs.providerNameSlug || '')
+    },
+    origin: { wpBlockName, attrs },
+    lossiness: attrs.url ? 'none' : 'partial',
+    children: []
+  };
+}
+
 export const contentImportTransform = {
   id: 'core.content.import.v1',
   priority: 100,
@@ -36,99 +131,18 @@ export const contentImportTransform = {
   canHandle: () => true,
   toCanonical({ wpBlockName, node }) {
     const attrs = node?.attributes && typeof node.attributes === 'object' ? node.attributes : {};
-
-    if (wpBlockName === 'core/spacer') {
-      const selfStretch = String(attrs?.style?.layout?.selfStretch || '');
-      const computedHeight = selfStretch === 'fill' || selfStretch === 'fit'
-        ? ''
-        : String(attrs.height || '100px');
-      return {
-        blockKind: 'ep/spacer',
-        props: {
-          style: {
-            spacing: {
-              height: makeSpacingStyleValue(computedHeight),
-              width: makeSpacingStyleValue(attrs.width || '')
-            },
-            layout: {
-              selfStretch: selfStretch ? makeStyleRef(`layout.selfStretch.${selfStretch}`) : null
-            }
-          }
-        },
-        origin: { wpBlockName, attrs },
-        lossiness: 'none',
-        children: []
-      };
+    switch (wpBlockName) {
+      case 'core/spacer':
+        return importSpacerBlock(wpBlockName, attrs);
+      case 'core/heading':
+        return importHeadingBlock(wpBlockName, attrs);
+      case 'core/quote':
+        return importQuoteBlock(wpBlockName, attrs);
+      case 'core/separator':
+        return importSeparatorBlock(wpBlockName, attrs);
+      default:
+        return importEmbedBlock(wpBlockName, attrs);
     }
-
-    if (wpBlockName === 'core/heading') {
-      return {
-        blockKind: 'ep/heading',
-        props: {
-          content: String(attrs.content || ''),
-          level: Number.isFinite(Number(attrs.level)) ? Number(attrs.level) : 2
-        },
-        origin: { wpBlockName, attrs },
-        lossiness: 'none',
-        children: []
-      };
-    }
-
-    if (wpBlockName === 'core/quote') {
-      return {
-        blockKind: 'ep/quote',
-        props: {
-          value: String(attrs.value || ''),
-          citation: String(attrs.citation || ''),
-          style: {
-            typography: {
-              textAlign: attrs.textAlign ? makeStyleRef(`typography.textAlign.${String(attrs.textAlign)}`) : null
-            }
-          }
-        },
-        origin: { wpBlockName, attrs },
-        lossiness: 'none',
-        children: []
-      };
-    }
-
-    if (wpBlockName === 'core/separator') {
-      const hasCustomColor = Boolean(attrs?.style?.color?.background);
-      const backgroundColorAttr = String(attrs.backgroundColor || '');
-      const backgroundColorSlug = toPresetSlug(backgroundColorAttr);
-      return {
-        blockKind: 'ep/separator',
-        props: {
-          opacity: attrs.opacity ? makeStyleRef(`effects.opacity.${String(attrs.opacity)}`) : makeStyleRef('effects.opacity.alpha-channel'),
-          tagName: attrs.tagName === 'div' ? 'div' : 'hr',
-          style: {
-            color: {
-              background: backgroundColorSlug
-                ? makeStyleRef(`color.palette.${backgroundColorSlug}`)
-                : makeStyleValue(attrs?.style?.color?.background || '')
-            }
-          },
-          hasCustomColor
-        },
-        origin: { wpBlockName, attrs },
-        lossiness: 'none',
-        children: []
-      };
-    }
-
-    // core/embed
-    return {
-      blockKind: 'ep/embed',
-      props: {
-        url: String(attrs.url || ''),
-        caption: String(attrs.caption || ''),
-        type: String(attrs.type || ''),
-        providerNameSlug: String(attrs.providerNameSlug || '')
-      },
-      origin: { wpBlockName, attrs },
-      lossiness: attrs.url ? 'none' : 'partial',
-      children: []
-    };
   }
 };
 
@@ -147,7 +161,11 @@ const spacerRenderer = {
     }
     const hasHeight = Boolean(String(height || '').trim());
     const heightStyle = hasHeight ? `height:${escapeHtml(height)}` : '';
-    const widthStyle = width ? `${hasHeight ? ';' : ''}width:${escapeHtml(width)}` : '';
+    let widthStyle = '';
+    if (width) {
+      const separator = hasHeight ? ';' : '';
+      widthStyle = `${separator}width:${escapeHtml(width)}`;
+    }
     const styleAttr = heightStyle || widthStyle ? ` style="${heightStyle}${widthStyle}"` : '';
     return `<div class="ep-spacer" aria-hidden="true"${styleAttr}></div>`;
   }
@@ -192,9 +210,10 @@ const quoteRenderer = {
     const textAlign = resolveEnumStyleValue(props?.style?.typography?.textAlign);
     const className = textAlign ? ` class="has-text-align-${escapeHtml(textAlign)}"` : '';
     const rawValue = normalizeRichTextHtml(props.value);
-    const fallbackValueMarkup = rawValue
-      ? (/<p[\s>]/i.test(rawValue) ? rawValue : `<p>${rawValue}</p>`)
-      : '';
+    let fallbackValueMarkup = '';
+    if (rawValue) {
+      fallbackValueMarkup = /<p[\s>]/i.test(rawValue) ? rawValue : `<p>${rawValue}</p>`;
+    }
     const citationMarkup = props.citation ? `<cite>${normalizeRichTextHtml(props.citation)}</cite>` : '';
     const childrenMarkup = renderedChildren.join('');
     return `<blockquote${className}>${childrenMarkup || fallbackValueMarkup}${citationMarkup}</blockquote>`;
@@ -217,25 +236,27 @@ const separatorRenderer = {
         opacity
       };
     }
-    const tagName = props.tagName === 'div' ? 'div' : 'hr';
-    const bgColor = props?.style?.color?.background;
-    const bgRef = bgColor && typeof bgColor === 'object' ? String(bgColor.ref || '') : '';
-    const colorSlug = toPresetSlug(bgRef.startsWith('color.palette.') ? bgRef.slice('color.palette.'.length) : '');
-    const customColor = bgColor && typeof bgColor === 'object' && typeof bgColor.value === 'string' ? bgColor.value : '';
-    const classes = classList([
-      'ep-separator',
-      opacity === 'css' ? 'has-css-opacity' : '',
-      opacity === 'alpha-channel' ? 'has-alpha-channel-opacity' : '',
-      colorSlug ? `has-${escapeHtml(colorSlug)}-color` : '',
-      bgRef || customColor ? 'has-text-color' : ''
-    ]);
-    const styleColor = customColor
-      ? `color:${escapeHtml(customColor)}`
-      : '';
-    const styleAttr = styleColor ? ` style="${styleColor}"` : '';
-    return `<${tagName} class="${classes}"${styleAttr}></${tagName}>`;
+    return renderSeparatorPublish(props, opacity);
   }
 };
+
+function renderSeparatorPublish(props, opacity) {
+  const tagName = props.tagName === 'div' ? 'div' : 'hr';
+  const bgColor = props?.style?.color?.background;
+  const bgRef = bgColor && typeof bgColor === 'object' ? String(bgColor.ref || '') : '';
+  const colorSlug = toPresetSlug(bgRef.startsWith('color.palette.') ? bgRef.slice('color.palette.'.length) : '');
+  const customColor = bgColor && typeof bgColor === 'object' && typeof bgColor.value === 'string' ? bgColor.value : '';
+  const classes = classList([
+    'ep-separator',
+    opacity === 'css' ? 'has-css-opacity' : '',
+    opacity === 'alpha-channel' ? 'has-alpha-channel-opacity' : '',
+    colorSlug ? `has-${escapeHtml(colorSlug)}-color` : '',
+    bgRef || customColor ? 'has-text-color' : ''
+  ]);
+  const styleColor = customColor ? `color:${escapeHtml(customColor)}` : '';
+  const styleAttr = styleColor ? ` style="${styleColor}"` : '';
+  return `<${tagName} class="${classes}"${styleAttr}></${tagName}>`;
+}
 
 const embedRenderer = {
   id: 'ep.embed.render.v1',
