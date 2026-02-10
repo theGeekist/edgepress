@@ -1,15 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createInMemoryPlatform } from '../src/inMemoryPlatform.js';
+import { createInMemoryPlatform } from '../src/store.js';
 import { authAsAdmin, requestJson } from '../src/testUtils.js';
-import { createUser } from '../../domain/src/entities.js';
+import { createUser } from '@geekist/edgepress/domain/entities.js';
 
 async function seedDoc(handler, token) {
   const created = await requestJson(handler, 'POST', '/v1/documents', {
     token,
     body: { title: 'Post', content: '<p>Body</p>' }
   });
-  return created.json.document.id;
+  return created.json.document;
 }
 
 test('release manifest is immutable and active release pointer is atomic', async () => {
@@ -77,7 +77,8 @@ test('release history is append-only for manifest writes and pointer switches', 
 test('publish writes release artifacts through releaseStore and persists blob refs', async () => {
   const platform = createInMemoryPlatform();
   const { handler, accessToken } = await authAsAdmin(platform);
-  const docId = await seedDoc(handler, accessToken);
+  const doc = await seedDoc(handler, accessToken);
+  const docSlug = doc.slug;
 
   const publish = await requestJson(handler, 'POST', '/v1/publish', { token: accessToken, body: {} });
   assert.equal(publish.res.status, 201);
@@ -86,10 +87,10 @@ test('publish writes release artifacts through releaseStore and persists blob re
   const history = await platform.releaseStore.getReleaseHistory();
   const artifactEvents = history.filter((entry) => entry.type === 'artifact_written');
   assert.ok(artifactEvents.length >= 1);
-  assert.ok(artifactEvents.some((entry) => entry.releaseId === releaseId && entry.route === docId));
+  assert.ok(artifactEvents.some((entry) => entry.releaseId === releaseId && entry.route === docSlug));
 
   const manifest = await platform.releaseStore.getManifest(releaseId);
-  const artifact = manifest.artifacts.find((entry) => entry.route === docId);
+  const artifact = manifest.artifacts.find((entry) => entry.route === docSlug);
   assert.ok(artifact);
 
   const blob = await platform.blobStore.getBlob(artifact.path);
@@ -127,7 +128,8 @@ test('publish manifest captures provenance and release hash fields', async () =>
 test('preview returns tokenized URL and serves temporary release-like HTML', async () => {
   const platform = createInMemoryPlatform();
   const { handler, accessToken } = await authAsAdmin(platform);
-  const docId = await seedDoc(handler, accessToken);
+  const doc = await seedDoc(handler, accessToken);
+  const docId = doc.id;
 
   const preview = await requestJson(handler, 'GET', `/v1/preview/${docId}`, { token: accessToken });
   assert.equal(preview.res.status, 200);
@@ -145,7 +147,8 @@ test('preview returns tokenized URL and serves temporary release-like HTML', asy
 test('private route reads static artifact and uses auth-scoped cache', async () => {
   const platform = createInMemoryPlatform();
   const { handler, accessToken } = await authAsAdmin(platform);
-  const docId = await seedDoc(handler, accessToken);
+  const doc = await seedDoc(handler, accessToken);
+  const docId = doc.id;
   await requestJson(handler, 'POST', '/v1/publish', { token: accessToken, body: {} });
 
   const first = await requestJson(handler, 'GET', `/v1/private/${encodeURIComponent(docId)}`, { token: accessToken });
@@ -160,7 +163,8 @@ test('private route reads static artifact and uses auth-scoped cache', async () 
 test('private route cache scope is isolated by auth capabilities', async () => {
   const platform = createInMemoryPlatform();
   const { handler, accessToken } = await authAsAdmin(platform);
-  const docId = await seedDoc(handler, accessToken);
+  const doc = await seedDoc(handler, accessToken);
+  const docId = doc.id;
   await requestJson(handler, 'POST', '/v1/publish', { token: accessToken, body: {} });
 
   const adminB = createUser({ id: 'u_admin_b', username: 'admin_b', password: 'admin', role: 'admin' });

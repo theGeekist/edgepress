@@ -165,3 +165,50 @@ test('sdk listDocuments serializes type and status filters into query', async ()
     'http://api.local/v1/documents?type=post&status=draft&sortBy=updatedAt&sortDir=desc&page=2'
   );
 });
+
+test('sdk navigation menu methods call canonical menu endpoints', async () => {
+  const calls = [];
+  const client = createClient({
+    baseUrl: 'http://api.local',
+    fetchImpl: async (url, init) => {
+      calls.push({ url, init });
+      return jsonResponse(200, { ok: true, items: [], menu: { key: 'primary', title: 'Primary', items: [] } });
+    }
+  });
+
+  await client.listNavigationMenus();
+  await client.getNavigationMenu('primary nav');
+  await client.upsertNavigationMenu('primary nav', { title: 'Primary', items: [] });
+
+  assert.equal(calls[0].url, 'http://api.local/v1/navigation/menus');
+  assert.equal(calls[1].url, 'http://api.local/v1/navigation/menus/primary%20nav');
+  assert.equal(calls[2].url, 'http://api.local/v1/navigation/menus/primary%20nav');
+  assert.equal(calls[2].init.method, 'PUT');
+});
+
+test('sdk media methods call canonical media endpoints', async () => {
+  const calls = [];
+  const client = createClient({
+    baseUrl: 'http://api.local',
+    fetchImpl: async (url, init) => {
+      calls.push({ url, init });
+      return jsonResponse(200, { ok: true, items: [], media: { id: 'med_1' } });
+    }
+  });
+
+  await client.initMedia({});
+  await client.finalizeMedia('med_1', { uploadToken: 'up_1', filename: 'hero.jpg' });
+  await client.listMedia({ q: 'hero', mimeType: 'image/jpeg', page: 2 });
+  await client.getMedia('med_1');
+  await client.updateMedia('med_1', { alt: 'Hero alt' });
+  await client.deleteMedia('med_1');
+
+  assert.equal(calls[0].url, 'http://api.local/v1/media/init');
+  assert.equal(calls[1].url, 'http://api.local/v1/media/med_1/finalize');
+  assert.equal(calls[2].url, 'http://api.local/v1/media?q=hero&mimeType=image%2Fjpeg&page=2');
+  assert.equal(calls[3].url, 'http://api.local/v1/media/med_1');
+  assert.equal(calls[4].url, 'http://api.local/v1/media/med_1');
+  assert.equal(calls[4].init.method, 'PATCH');
+  assert.equal(calls[5].url, 'http://api.local/v1/media/med_1');
+  assert.equal(calls[5].init.method, 'DELETE');
+});

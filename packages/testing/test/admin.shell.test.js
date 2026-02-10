@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createAdminShell } from '../../../apps/admin-web/src/editor-shell.js';
-import { createInMemoryPlatform } from '../src/inMemoryPlatform.js';
+import { createAdminShell } from '../../../apps/admin-web/src/features/editor/shell.js';
+import { createInMemoryPlatform } from '../src/store.js';
 import { createApiHandler } from '../../../apps/api-edge/src/app.js';
 
 function createLocalFetch(handler) {
@@ -109,4 +109,32 @@ test('admin shell supports full editor-to-publish loop operations', async () => 
   const privateRead = await shell.verifyPrivate(docId);
   assert.equal(privateRead.releaseId, secondRelease);
   assert.equal(typeof privateRead.html, 'string');
+});
+
+test('admin shell can load and save navigation menus', async () => {
+  const platform = createInMemoryPlatform();
+  const handler = createApiHandler(platform);
+  const shell = createAdminShell({
+    baseUrl: 'http://api.local',
+    fetchImpl: createLocalFetch(handler)
+  });
+
+  await shell.login('admin', 'admin');
+
+  const initial = await shell.getNavigationMenu('primary');
+  assert.equal(initial.menu.key, 'primary');
+  assert.ok(Array.isArray(initial.menu.items));
+
+  const saved = await shell.upsertNavigationMenu('primary', {
+    title: 'Primary Menu',
+    items: [
+      { id: 'home', label: 'Home', kind: 'internal', route: 'home', order: 0 }
+    ]
+  });
+  assert.equal(saved.menu.title, 'Primary Menu');
+  assert.equal(saved.menu.items.length, 1);
+
+  const listed = await shell.listNavigationMenus();
+  assert.equal(listed.items.length, 1);
+  assert.equal(listed.items[0].key, 'primary');
 });

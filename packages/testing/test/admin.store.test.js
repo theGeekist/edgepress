@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createCanonicalSdkStore } from '../../../apps/admin-web/src/gutenberg-integration.js';
-import { createInMemoryPlatform } from '../src/inMemoryPlatform.js';
+import { createCanonicalSdkStore } from '../../../apps/admin-web/src/features/editor/gutenberg-integration.js';
+import { createInMemoryPlatform } from '../src/store.js';
 import { createApiHandler } from '../../../apps/api-edge/src/app.js';
 import { authAsAdmin } from '../src/testUtils.js';
 
@@ -32,6 +32,17 @@ test('canonical sdk store media and preview flows are wired', async () => {
 
   const mediaInit = await store.initMedia({});
   assert.ok(mediaInit.mediaId);
+  const localFetch = createLocalFetch(handler);
+  const uploadRes = await localFetch(`http://api.local/uploads/${mediaInit.mediaId}`, {
+    method: 'PUT',
+    headers: {
+      authorization: `Bearer ${accessToken}`,
+      'x-upload-token': mediaInit.uploadToken,
+      'content-type': 'image/png'
+    },
+    body: new Uint8Array([1, 2, 3, 4])
+  });
+  assert.equal(uploadRes.status, 200);
 
   const mediaFinal = await store.finalizeMedia(mediaInit.mediaId, {
     uploadToken: mediaInit.uploadToken,

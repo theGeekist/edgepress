@@ -2,12 +2,31 @@
   "compilerOptions": {
     "target": "ES2021",
     "module": "ESNext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "lib": ["ES2021"],
     "strict": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
-    "types": ["node"]
+    "types": ["node"],
+    "baseUrl": ".",
+    "paths": {
+      "@geekist/edgepress/domain": ["./packages/domain/src"],
+      "@geekist/edgepress/domain/*": ["./packages/domain/src/*"],
+      "@geekist/edgepress/contracts": ["./packages/contracts/src"],
+      "@geekist/edgepress/contracts/*": ["./packages/contracts/src/*"],
+      "@geekist/edgepress/ports": ["./packages/ports/src"],
+      "@geekist/edgepress/ports/*": ["./packages/ports/src/*"],
+      "@geekist/edgepress/hooks": ["./packages/hooks/src"],
+      "@geekist/edgepress/hooks/*": ["./packages/hooks/src/*"],
+      "@geekist/edgepress/publish": ["./packages/publish/src"],
+      "@geekist/edgepress/publish/*": ["./packages/publish/src/*"],
+      "@geekist/edgepress/sdk": ["./packages/sdk/src"],
+      "@geekist/edgepress/sdk/*": ["./packages/sdk/src/*"],
+      "@geekist/edgepress/testing": ["./packages/testing/src"],
+      "@geekist/edgepress/testing/*": ["./packages/testing/src/*"],
+      "@geekist/edgepress/adapters-cloudflare": ["./packages/adapters-cloudflare/src"],
+      "@geekist/edgepress/adapters-cloudflare/*": ["./packages/adapters-cloudflare/src/*"]
+    }
   }
 }

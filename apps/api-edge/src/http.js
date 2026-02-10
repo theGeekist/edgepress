@@ -25,11 +25,20 @@ export async function readJson(request) {
 export function matchPath(template, actualPath) {
   const tParts = template.split('/').filter(Boolean);
   const aParts = actualPath.split('/').filter(Boolean);
-  if (tParts.length !== aParts.length) return null;
+  const hasTrailingSplatParam = tParts.length > 0
+    && tParts[tParts.length - 1].startsWith(':')
+    && tParts[tParts.length - 1].endsWith('*');
+  if (!hasTrailingSplatParam && tParts.length !== aParts.length) return null;
+  if (hasTrailingSplatParam && aParts.length < tParts.length - 1) return null;
 
   const params = {};
   for (let i = 0; i < tParts.length; i += 1) {
     const t = tParts[i];
+    if (t.startsWith(':') && t.endsWith('*')) {
+      const key = t.slice(1, -1);
+      params[key] = decodeURIComponent(aParts.slice(i).join('/'));
+      return params;
+    }
     const a = aParts[i];
     if (t.startsWith(':')) {
       params[t.slice(1)] = decodeURIComponent(a);
@@ -50,8 +59,8 @@ export function getBearerToken(request) {
 export function getCorsHeaders(origin = '*') {
   return {
     'access-control-allow-origin': origin,
-    'access-control-allow-methods': 'GET,POST,PATCH,OPTIONS',
-    'access-control-allow-headers': 'content-type,authorization,x-trace-id,x-ip-hash,x-ua-hash'
+    'access-control-allow-methods': 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
+    'access-control-allow-headers': 'content-type,authorization,x-upload-token,x-trace-id,x-ip-hash,x-ua-hash'
   };
 }
 

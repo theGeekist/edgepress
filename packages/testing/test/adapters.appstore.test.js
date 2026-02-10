@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createAppStores } from '../../adapters-cloudflare/src/app-store.js';
-import { D1_SQL } from '../../adapters-cloudflare/src/d1-sql.js';
-import { createInMemoryPlatform } from '../src/inMemoryPlatform.js';
+import { createAppStores } from '../../cloudflare/src/store.js';
+import { D1_SQL } from '../../cloudflare/src/d1-sql.js';
+import { createInMemoryPlatform } from '../src/store.js';
 import { createFakeD1, createFakeKV } from './helpers/cloudflareFakes.js';
 
 function parseJsonSafe(value) {
@@ -117,6 +117,18 @@ test('app-store KV mode covers bootstrap + CRUD paths', async () => {
     size: 11
   });
   assert.equal(finalized.status, 'ready');
+  assert.equal((await store.listMedia()).items.length, 1);
+  const mediaUpdated = await store.updateMedia(media.id, {
+    alt: 'Cover image',
+    caption: 'Hero caption',
+    description: 'Hero description'
+  });
+  assert.equal(mediaUpdated.alt, 'Cover image');
+  assert.equal((await store.listMedia({ q: 'cover' })).items.length, 1);
+  assert.deepEqual(await store.deleteMedia(media.id), { id: media.id });
+  assert.equal((await store.listMedia()).items.length, 0);
+  assert.equal(await store.deleteMedia('missing'), null);
+  assert.equal(await store.updateMedia('missing', { alt: 'x' }), null);
   assert.equal(await store.finalizeMedia('missing', { storageKey: 'x', checksum: 'y', size: 1 }), null);
 
   const job = await store.createPublishJob({
@@ -218,6 +230,18 @@ test('app-store D1 mode covers schema setup + CRUD paths', async () => {
   });
   assert.equal((await store.getMedia(media.id)).id, media.id);
   assert.equal((await store.finalizeMedia(media.id, { storageKey: 'r2/a', checksum: 'sum', size: 22 })).status, 'ready');
+  assert.equal((await store.listMedia()).items.length, 1);
+  const d1MediaUpdated = await store.updateMedia(media.id, {
+    alt: 'PDF alt',
+    caption: 'PDF caption',
+    description: 'PDF description'
+  });
+  assert.equal(d1MediaUpdated.caption, 'PDF caption');
+  assert.equal((await store.listMedia({ q: 'pdf' })).items.length, 1);
+  assert.deepEqual(await store.deleteMedia(media.id), { id: media.id });
+  assert.equal((await store.listMedia()).items.length, 0);
+  assert.equal(await store.deleteMedia('missing'), null);
+  assert.equal(await store.updateMedia('missing', { alt: 'x' }), null);
   assert.equal(await store.finalizeMedia('missing', { storageKey: 'a', checksum: 'b', size: 1 }), null);
 
   const job = await store.createPublishJob({ actorUserId: 'u2', sourceRevisionId: rev.id });

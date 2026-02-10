@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createInMemoryPlatform } from '../src/inMemoryPlatform.js';
+import { createInMemoryPlatform } from '../src/store.js';
 import { authAsAdmin, requestJson } from '../src/testUtils.js';
 
 async function createDoc(handler, token) {
@@ -60,6 +60,88 @@ test('media finalize enforces token and not-found semantics', async () => {
   });
   assert.equal(missing.res.status, 404);
   assert.equal(missing.json.error.code, 'MEDIA_NOT_FOUND');
+});
+
+test('media list and metadata updates persist canonical fields', async () => {
+  const platform = createInMemoryPlatform();
+  platform.blobStore.signedReadUrl = async (path, ttlSeconds = 300) => `/blob/${path}?ttl=${ttlSeconds}`;
+  const { handler, accessToken } = await authAsAdmin(platform);
+
+  const init = await requestJson(handler, 'POST', '/v1/media/init', { token: accessToken, body: {} });
+  assert.equal(init.res.status, 201);
+
+  const uploadReq = new Request(`http://test.local/uploads/${init.json.mediaId}`, {
+    method: 'PUT',
+    headers: {
+      authorization: `Bearer ${accessToken}`,
+      'x-upload-token': init.json.uploadToken,
+      'content-type': 'image/jpeg'
+    },
+    body: new Uint8Array([1, 2, 3, 4])
+  });
+  const uploadRes = await handler(uploadReq);
+  assert.equal(uploadRes.status, 200);
+
+  const finalized = await requestJson(handler, 'POST', `/v1/media/${init.json.mediaId}/finalize`, {
+    token: accessToken,
+    body: {
+      uploadToken: init.json.uploadToken,
+      filename: 'hero.jpg',
+      mimeType: 'image/jpeg',
+      size: 1024,
+      width: 1200,
+      height: 630,
+      alt: 'Hero image',
+      caption: 'Primary hero',
+      description: 'Homepage hero media'
+    }
+  });
+  assert.equal(finalized.res.status, 200);
+  assert.equal(finalized.json.media.width, 1200);
+  assert.equal(finalized.json.media.height, 630);
+  assert.equal(finalized.json.media.alt, 'Hero image');
+  assert.ok(/^http:\/\/test\.local\/blob\//.test(finalized.json.media.url));
+
+  const mediaUrl = new URL(finalized.json.media.url);
+  const blobRes = await handler(new Request(mediaUrl.toString(), {
+    method: 'GET',
+    headers: { authorization: `Bearer ${accessToken}` }
+  }));
+  assert.equal(blobRes.status, 200);
+  assert.equal(blobRes.headers.get('content-type'), 'image/jpeg');
+  const blobBytes = new Uint8Array(await blobRes.arrayBuffer());
+  assert.deepEqual(Array.from(blobBytes), [1, 2, 3, 4]);
+
+  const updated = await requestJson(handler, 'PATCH', `/v1/media/${init.json.mediaId}`, {
+    token: accessToken,
+    body: {
+      alt: 'Updated alt',
+      caption: 'Updated caption',
+      description: 'Updated description'
+    }
+  });
+  assert.equal(updated.res.status, 200);
+  assert.equal(updated.json.media.alt, 'Updated alt');
+
+  const listed = await requestJson(handler, 'GET', '/v1/media?q=updated&mimeType=image%2Fjpeg', {
+    token: accessToken
+  });
+  assert.equal(listed.res.status, 200);
+  assert.equal(listed.json.items.length, 1);
+  assert.equal(listed.json.items[0].id, init.json.mediaId);
+  assert.equal(listed.json.pagination.totalItems, 1);
+
+  const deleted = await requestJson(handler, 'DELETE', `/v1/media/${init.json.mediaId}`, {
+    token: accessToken
+  });
+  assert.equal(deleted.res.status, 200);
+  assert.equal(deleted.json.deleted, true);
+
+  const listedAfterDelete = await requestJson(handler, 'GET', '/v1/media', {
+    token: accessToken
+  });
+  assert.equal(listedAfterDelete.res.status, 200);
+  assert.equal(listedAfterDelete.json.items.length, 0);
 });
 
 test('release activation and publish job errors use canonical envelopes', async () => {
@@ -150,6 +232,189 @@ test('publish canonicalizes sourceRevisionId from sourceRevisionSet when omitted
   assert.deepEqual(publish.json.job.sourceRevisionSet, ['rev_derived']);
 });
 
+test('content model routes manage content types, taxonomies, and terms', async () => {
+  const platform = createInMemoryPlatform();
+  const { handler, accessToken } = await authAsAdmin(platform);
+
+  const contentTypes = await requestJson(handler, 'GET', '/v1/content-types', { token: accessToken });
+  assert.equal(contentTypes.res.status, 200);
+  assert.ok(contentTypes.json.items.some((entry) => entry.slug === 'page'));
+
+  const updatedType = await requestJson(handler, 'PUT', '/v1/content-types/article', {
+    token: accessToken,
+    body: {
+      label: 'Article',
+      supports: { title: true, editor: true },
+      fields: [{ key: 'subtitle', label: 'Subtitle', kind: 'text', required: false, default: '' }],
+      taxonomies: ['category', 'post_tag'],
+      statusOptions: ['draft', 'published', 'trash']
+    }
+  });
+  assert.equal(updatedType.res.status, 200);
+  assert.equal(updatedType.json.contentType.slug, 'article');
+
+  const taxonomy = await requestJson(handler, 'PUT', '/v1/taxonomies/topic', {
+    token: accessToken,
+    body: {
+      label: 'Topics',
+      hierarchical: true,
+      objectTypes: ['article']
+    }
+  });
+  assert.equal(taxonomy.res.status, 200);
+  assert.equal(taxonomy.json.taxonomy.slug, 'topic');
+
+  const term = await requestJson(handler, 'PUT', '/v1/terms/term_topic_ai', {
+    token: accessToken,
+    body: {
+      taxonomySlug: 'topic',
+      name: 'AI'
+    }
+  });
+  assert.equal(term.res.status, 200);
+  assert.equal(term.json.term.taxonomySlug, 'topic');
+
+  const createdByPost = await requestJson(handler, 'POST', '/v1/terms', {
+    token: accessToken,
+    body: {
+      taxonomySlug: 'topic',
+      name: 'ML'
+    }
+  });
+  assert.equal(createdByPost.res.status, 200);
+  assert.equal(createdByPost.json.term.taxonomySlug, 'topic');
+
+  const terms = await requestJson(handler, 'GET', '/v1/terms?taxonomySlug=topic', { token: accessToken });
+  assert.equal(terms.res.status, 200);
+  assert.equal(terms.json.items.length, 2);
+});
+
+test('document revisions snapshot publish-relevant metadata fields', async () => {
+  const platform = createInMemoryPlatform();
+  const { handler, accessToken } = await authAsAdmin(platform);
+
+  const created = await requestJson(handler, 'POST', '/v1/documents', {
+    token: accessToken,
+    body: {
+      title: 'Snapshot Doc',
+      type: 'post',
+      slug: 'snapshot-doc',
+      excerpt: 'short',
+      status: 'draft',
+      featuredImageId: 'med_123',
+      fields: { subtitle: 'sub' },
+      termIds: ['term_news'],
+      blocks: [{ name: 'core/paragraph', attributes: {}, innerBlocks: [], originalContent: '<p>x</p>' }]
+    }
+  });
+  assert.equal(created.res.status, 201);
+  assert.equal(created.json.revision.excerpt, 'short');
+  assert.equal(created.json.revision.slug, 'snapshot-doc');
+  assert.equal(created.json.revision.status, 'draft');
+  assert.equal(created.json.revision.featuredImageId, 'med_123');
+  assert.deepEqual(created.json.revision.fields, { subtitle: 'sub' });
+  assert.deepEqual(created.json.revision.termIds, ['term_news']);
+
+  const docId = created.json.document.id;
+  const updated = await requestJson(handler, 'PATCH', `/v1/documents/${docId}`, {
+    token: accessToken,
+    body: {
+      excerpt: 'short-2',
+      slug: 'snapshot-doc-2',
+      status: 'published',
+      featuredImageId: 'med_456',
+      fields: { subtitle: 'sub2' },
+      termIds: ['term_release']
+    }
+  });
+  assert.equal(updated.res.status, 200);
+  assert.equal(updated.json.revision.excerpt, 'short-2');
+  assert.equal(updated.json.revision.slug, 'snapshot-doc-2');
+  assert.equal(updated.json.revision.status, 'published');
+  assert.equal(updated.json.revision.featuredImageId, 'med_456');
+  assert.deepEqual(updated.json.revision.fields, { subtitle: 'sub2' });
+  assert.deepEqual(updated.json.revision.termIds, ['term_release']);
+});
+
+test('wp-compatible page routes read and update entities for editor core-data', async () => {
+  const platform = createInMemoryPlatform();
+  const { handler, accessToken } = await authAsAdmin(platform);
+
+  const created = await requestJson(handler, 'POST', '/v1/documents', {
+    token: accessToken,
+    body: { title: 'WP Page', content: '<p>hello</p>', type: 'page' }
+  });
+  const docId = created.json.document.id;
+
+  const typeRecord = await requestJson(handler, 'GET', '/wp/v2/types/page', {
+    token: accessToken
+  });
+  assert.equal(typeRecord.res.status, 200);
+  assert.equal(typeRecord.json.slug, 'page');
+  assert.equal(typeRecord.json.labels.view_item, 'View Page');
+
+  const pageEntity = await requestJson(handler, 'GET', `/wp/v2/pages/${docId}`, {
+    token: accessToken
+  });
+  assert.equal(pageEntity.res.status, 200);
+  assert.equal(typeof pageEntity.json.id, 'number');
+  assert.equal(pageEntity.json.title.raw, 'WP Page');
+  assert.equal(pageEntity.json.content.raw, '<p>hello</p>');
+
+  const wpNumericId = pageEntity.json.id;
+  const pageEntityByNumeric = await requestJson(handler, 'GET', `/wp/v2/pages/${wpNumericId}`, {
+    token: accessToken
+  });
+  assert.equal(pageEntityByNumeric.res.status, 200);
+  assert.equal(pageEntityByNumeric.json.id, wpNumericId);
+
+  const updated = await requestJson(handler, 'POST', `/wp/v2/pages/${wpNumericId}`, {
+    token: accessToken,
+    body: {
+      title: 'Updated via wp/v2',
+      content: '<p>updated</p>'
+    }
+  });
+  assert.equal(updated.res.status, 200);
+  assert.equal(updated.json.title.raw, 'Updated via wp/v2');
+  assert.equal(updated.json.content.raw, '<p>updated</p>');
+
+  const prefixedTypes = await requestJson(handler, 'GET', '/v1/wp/v2/types/page', {
+    token: accessToken
+  });
+  assert.equal(prefixedTypes.res.status, 200);
+  assert.equal(prefixedTypes.json.slug, 'page');
+
+  const prefixedPage = await requestJson(handler, 'GET', `/v1/wp/v2/pages/${wpNumericId}`, {
+    token: accessToken
+  });
+  assert.equal(prefixedPage.res.status, 200);
+  assert.equal(prefixedPage.json.id, wpNumericId);
+
+  const settings = await requestJson(handler, 'GET', '/v1/wp/v2/settings', {
+    token: accessToken
+  });
+  assert.equal(settings.res.status, 200);
+  assert.equal(typeof settings.json.title, 'string');
+
+  const themes = await requestJson(handler, 'GET', '/v1/wp/v2/themes', {
+    token: accessToken
+  });
+  assert.equal(themes.res.status, 200);
+  assert.equal(Array.isArray(themes.json), true);
+  assert.equal(themes.json[0].status, 'active');
+
+  const siteRoot = await requestJson(
+    handler,
+    'GET',
+    '/v1?_fields=description,gmt_offset,home,name,site_icon,site_icon_url,site_logo,timezone_string,url,page_for_posts,page_on_front,show_on_front'
+    ,
+    { token: accessToken }
+  );
+  assert.equal(siteRoot.res.status, 200);
+  assert.equal(typeof siteRoot.json.name, 'string');
+});
+
 test('private cache TTL parsing falls back and clamps from runtime env', async () => {
   const platform = createInMemoryPlatform();
   const { handler, accessToken } = await authAsAdmin(platform);
@@ -192,6 +457,7 @@ test('document create/update validates and persists canonical block metadata', a
     body: {
       title: 'Valid blocks',
       content: '<p>seed</p>',
+      featuredImageId: 'med_featured_1',
       blocks: [
         {
           name: 'core/paragraph',
@@ -203,11 +469,13 @@ test('document create/update validates and persists canonical block metadata', a
   assert.equal(created.res.status, 201);
   assert.equal(created.json.document.blocksSchemaVersion, 1);
   assert.equal(created.json.revision.blocksSchemaVersion, 1);
+  assert.equal(created.json.document.featuredImageId, 'med_featured_1');
 
   const documentId = created.json.document.id;
   const updated = await requestJson(handler, 'PATCH', `/v1/documents/${encodeURIComponent(documentId)}`, {
     token: accessToken,
     body: {
+      featuredImageId: 'med_featured_2',
       blocks: [
         {
           name: 'core/paragraph',
@@ -219,6 +487,7 @@ test('document create/update validates and persists canonical block metadata', a
   assert.equal(updated.res.status, 200);
   assert.equal(updated.json.document.blocksSchemaVersion, 1);
   assert.equal(updated.json.revision.blocksSchemaVersion, 1);
+  assert.equal(updated.json.document.featuredImageId, 'med_featured_2');
 });
 
 test('document delete route supports soft-trash and permanent delete', async () => {
@@ -250,113 +519,4 @@ test('document delete route supports soft-trash and permanent delete', async () 
 
   const listedAfterHardDelete = await requestJson(handler, 'GET', '/v1/documents', { token: accessToken });
   assert.equal(listedAfterHardDelete.json.items.find((entry) => entry.id === documentId), undefined);
-});
-
-test('document type filtering is backed by canonical stored type', async () => {
-  const platform = createInMemoryPlatform();
-  const { handler, accessToken } = await authAsAdmin(platform);
-
-  const pageDoc = await requestJson(handler, 'POST', '/v1/documents', {
-    token: accessToken,
-    body: { title: 'Page Doc', content: '<p>page</p>', type: 'page' }
-  });
-  const postDoc = await requestJson(handler, 'POST', '/v1/documents', {
-    token: accessToken,
-    body: { title: 'Post Doc', content: '<p>post</p>', type: 'post' }
-  });
-  assert.equal(pageDoc.res.status, 201);
-  assert.equal(postDoc.res.status, 201);
-
-  const pagesOnly = await requestJson(handler, 'GET', '/v1/documents?type=page', { token: accessToken });
-  assert.equal(pagesOnly.res.status, 200);
-  assert.ok(pagesOnly.json.items.length >= 1);
-  assert.ok(pagesOnly.json.items.every((doc) => (doc.type || 'page') === 'page'));
-
-  const postsOnly = await requestJson(handler, 'GET', '/v1/documents?type=post', { token: accessToken });
-  assert.equal(postsOnly.res.status, 200);
-  assert.ok(postsOnly.json.items.length >= 1);
-  assert.ok(postsOnly.json.items.every((doc) => (doc.type || 'page') === 'post'));
-});
-
-test('document creation enforces unique slugs and private read supports slug routes', async () => {
-  const platform = createInMemoryPlatform();
-  const { handler, accessToken } = await authAsAdmin(platform);
-
-  const first = await requestJson(handler, 'POST', '/v1/documents', {
-    token: accessToken,
-    body: { title: 'Hello World', content: '<p>one</p>' }
-  });
-  const second = await requestJson(handler, 'POST', '/v1/documents', {
-    token: accessToken,
-    body: { title: 'Hello World', content: '<p>two</p>' }
-  });
-  assert.equal(first.res.status, 201);
-  assert.equal(second.res.status, 201);
-  assert.equal(first.json.document.slug, 'hello-world');
-  assert.equal(second.json.document.slug, 'hello-world-2');
-
-  const publish = await requestJson(handler, 'POST', '/v1/publish', { token: accessToken, body: {} });
-  assert.equal(publish.res.status, 201);
-
-  const bySlug = await requestJson(handler, 'GET', '/v1/private/hello-world', { token: accessToken });
-  assert.equal(bySlug.res.status, 200);
-  assert.equal(bySlug.json.releaseId, publish.json.job.releaseId);
-
-  const byLegacyDocId = await requestJson(
-    handler,
-    'GET',
-    `/v1/private/${encodeURIComponent(first.json.document.id)}`,
-    { token: accessToken }
-  );
-  assert.equal(byLegacyDocId.res.status, 200);
-  assert.equal(byLegacyDocId.json.releaseId, publish.json.job.releaseId);
-});
-
-test('route edits are reflected after republish while doc-id private reads stay stable', async () => {
-  const platform = createInMemoryPlatform();
-  const { handler, accessToken } = await authAsAdmin(platform);
-
-  const created = await requestJson(handler, 'POST', '/v1/documents', {
-    token: accessToken,
-    body: { title: 'Route Edit Me', content: '<p>v1</p>' }
-  });
-  assert.equal(created.res.status, 201);
-  const docId = created.json.document.id;
-  const initialSlug = created.json.document.slug;
-  assert.equal(initialSlug, 'route-edit-me');
-
-  const firstPublish = await requestJson(handler, 'POST', '/v1/publish', { token: accessToken, body: {} });
-  assert.equal(firstPublish.res.status, 201);
-  const firstReleaseId = firstPublish.json.job.releaseId;
-
-  const firstBySlug = await requestJson(handler, 'GET', `/v1/private/${encodeURIComponent(initialSlug)}`, { token: accessToken });
-  assert.equal(firstBySlug.res.status, 200);
-  assert.equal(firstBySlug.json.releaseId, firstReleaseId);
-
-  const patched = await requestJson(handler, 'PATCH', `/v1/documents/${encodeURIComponent(docId)}`, {
-    token: accessToken,
-    body: { slug: 'route-edit-me-v2', content: '<p>v2</p>' }
-  });
-  assert.equal(patched.res.status, 200);
-  assert.equal(patched.json.document.slug, 'route-edit-me-v2');
-
-  const secondPublish = await requestJson(handler, 'POST', '/v1/publish', { token: accessToken, body: {} });
-  assert.equal(secondPublish.res.status, 201);
-  const secondReleaseId = secondPublish.json.job.releaseId;
-  const activateSecond = await requestJson(handler, 'POST', `/v1/releases/${encodeURIComponent(secondReleaseId)}/activate`, {
-    token: accessToken,
-    body: {}
-  });
-  assert.equal(activateSecond.res.status, 200);
-
-  const oldSlugRead = await requestJson(handler, 'GET', `/v1/private/${encodeURIComponent(initialSlug)}`, { token: accessToken });
-  assert.equal(oldSlugRead.res.status, 404);
-
-  const newSlugRead = await requestJson(handler, 'GET', '/v1/private/route-edit-me-v2', { token: accessToken });
-  assert.equal(newSlugRead.res.status, 200);
-  assert.equal(newSlugRead.json.releaseId, secondReleaseId);
-
-  const stableByDocId = await requestJson(handler, 'GET', `/v1/private/${encodeURIComponent(docId)}`, { token: accessToken });
-  assert.equal(stableByDocId.res.status, 200);
-  assert.equal(stableByDocId.json.releaseId, secondReleaseId);
 });
