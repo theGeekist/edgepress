@@ -15,7 +15,10 @@ const files = execSync("find apps packages -type f \\( -name '*.js' -o -name '*.
   .trim()
   .split('\n')
   .filter(Boolean)
-  .filter((f) => !f.startsWith('packages/adapters-cloudflare/'));
+  .filter((f) =>
+    !f.startsWith('packages/adapters-cloudflare/') &&
+    !f.startsWith('packages/cloudflare/')
+  );
   
 const scannedFiles = files.filter((f) => !f.includes('/test/'));
 
