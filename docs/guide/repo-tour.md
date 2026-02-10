@@ -13,7 +13,7 @@ We use **Bun workspaces** to manage dependencies. `apps/` are deployable targets
 ```
 /
 ├── apps/               # The executable applications
-│   ├── api-edge/       # The backend (Cloudflare Worker / Node Server)
+│   ├── api/       # The backend (Cloudflare Worker / Node Server)
 │   └── admin-web/      # The frontend (Vite + React + Gutenberg)
 ├── packages/           # The shared logic
 │   ├── domain/         # Pure business logic (No ext dependencies)
@@ -29,16 +29,16 @@ We use **Bun workspaces** to manage dependencies. `apps/` are deployable targets
 ### ...you want to add a new Feature (e.g., Comments)?
 1.  **Start in `packages/domain`**: Define your entities (`Comment`) and use-cases.
 2.  **Define Ports in `packages/ports`**: How will comments be stored? Add `CommentStore` interface.
-3.  **Update `apps/api-edge`**: Add the route handlers for your new use-cases.
-4.  **Implement Adapters**: Add clear implementation in `packages/testing` (in-memory) and `packages/adapters-cloudflare` (Production).
+3.  **Update `apps/api`**: Add the route handlers for your new use-cases.
+4.  **Implement Adapters**: Add clear implementation in `packages/testing` (in-memory) and `packages/cloudflare` (Production).
 
 ### ...you want to modify the Admin UI?
 - Go to `apps/admin-web`.
 - This is a standard Vite + React application.
-- It "embeds" the generic Gutenberg packages (`@wordpress/*`) but talks to our custom `apps/api-edge` backend.
+- It "embeds" the generic Gutenberg packages (`@wordpress/*`) but talks to our custom `apps/api` backend.
 
 ### ...you want to change the Storage Layer?
-- Look at `packages/adapters-cloudflare`.
+- Look at `packages/cloudflare`.
 - You'll see how we map the generic `StructuredStore` port to Cloudflare D1 SQL.
 - You can copy this pattern to create `packages/adapters-postgres` or others.
 

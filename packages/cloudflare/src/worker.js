@@ -1,5 +1,5 @@
-import { createApiHandler } from '../../../apps/api-edge/src/app.js';
-import { attachServerHooks } from '../../../apps/api-edge/src/hooks-bootstrap.js';
+import { createApiHandler } from '../../../apps/api/src/app.js';
+import { attachServerHooks } from '../../../apps/api/src/hooks-bootstrap.js';
 import { createCloudflareReferencePlatform } from './index.js';
 
 let cachedEnv = null;

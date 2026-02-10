@@ -10,7 +10,7 @@ Error envelope is consistently shaped as:
 
 Source:
 
-- `apps/api-edge/src/http.js`
+- `apps/api/src/http.js`
 
 ## CORS
 

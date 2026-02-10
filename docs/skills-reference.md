@@ -18,10 +18,10 @@ This document provides context for working with the EdgePress project, helping s
 
 ### Critical Rules (Read First!)
 
-1. **NEVER Import Cloudflare Outside `adapters-cloudflare/`**
+1. **NEVER Import Cloudflare Outside `cloudflare/`**
    - The boundary checker script (`scripts/check-boundaries.js`) will fail if you:
-     - Import `@cloudflare/workers-types` in `api-edge` or `domain` packages
-     - Use Cloudflare-specific APIs (env.D1, env.R2, etc.) outside `adapters-cloudflare/`
+     - Import `@cloudflare/workers-types` in `api` or `domain` packages
+     - Use Cloudflare-specific APIs (env.D1, env.R2, etc.) outside `cloudflare/`
    - **What to do instead**: Depend on port interfaces in `packages/ports/`. The core doesn't know *how* data is stored, only *that* it can be stored.
 
 2. **Block JSON is Source of Truth**
@@ -35,9 +35,9 @@ This document provides context for working with the EdgePress project, helping s
 3. **All Domain Changes Need Ports**
    - Add entities/invariants in `packages/domain/`
    - Add port methods in `packages/ports/`
-   - Implement ports in `packages/adapters-cloudflare/` (Cloudflare)
+   - Implement ports in `packages/cloudflare/` (Cloudflare)
    - Implement ports in `packages/testing/src/inMemoryPlatform.js` (for tests)
-   - Add API route handlers in `apps/api-edge/src/features/`
+   - Add API route handlers in `apps/api/src/features/`
    - Add admin state/hooks in `apps/admin-web/src/features/`
    - Add tests in `packages/testing/test/`
 
@@ -51,7 +51,7 @@ This document provides context for working with the EdgePress project, helping s
 ```
 edgepress/
 ├── apps/
-│   ├── api-edge/          # REST API (platform-agnostic)
+│   ├── api/          # REST API (platform-agnostic)
 │   └── admin-web/         # WordPress-like admin with Gutenberg
 ├── packages/
 │   ├── ports/              # Interface definitions (core depends on these)
@@ -59,7 +59,7 @@ edgepress/
 │   ├── publish/            # Release compilation pipeline
 │   ├── sdk/                # Canonical API client
 │   ├── testing/            # In-memory adapters + tests
-│   └── adapters-cloudflare/ # Cloudflare reference implementation
+│   └── cloudflare/ # Cloudflare reference implementation
 ├── scripts/
 │   └── check-boundaries.js # Enforces no CF imports outside adapters
 └── docs/                  # Generated documentation
@@ -213,9 +213,9 @@ bun run lint
 - `createPreview(documentId, createdBy, expiresAt)` - Create preview session
 - `getPreview(token)` - Retrieve preview session
 
-### 3. Adapter Layer (`packages/adapters-cloudflare/`)
+### 3. Adapter Layer (`packages/cloudflare/`)
 
-**Location**: `packages/adapters-cloudflare/src/`
+**Location**: `packages/cloudflare/src/`
 
 **Purpose**: Reference implementation using Cloudflare Workers.
 
@@ -232,7 +232,7 @@ bun run lint
 
 #### Worker Composition Root
 
-**Location**: `packages/adapters-cloudflare/src/worker.js`
+**Location**: `packages/cloudflare/src/worker.js`
 
 ```javascript
 // Platform composition
@@ -247,9 +247,9 @@ createCloudflareReferencePlatform(env, { ctx })
 2. Attaches server-side hooks
 3. Returns API handler
 
-### 4. API Layer (`apps/api-edge/`)
+### 4. API Layer (`apps/api/`)
 
-**Location**: `apps/api-edge/src/`
+**Location**: `apps/api/src/`
 
 **Purpose**: REST API that exposes core functionality via HTTP.
 
@@ -270,7 +270,7 @@ All routes are in `features/` directory:
 
 #### Error Envelope (Canonical)
 
-**Location**: `apps/api-edge/src/http.js`
+**Location**: `apps/api/src/http.js`
 
 ```javascript
 {
@@ -283,7 +283,7 @@ All routes are in `features/` directory:
 
 #### Authorization
 
-**Location**: `apps/api-edge/src/auth.js`
+**Location**: `apps/api/src/auth.js`
 
 **Mechanism**: JWT bearer tokens with capability strings.
 
@@ -294,7 +294,7 @@ All routes are in `features/` directory:
 
 #### Server Hooks System
 
-**Location**: `apps/api-edge/src/hooks.js`, `apps/api-edge/src/hooks-bootstrap.js`
+**Location**: `apps/api/src/hooks.js`, `apps/api/src/hooks-bootstrap.js`
 
 **Purpose**: WP-compatible actions/filters using `@wordpress/hooks`.
 
@@ -459,7 +459,7 @@ All routes are in `features/` directory:
 
 **Location**: `scripts/check-boundaries.js`
 
-**Rule**: `apps/api-edge` and `packages/*` (except `adapters-cloudflare`) may not import Cloudflare-specific APIs.
+**Rule**: `apps/api` and `packages/*` (except `cloudflare`) may not import Cloudflare-specific APIs.
 
 **Check**: Prevents infrastructure leakage into platform-agnostic code.
 
@@ -511,8 +511,8 @@ bun run test:coverage
 
 1. **Domain**: Add entities/invariants in `packages/domain/`
 2. **Ports**: Add port methods in `packages/ports/`
-3. **Adapters**: Implement ports in `packages/adapters-cloudflare/`
-4. **API**: Add route handlers in `apps/api-edge/src/features/`
+3. **Adapters**: Implement ports in `packages/cloudflare/`
+4. **API**: Add route handlers in `apps/api/src/features/`
 5. **Admin**: Add state/hooks in `apps/admin-web/src/features/`
 6. **Tests**: Add tests in `packages/testing/test/`
 
