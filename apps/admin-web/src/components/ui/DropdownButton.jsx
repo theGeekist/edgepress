@@ -4,7 +4,10 @@ import { ActionButton } from './ActionButton.jsx';
 
 export function DropdownButton({ label, items, palette }) {
     const [isOpen, setIsOpen] = useState(false);
-    const menuBackground = palette.surface === 'transparent' ? palette.surfaceMuted : palette.surface;
+    const rawSurface = String(palette.surface || '').trim().toLowerCase();
+    const menuBackground = rawSurface === 'transparent' || rawSurface === 'rgba(0,0,0,0)'
+        ? (palette.surfaceMuted || '#ffffff')
+        : (palette.surface || '#ffffff');
 
     return (
         <View style={styles.container}>
@@ -19,7 +22,8 @@ export function DropdownButton({ label, items, palette }) {
                 <View style={[styles.menu, {
                     borderColor: palette.border,
                     backgroundColor: menuBackground,
-                    shadowColor: palette.shadow || '#000'
+                    shadowColor: '#000',
+                    opacity: 1
                 }]}>
                     {items.map((item, index) => (
                         <Pressable
