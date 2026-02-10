@@ -28,5 +28,5 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(port, () => {
-  console.log(`api-edge listening on http://localhost:${port}`);
+  console.log(`api listening on http://localhost:${port}`);
 });

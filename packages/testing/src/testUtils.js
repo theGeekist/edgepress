@@ -1,4 +1,4 @@
-import { createApiHandler } from '../../../apps/api-edge/src/app.js';
+import { createApiHandler } from '../../../apps/api/src/app.js';
 
 export async function requestJson(handler, method, path, { body, token, headers } = {}) {
   const reqHeaders = new Headers(headers || {});

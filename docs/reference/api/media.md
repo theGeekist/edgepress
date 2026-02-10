@@ -42,7 +42,7 @@ Returns:
 
 Source:
 
-- `apps/api-edge/src/app.js`
+- `apps/api/src/app.js`
 
 Tests:
 

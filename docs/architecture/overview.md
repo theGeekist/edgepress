@@ -24,11 +24,11 @@ Surrounding the core are the Ports. These are strict interfaces that the Core us
 
 ### 3. The Adapters (Infrastructure)
 These are the implementations of the Ports. This is where the rubber meets the road.
-- **Reference Adapter**: `packages/adapters-cloudflare`. We implement the ports using Cloudflare D1 (Database), R2 (Blob Storage), and KV (Cache).
+- **Reference Adapter**: `packages/cloudflare`. We implement the ports using Cloudflare D1 (Database), R2 (Blob Storage), and KV (Cache).
 - **In-Memory Adapter**: `packages/testing`. We also have a full in-memory implementation for lightning-fast tests.
 
 ### 4. The Application (Wiring)
-Finally, we wire it all together. The `api-edge` application takes the Core, injects the Adapters, and exposes it via a clean REST API.
+Finally, we wire it all together. The `api` application takes the Core, injects the Adapters, and exposes it via a clean REST API.
 
 ## Data Model & Invariants
 
@@ -52,7 +52,7 @@ Result: **The public site is just static files.** No database lookups are requir
 
 ## Request Lifecycle
 
-1. **Request**: A request hits `apps/api-edge` (e.g., Cloudflare Worker).
+1. **Request**: A request hits `apps/api` (e.g., Cloudflare Worker).
 2. **Auth**: The handler verifies the JWT token (stateless auth).
 3. **Capabilities**: We check if the user has the `cap_write_document` capability.
 4. **Delegate**: The handler calls the Domain logic.

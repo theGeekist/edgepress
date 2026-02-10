@@ -6,8 +6,8 @@ title: API Edge
 
 Entry point:
 
-- `apps/api-edge/src/server.js`
+- `apps/api/src/server.js`
 
 Router:
 
-- `apps/api-edge/src/app.js`
+- `apps/api/src/app.js`

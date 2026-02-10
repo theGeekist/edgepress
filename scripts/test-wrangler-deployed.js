@@ -15,7 +15,7 @@ async function request(path, options = {}) {
 }
 
 if (!baseUrl) {
-  console.error('GCMS_BASE_URL is required, e.g. https://gcms-api-edge.<subdomain>.workers.dev');
+  console.error('GCMS_BASE_URL is required, e.g. https://gcms-api.<subdomain>.workers.dev');
   process.exit(1);
 }
 if (!pass) {

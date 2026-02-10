@@ -2,11 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execSync } from 'node:child_process';
 import { createCloudflareReferencePlatform } from '../../cloudflare/src/index.js';
-import { createApiHandler } from '../../../apps/api-edge/src/app.js';
+import { createApiHandler } from '../../../apps/api/src/app.js';
 import { requestJson } from '../src/testUtils.js';
 import { createFakeD1, createFakeKV, createFakeR2 } from './helpers/cloudflareFakes.js';
 
-test('boundary check blocks Cloudflare terms outside adapters-cloudflare', async () => {
+test('boundary check blocks Cloudflare terms outside cloudflare', async () => {
   const out = execSync('node scripts/check-boundaries.js', { encoding: 'utf8', cwd: process.cwd() });
   assert.match(out, /Boundary check passed/);
 });

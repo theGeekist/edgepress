@@ -77,7 +77,7 @@ export default defineConfig({
         {
           text: "Apps",
           items: [
-            { text: "API Edge", link: "/apps/api-edge" },
+            { text: "API Edge", link: "/apps/api" },
             { text: "Admin Web", link: "/apps/admin-web" }
           ]
         }

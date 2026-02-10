@@ -4,14 +4,14 @@ This file turns the architectural story from `idea.md` into concrete phases with
 
 ## Plan Alignment (Original + Revised)
 - Canonical baseline: `idea.md` plus the revised edge-portable constraints are both authoritative.
-- Non-negotiable boundary: `apps/api-edge` may only depend on runtime/storage ports; Cloudflare-specific bindings stay only in `packages/adapters-cloudflare`.
+- Non-negotiable boundary: `apps/api` may only depend on runtime/storage ports; Cloudflare-specific bindings stay only in `packages/cloudflare`.
 - Runtime portability rule: edge runtime is an adapter/DI concern, not the product architecture.
 - API invariants in force: two-phase media (`init` + `finalize`), preview returns `{ previewUrl, expiresAt, releaseLikeRef }`, canonical `{ error: { code, message } }` envelope.
 - Release invariants target: immutable manifest, active-release pointer switching, release history retained.
 - Explicitly deferred: collaborative editing/presence, server-side runtime block rendering, broad plugin compatibility, multi-tenant isolation.
 
 ## DI / Adapter Milestone Status
-- [x] Composition root exists: `packages/adapters-cloudflare/src/worker.js` builds platform and injects it into `createApiHandler`.
+- [x] Composition root exists: `packages/cloudflare/src/worker.js` builds platform and injects it into `createApiHandler`.
 - [x] Stable port seams are in use (`runtime`, `store`, `releaseStore`, `blobStore`, `cacheStore`, `previewStore`).
 - [x] Boundary enforcement exists (`scripts/check-boundaries.js`) to prevent infra leakage outside adapters.
 - [x] Durable Cloudflare store adapter landed for core mutable state (D1-backed users/tokens/documents/revisions/media/publish jobs/forms/previews).
@@ -25,11 +25,11 @@ This file turns the architectural story from `idea.md` into concrete phases with
 
 Exit criteria:
 - `bun run lint` and `bun run test:coverage` are green on main branch.
-- Boundary script prevents Cloudflare API leakage outside `packages/adapters-cloudflare`.
+- Boundary script prevents Cloudflare API leakage outside `packages/cloudflare`.
 
 ## Phase 1 – Core Contracts & In-Memory Platform (complete)
 - [x] Ports and domain invariants (`packages/ports`, `packages/domain`).
-- [x] Canonical edge API skeleton (`apps/api-edge/src/{http,auth,app}.js`).
+- [x] Canonical edge API skeleton (`apps/api/src/{http,auth,app}.js`).
 - [x] In-memory platform for deterministic behaviour tests (`packages/testing/src/inMemoryPlatform.js`).
 - [x] Publish/release invariants in core publisher (`packages/publish/src/publisher.js`).
 
@@ -57,7 +57,7 @@ Exit criteria:
 - Preview/private semantics are enforced by tests (signature, expiry, scoped cache keys).
 
 ## Phase 4 – Cloudflare Adapter Baseline (complete)
-- [x] Worker composition root in adapter package (`packages/adapters-cloudflare/src/worker.js`).
+- [x] Worker composition root in adapter package (`packages/cloudflare/src/worker.js`).
 - [x] Binding-aware KV/R2 adapter behavior with local fallbacks.
 - [x] Wrangler local/deployed smoke scripts for the core API path.
 
@@ -101,7 +101,7 @@ Exit criteria:
 - [x] Add server-side JS hook bootstrap registration at composition roots (local server + Cloudflare worker) so `addAction`/`addFilter` are available on both client and server runtimes.
 - [ ] Normalize API versioning/envelope/pagination rules and document them as stable contract behavior. (tracked for close in Phase 14)
 - [ ] Add webhook delivery surface for publish completed + release activated events. (tracked for close in Phase 14)
-- `Increment complete`: replaced bespoke lifecycle hooks with canonical `@wordpress/hooks` semantics (`addAction`, `doAction`, `addFilter`, `applyFilters`) and added server-side JS bootstrap registration in composition roots (`apps/api-edge/src/hooks-bootstrap.js`, `apps/api-edge/src/server.js`, `packages/adapters-cloudflare/src/worker.js`).
+- `Increment complete`: replaced bespoke lifecycle hooks with canonical `@wordpress/hooks` semantics (`addAction`, `doAction`, `addFilter`, `applyFilters`) and added server-side JS bootstrap registration in composition roots (`apps/api/src/hooks-bootstrap.js`, `apps/api/src/server.js`, `packages/cloudflare/src/worker.js`).
 - Note: API runtime now requires a full WP-compatible hook registry surface when `platform.hooks` is supplied; partial custom registries intentionally fall back to shared `@wordpress/hooks`.
 - Trust boundary note: published HTML intentionally renders author-provided block/content HTML; sanitization is not performed in the publisher and must be enforced at authoring/import boundaries when untrusted inputs are introduced.
 - Hook bootstrap note: failing registrars are retried on subsequent attach attempts, with failure logging rate-limited to first failure per registry/registrar pair.
@@ -153,7 +153,7 @@ Exit criteria:
 - [x] Wire private/live read resolution by canonical route identity, not implicit document-id assumptions.
 - [x] Add migration strategy for existing documents and legacy route assumptions.
 - [x] Add acceptance tests for route edits across draft -> preview -> publish -> live flows.
-- `Increment complete (2026-02-07)`: canonical slug persistence and uniqueness now enforced in document routes, publish artifact routes resolve by slug with doc-id fallback compatibility for private reads, and admin UI preserves in-editor slug edits (`apps/api-edge/src/features/document-routes.js`, `apps/api-edge/src/features/private-routes.js`, `packages/publish/src/publisher.js`, `apps/admin-web/src/features/documents/useDocumentsState.js`).
+- `Increment complete (2026-02-07)`: canonical slug persistence and uniqueness now enforced in document routes, publish artifact routes resolve by slug with doc-id fallback compatibility for private reads, and admin UI preserves in-editor slug edits (`apps/api/src/features/document-routes.js`, `apps/api/src/features/private-routes.js`, `packages/publish/src/publisher.js`, `apps/admin-web/src/features/documents/useDocumentsState.js`).
 - `Increment complete (2026-02-07)`: added acceptance coverage for slug route edits across republish + activation, including stable doc-id private-read compatibility (`packages/testing/test/api.behavior.test.js`).
 
 Exit criteria:
@@ -165,8 +165,8 @@ Exit criteria:
 - [x] Defer Gutenberg navigation block parity and menu rendering semantics to block-parity phase (no standalone menu publish-artifact pipeline).
 - [x] Implement media domain metadata parity (`alt`, `caption`, `description`, featured image linkage).
 - [x] Implement media upload/browse workflow substrate in admin/API (selection UX and full block parity tracked in Phase 12B).
-- `Increment complete (2026-02-07)`: canonical navigation menu substrate is live via API/store/tests (`apps/api-edge/src/features/navigation-routes.js`, `packages/testing/src/inMemoryPlatform.js`, `packages/adapters-cloudflare/src/{app-store.js,d1-sql.js}`, `packages/testing/test/{api.behavior.test.js,api.contract.test.js,sdk.client.test.js,admin.shell.test.js}`).
-- `Increment complete (2026-02-07)`: canonical media substrate is live across API/store/admin for upload, list/edit/delete, and featured-image/media-id linkage into document save + publish-time media URL resolution (`apps/api-edge/src/features/media-routes.js`, `apps/admin-web/src/features/media/*`, `apps/admin-web/src/features/content/*`, `packages/publish/src/publisher.js`, `packages/testing/test/{api.behavior.test.js,publisher.test.js}`).
+- `Increment complete (2026-02-07)`: canonical navigation menu substrate is live via API/store/tests (`apps/api/src/features/navigation-routes.js`, `packages/testing/src/inMemoryPlatform.js`, `packages/cloudflare/src/{app-store.js,d1-sql.js}`, `packages/testing/test/{api.behavior.test.js,api.contract.test.js,sdk.client.test.js,admin.shell.test.js}`).
+- `Increment complete (2026-02-07)`: canonical media substrate is live across API/store/admin for upload, list/edit/delete, and featured-image/media-id linkage into document save + publish-time media URL resolution (`apps/api/src/features/media-routes.js`, `apps/admin-web/src/features/media/*`, `apps/admin-web/src/features/content/*`, `packages/publish/src/publisher.js`, `packages/testing/test/{api.behavior.test.js,publisher.test.js}`).
 
 Exit criteria:
 - Navigation and media are first-class data models with stable API/store contracts and admin substrate flows.
@@ -305,7 +305,7 @@ Exit criteria:
 - No phase handoff requires piggyback completion from prior undocumented work.
 
 ## Dependencies & Notes
-- Ports + Domain must not depend on infrastructure; only `packages/adapters-cloudflare` uses Cloudflare-specific APIs. (`scripts/check-boundaries.js` enforces this.)
+- Ports + Domain must not depend on infrastructure; only `packages/cloudflare` uses Cloudflare-specific APIs. (`scripts/check-boundaries.js` enforces this.)
 - Canonical API tests currently validate required keys only. Replace `packages/contracts` with full schema before closing Phase 14.
 - Current docs (`idea.md`) imply Gutenberg usability improvements, but execution tracking now lives in `Phase 10` above for explicit ownership.
 - Concurrency caveat: KV-backed pointer/history updates in the reference Cloudflare adapter are not strongly atomic under concurrent writers; use D1 transaction boundaries or a Durable Object single-writer path when moving from reference to production guarantees.
@@ -336,6 +336,6 @@ Exit criteria:
 - Delta (2026-02-06 after D1 app-store migration + no-default-admin bootstrap): `93.55%` lines, `90.20%` funcs.
 - Delta (2026-02-06 after unhappy-path coverage expansion and threshold wiring): `97.15%` lines, `95.96%` funcs.
 - Priority hotspot 1: `apps/admin-web/src/editor-shell.js` (`89.66%` lines) where document update/preview branches remain.
-- Priority hotspot 2: `apps/api-edge/src/app.js` (`95.61%` lines) for endpoint-level negative branches and rare error guards.
+- Priority hotspot 2: `apps/api/src/app.js` (`95.61%` lines) for endpoint-level negative branches and rare error guards.
 - Priority hotspot 3: `packages/testing/src/inMemoryPlatform.js` (`97.38%` lines, `96.23%` funcs) with remaining branches tied to deeper revision/list edge paths.
 - Process: run `bun run test:coverage` at the end of each phase slice and append a one-line delta note here.
