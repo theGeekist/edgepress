@@ -23,24 +23,15 @@ function parsePositiveInt(input, fallback) {
 }
 
 function toSlug(input) {
-  const normalized = String(input || '').trim().toLowerCase();
-  let slug = '';
-  let previousWasDash = false;
-  for (const char of normalized) {
-    const isAlphaNumeric = (char >= 'a' && char <= 'z') || (char >= '0' && char <= '9');
-    if (isAlphaNumeric) {
-      slug += char;
-      previousWasDash = false;
-      continue;
-    }
-    if (!previousWasDash) {
-      slug += '-';
-      previousWasDash = true;
-    }
-  }
-  if (slug.startsWith('-')) slug = slug.slice(1);
-  if (slug.endsWith('-')) slug = slug.slice(0, -1);
-  return slug;
+  return String(input || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase()
+    .replace(/[_\s]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/[^a-z0-9-]/g, '')
+    .replace(/^-+|-+$/g, '');
 }
 
 function toDocumentItems(payload) {

@@ -64,6 +64,25 @@ test('document creation enforces unique slugs and private read supports slug rou
   assert.equal(byLegacyDocId.json.releaseId, publish.json.job.releaseId);
 });
 
+test('slug normalization transliterates diacritics for document create and patch', async () => {
+  const platform = createInMemoryPlatform();
+  const { handler, accessToken } = await authAsAdmin(platform);
+
+  const created = await requestJson(handler, 'POST', '/v1/documents', {
+    token: accessToken,
+    body: { title: 'Café Résumé', content: '<p>body</p>' }
+  });
+  assert.equal(created.res.status, 201);
+  assert.equal(created.json.document.slug, 'cafe-resume');
+
+  const updated = await requestJson(handler, 'PATCH', `/v1/documents/${encodeURIComponent(created.json.document.id)}`, {
+    token: accessToken,
+    body: { slug: 'Señor Niño' }
+  });
+  assert.equal(updated.res.status, 200);
+  assert.equal(updated.json.document.slug, 'senor-nino');
+});
+
 test('route edits are reflected after republish while doc-id private reads stay stable', async () => {
   const platform = createInMemoryPlatform();
   const { handler, accessToken } = await authAsAdmin(platform);
