@@ -37,7 +37,13 @@ function parseThemeVarsFromRequest(request) {
 function toCssVarBlock(themeVars) {
   const entries = Object.entries(themeVars || {});
   if (entries.length === 0) return '';
-  return entries.map(([key, value]) => `${key}: ${value};`).join('\n');
+  return entries
+    .filter(([, value]) => {
+      const v = String(value || '');
+      return !v.includes('<') && !v.includes('>') && !v.toLowerCase().includes('</');
+    })
+    .map(([key, value]) => `${key}: ${value};`)
+    .join('\n');
 }
 
 function buildPreviewHtml(doc, themeVars) {
@@ -131,7 +137,13 @@ export function createPreviewRoutes({ runtime, store, previewStore, route, authz
       } catch (e) {
         return error('PREVIEW_EXPIRED', e.message, 410);
       }
-      return new Response(preview.html, { status: 200, headers: { 'content-type': 'text/html' } });
+      return new Response(preview.html, {
+        status: 200,
+        headers: {
+          'content-type': 'text/html',
+          'content-security-policy': "default-src 'none'; script-src 'none'; img-src 'self' data: https:; style-src 'unsafe-inline'; font-src 'self' data:; connect-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'"
+        }
+      });
     })
   ];
 }

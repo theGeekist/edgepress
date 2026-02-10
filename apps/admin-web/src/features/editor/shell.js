@@ -149,18 +149,28 @@ export function createAdminShell({ baseUrl, fetchImpl = fetch }) {
       return store.deleteMedia(id);
     },
     async uploadMediaBinary(uploadUrl, { uploadToken, file, mimeType }) {
-      const headers = {
-        'x-upload-token': uploadToken,
-        'content-type': mimeType || file?.type || 'application/octet-stream'
-      };
-      if (session.accessToken) {
-        headers.authorization = `Bearer ${session.accessToken}`;
+      async function sendUpload() {
+        const headers = {
+          'x-upload-token': uploadToken,
+          'content-type': mimeType || file?.type || 'application/octet-stream'
+        };
+        if (session.accessToken) {
+          headers.authorization = `Bearer ${session.accessToken}`;
+        }
+        return fetchImpl(uploadUrl, {
+          method: 'PUT',
+          headers,
+          body: file
+        });
       }
-      const response = await fetchImpl(uploadUrl, {
-        method: 'PUT',
-        headers,
-        body: file
-      });
+
+      let response = await sendUpload();
+      if (response.status === 401 && session.refreshToken) {
+        const refreshed = await refreshSession(client);
+        if (refreshed) {
+          response = await sendUpload();
+        }
+      }
       if (!response.ok) {
         const payload = await response.text();
         throw new Error(payload || `Upload failed with status ${response.status}`);

@@ -103,7 +103,10 @@ test('media list and metadata updates persist canonical fields', async () => {
   assert.ok(/^http:\/\/test\.local\/blob\//.test(finalized.json.media.url));
 
   const mediaUrl = new URL(finalized.json.media.url);
-  const blobRes = await handler(new Request(mediaUrl.toString(), { method: 'GET' }));
+  const blobRes = await handler(new Request(mediaUrl.toString(), {
+    method: 'GET',
+    headers: { authorization: `Bearer ${accessToken}` }
+  }));
   assert.equal(blobRes.status, 200);
   assert.equal(blobRes.headers.get('content-type'), 'image/jpeg');
   const blobBytes = new Uint8Array(await blobRes.arrayBuffer());

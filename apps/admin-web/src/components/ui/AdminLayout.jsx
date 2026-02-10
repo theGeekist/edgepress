@@ -333,7 +333,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   pageContent: {
-    flex: 1,
+    flexGrow: 1,
     paddingHorizontal: 24,
     paddingVertical: 16,
     maxWidth: 'none',

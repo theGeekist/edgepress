@@ -69,6 +69,18 @@ test('canonical API contracts return required response keys', async () => {
   assert.equal(mediaInitAlias.res.status, 201);
   assertResponseShape('POST /v1/media/init', mediaInitAlias.json);
 
+  const uploadReq = new Request(`http://test.local/uploads/${mediaInit.json.mediaId}`, {
+    method: 'PUT',
+    headers: {
+      authorization: `Bearer ${token}`,
+      'x-upload-token': mediaInit.json.uploadToken,
+      'content-type': 'image/jpeg'
+    },
+    body: new Uint8Array([1, 2, 3, 4])
+  });
+  const uploadRes = await handler(uploadReq);
+  assert.equal(uploadRes.status, 200);
+
   const mediaFinalize = await requestJson(handler, 'POST', `/v1/media/${mediaInit.json.mediaId}/finalize`, {
     token,
     body: {

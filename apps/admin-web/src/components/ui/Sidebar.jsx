@@ -26,7 +26,7 @@ function renderSidebarItems({
     const isActive = activeId === item.id;
     const hasActiveChild = item.children?.some(child => child.id === activeId);
 
-    const focusableIds = getFocusableItemIds(items);
+    const focusableIds = getFocusableItemIds();
     const focusedIndex = getFocusedIndex(focusableIds);
 
     return (
@@ -89,7 +89,7 @@ export function Sidebar({
     handleKeyDown,
     getFocusableItemIds,
     getFocusedIndex,
-  } = useSidebarNavigation({ activeItemId, onSelectItem });
+  } = useSidebarNavigation({ activeItemId, onSelectItem, menuItems: customMenuItems || items || DEFAULT_MENU_ITEMS });
 
   const itemRefs = useRef(new Map());
 

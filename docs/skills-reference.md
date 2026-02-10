@@ -109,7 +109,7 @@ bun run lint
 
 ### 1. Domain Layer (`packages/domain/`)
 
-**Location**: `/Users/jasonnathan/Repos/gcms/packages/domain/src/`
+**Location**: `packages/domain/src/`
 
 **Purpose**: Pure business logic with no infrastructure dependencies.
 
@@ -150,7 +150,7 @@ bun run lint
 
 #### Domain Invariants
 
-**Location**: `/Users/jasonnathan/Repos/gcms/packages/domain/src/invariants.js`
+**Location**: `packages/domain/src/invariants.js`
 
 | Invariant | Purpose | Error Condition |
 |-----------|---------|-----------------|
@@ -160,7 +160,7 @@ bun run lint
 
 ### 2. Ports Layer (`packages/ports/`)
 
-**Location**: `/Users/jasonnathan/Repos/gcms/packages/ports/src/`
+**Location**: `packages/ports/src/`
 
 **Purpose**: Interface definitions that core depends on. Adapters implement these.
 
@@ -215,7 +215,7 @@ bun run lint
 
 ### 3. Adapter Layer (`packages/adapters-cloudflare/`)
 
-**Location**: `/Users/jasonnathan/Repos/gcms/packages/adapters-cloudflare/src/`
+**Location**: `packages/adapters-cloudflare/src/`
 
 **Purpose**: Reference implementation using Cloudflare Workers.
 
@@ -232,7 +232,7 @@ bun run lint
 
 #### Worker Composition Root
 
-**Location**: `/Users/jasonnathan/Repos/gcms/packages/adapters-cloudflare/src/worker.js`
+**Location**: `packages/adapters-cloudflare/src/worker.js`
 
 ```javascript
 // Platform composition
@@ -249,7 +249,7 @@ createCloudflareReferencePlatform(env, { ctx })
 
 ### 4. API Layer (`apps/api-edge/`)
 
-**Location**: `/Users/jasonnathan/Repos/gcms/apps/api-edge/src/`
+**Location**: `apps/api-edge/src/`
 
 **Purpose**: REST API that exposes core functionality via HTTP.
 
@@ -270,7 +270,7 @@ All routes are in `features/` directory:
 
 #### Error Envelope (Canonical)
 
-**Location**: `/Users/jasonnathan/Repos/gcms/apps/api-edge/src/http.js`
+**Location**: `apps/api-edge/src/http.js`
 
 ```javascript
 {
@@ -283,7 +283,7 @@ All routes are in `features/` directory:
 
 #### Authorization
 
-**Location**: `/Users/jasonnathan/Repos/gcms/apps/api-edge/src/auth.js`
+**Location**: `apps/api-edge/src/auth.js`
 
 **Mechanism**: JWT bearer tokens with capability strings.
 
@@ -294,7 +294,7 @@ All routes are in `features/` directory:
 
 #### Server Hooks System
 
-**Location**: `/Users/jasonnathan/Repos/gcms/apps/api-edge/src/hooks.js`, `hooks-bootstrap.js`
+**Location**: `apps/api-edge/src/hooks.js`, `apps/api-edge/src/hooks-bootstrap.js`
 
 **Purpose**: WP-compatible actions/filters using `@wordpress/hooks`.
 
@@ -305,7 +305,7 @@ All routes are in `features/` directory:
 
 ### 5. Admin Web (`apps/admin-web/`)
 
-**Location**: `/Users/jasonnathan/Repos/gcms/apps/admin-web/src/`
+**Location**: `apps/admin-web/src/`
 
 **Purpose**: WordPress-like admin interface with Gutenberg integration.
 
@@ -324,7 +324,7 @@ All routes are in `features/` directory:
 
 #### Gutenberg Integration
 
-**Location**: `/Users/jasonnathan/Repos/gcms/apps/admin-web/src/features/editor/gutenberg-integration.js`
+**Location**: `apps/admin-web/src/features/editor/gutenberg-integration.js`
 
 **Key Pattern**: Uses `@wordpress/api-fetch` middleware to inject auth tokens and handle token refresh.
 
@@ -335,7 +335,7 @@ All routes are in `features/` directory:
 
 #### Block Parity System
 
-**Location**: `/Users/jasonnathan/Repos/gcms/apps/admin-web/src/features/editor/parity/`
+**Location**: `apps/admin-web/src/features/editor/parity/`
 
 **Purpose**: Import WP blocks into canonical EP block format.
 
@@ -354,7 +354,7 @@ All routes are in `features/` directory:
 
 ### 6. Publish Layer (`packages/publish/`)
 
-**Location**: `/Users/jasonnathan/Repos/gcms/packages/publish/src/publisher.js`
+**Location**: `packages/publish/src/publisher.js`
 
 **Purpose**: Compilations from revisions to static releases.
 
@@ -404,7 +404,7 @@ All routes are in `features/` directory:
 
 ### 7. SDK Layer (`packages/sdk/`)
 
-**Location**: `/Users/jasonnathan/Repos/gcms/packages/sdk/src/client.js`
+**Location**: `packages/sdk/src/client.js`
 
 **Purpose**: Canonical API client with auth and refresh.
 
@@ -425,13 +425,13 @@ All routes are in `features/` directory:
 
 ### 8. Testing Layer (`packages/testing/`)
 
-**Location**: `/Users/jasonnathan/Repos/gcms/packages/testing/`
+**Location**: `packages/testing/`
 
 **Purpose**: In-memory adapters and test infrastructure.
 
 #### In-Memory Platform
 
-**Location**: `/Users/jasonnathan/Repos/gcms/packages/testing/src/inMemoryPlatform.js`
+**Location**: `packages/testing/src/inMemoryPlatform.js`
 
 **Purpose**: Deterministic platform for tests.
 
@@ -439,7 +439,7 @@ All routes are in `features/` directory:
 
 #### Test Organization
 
-**Location**: `/Users/jasonnathan/Repos/gcms/packages/testing/test/`
+**Location**: `packages/testing/test/`
 
 | Test File | Purpose |
 |-----------|---------|
@@ -457,7 +457,7 @@ All routes are in `features/` directory:
 
 ### Boundary Enforcement
 
-**Location**: `/Users/jasonnathan/Repos/gcms/scripts/check-boundaries.js`
+**Location**: `scripts/check-boundaries.js`
 
 **Rule**: `apps/api-edge` and `packages/*` (except `adapters-cloudflare`) may not import Cloudflare-specific APIs.
 

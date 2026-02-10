@@ -38,6 +38,48 @@ function resolveImageData(node, context = {}) {
   };
 }
 
+function resolveAlignClass(align) {
+  if (!align) return '';
+  if (align === 'none') return 'alignnone';
+  return `align${escapeHtml(align)}`;
+}
+
+function renderImageMarkup(node, image) {
+  const safeUrl = escapeHtml(image.url);
+  const safeAlt = escapeHtml(image.alt);
+  const richCaption = normalizeRichTextHtml(image.caption);
+  const safeTitle = escapeHtml(image.title);
+  const safeHref = escapeHtml(image.href);
+  const safeRel = escapeHtml(image.rel);
+  const safeLinkClass = escapeHtml(image.linkClass);
+  const safeLinkTarget = escapeHtml(image.linkTarget);
+  const safeWidth = escapeHtml(image.width);
+  const safeHeight = escapeHtml(image.height);
+  const figureClassNames = [
+    'ep-image',
+    resolveAlignClass(image.align),
+    image.sizeSlug ? `size-${escapeHtml(image.sizeSlug)}` : '',
+    image.width || image.height ? 'is-resized' : ''
+  ].filter(Boolean);
+  const showCaption = Boolean(richCaption) || Boolean(node?.props?.hasCaptionBinding);
+  const captionMarkup = showCaption ? `<figcaption>${richCaption}</figcaption>` : '';
+  if (!safeUrl) {
+    return '<figure class="ep-image ep-image-missing"></figure>';
+  }
+  const imageClass = image.mediaId ? ` class="wp-image-${escapeHtml(image.mediaId)}"` : '';
+  const titleAttr = safeTitle ? ` title="${safeTitle}"` : '';
+  const widthAttr = safeWidth ? ` width="${safeWidth}"` : '';
+  const heightAttr = safeHeight ? ` height="${safeHeight}"` : '';
+  const imageTag = `<img src="${safeUrl}" alt="${safeAlt}"${imageClass}${titleAttr}${widthAttr}${heightAttr} />`;
+  const linkClassAttr = safeLinkClass ? ` class="${safeLinkClass}"` : '';
+  const linkTargetAttr = safeLinkTarget ? ` target="${safeLinkTarget}"` : '';
+  const linkRelAttr = safeRel ? ` rel="${safeRel}"` : '';
+  const linkTag = safeHref
+    ? `<a${linkClassAttr} href="${safeHref}"${linkTargetAttr}${linkRelAttr}>${imageTag}</a>`
+    : imageTag;
+  return `<figure class="${figureClassNames.join(' ')}">${linkTag}${captionMarkup}</figure>`;
+}
+
 export const imageImportTransform = {
   id: 'core.image.import.v1',
   priority: 100,
@@ -115,39 +157,7 @@ const imageRenderer = {
       };
     }
 
-    const safeUrl = escapeHtml(image.url);
-    const safeAlt = escapeHtml(image.alt);
-    const richCaption = normalizeRichTextHtml(image.caption);
-    const safeTitle = escapeHtml(image.title);
-    const safeHref = escapeHtml(image.href);
-    const safeRel = escapeHtml(image.rel);
-    const safeLinkClass = escapeHtml(image.linkClass);
-    const safeLinkTarget = escapeHtml(image.linkTarget);
-    const safeWidth = escapeHtml(image.width);
-    const safeHeight = escapeHtml(image.height);
-    const figureClassNames = [
-      'ep-image',
-      image.align === 'none' ? 'alignnone' : '',
-      image.sizeSlug ? `size-${escapeHtml(image.sizeSlug)}` : '',
-      image.width || image.height ? 'is-resized' : ''
-    ].filter(Boolean);
-    const showCaption = Boolean(richCaption) || Boolean(node?.props?.hasCaptionBinding);
-    const captionMarkup = showCaption ? `<figcaption>${richCaption}</figcaption>` : '';
-    if (!safeUrl) {
-      return '<figure class="ep-image ep-image-missing"></figure>';
-    }
-    const imageClass = image.mediaId ? ` class="wp-image-${escapeHtml(image.mediaId)}"` : '';
-    const titleAttr = safeTitle ? ` title="${safeTitle}"` : '';
-    const widthAttr = safeWidth ? ` width="${safeWidth}"` : '';
-    const heightAttr = safeHeight ? ` height="${safeHeight}"` : '';
-    const imageTag = `<img src="${safeUrl}" alt="${safeAlt}"${imageClass}${titleAttr}${widthAttr}${heightAttr} />`;
-    const linkClassAttr = safeLinkClass ? ` class="${safeLinkClass}"` : '';
-    const linkTargetAttr = safeLinkTarget ? ` target="${safeLinkTarget}"` : '';
-    const linkRelAttr = safeRel ? ` rel="${safeRel}"` : '';
-    const linkTag = safeHref
-      ? `<a${linkClassAttr} href="${safeHref}"${linkTargetAttr}${linkRelAttr}>${imageTag}</a>`
-      : imageTag;
-    return `<figure class="${figureClassNames.join(' ')}">${linkTag}${captionMarkup}</figure>`;
+    return renderImageMarkup(node, image);
   }
 };
 
