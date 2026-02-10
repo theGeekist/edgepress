@@ -23,7 +23,7 @@ function parsePositiveInt(input, fallback) {
 }
 
 function toSlug(input) {
-  return String(input || '')
+  let slug = String(input || '')
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .trim()
@@ -31,7 +31,12 @@ function toSlug(input) {
     .replace(/[_\s]+/g, '-')
     .replace(/-+/g, '-')
     .replace(/[^a-z0-9-]/g, '')
-    .replace(/^-+|-+$/g, '');
+    .replace(/^-+/, '');
+
+  while (slug.endsWith('-')) {
+    slug = slug.slice(0, -1);
+  }
+  return slug;
 }
 
 function toDocumentItems(payload) {
