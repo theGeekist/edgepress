@@ -146,11 +146,7 @@ export function createMediaRoutes({ runtime, store, blobStore, route, authzError
       }
       const contentType = blob?.metadata?.contentType || 'application/octet-stream';
       const bytes = blob?.bytes;
-<<<<<<< HEAD
       const body = normalizeBlobBody(bytes);
-=======
-      const body = normalizeBlobBody(bytes);
->>>>>>> 8249750 (feat(platform): add content-model routes and reorganize cloudflare/testing stores)
       return new Response(body, { status: 200, headers: { 'content-type': contentType } });
     }),
 
