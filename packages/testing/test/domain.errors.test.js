@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { toErrorMessage } from '../../domain/src/errors.js';
+import { toErrorMessage } from '@geekist/edgepress/domain/errors.js';
 
 test('toErrorMessage mapping', () => {
     assert.equal(toErrorMessage(null, 'Fallback'), 'Fallback');

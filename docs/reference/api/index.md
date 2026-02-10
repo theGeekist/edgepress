@@ -20,6 +20,7 @@ Current source of truth:
 
 Pages:
 
+- [/reference/content-model-v2](/reference/content-model-v2)
 - [/reference/api/auth](/reference/api/auth)
 - [/reference/api/documents](/reference/api/documents)
 - [/reference/api/media](/reference/api/media)
