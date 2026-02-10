@@ -110,6 +110,11 @@ export function createApiFetchMiddlewares({ getAccessToken, refresh }) {
 }
 
 export function configureApiFetch(apiFetch, { getAccessToken, refresh, apiRoot }) {
+  const configurationKey = normalizeApiRoot(apiRoot) || '(same-origin)';
+  if (apiFetch.__epConfiguredApiRootKey === configurationKey) {
+    return apiFetch.__epConfiguredMiddlewares || null;
+  }
+
   const middlewares = createApiFetchMiddlewares({ getAccessToken, refresh });
 
   const root = normalizeApiRoot(apiRoot);
@@ -122,5 +127,7 @@ export function configureApiFetch(apiFetch, { getAccessToken, refresh, apiRoot }
   }
   apiFetch.use(middlewares.refreshMiddleware);
 
+  apiFetch.__epConfiguredApiRootKey = configurationKey;
+  apiFetch.__epConfiguredMiddlewares = middlewares;
   return middlewares;
 }
