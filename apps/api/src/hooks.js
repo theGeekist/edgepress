@@ -1,5 +1,5 @@
-import { getSharedHooksRegistry } from '../../../packages/hooks/src/index.js';
-import { toErrorMessage } from '../../../packages/domain/src/errors.js';
+import { getSharedHooksRegistry } from '@geekist/edgepress/hooks';
+import { toErrorMessage } from '@geekist/edgepress/domain/errors';
 
 export const HOOK_NAMES = {
   publishProvenanceFilter: 'edgepress.publish.provenance',

@@ -4,4 +4,7 @@ coverage = true
 coverageReporter = ["text", "lcov"]
 coverageDir = "coverage"
 coverageSkipTestFiles = true
-coveragePathIgnorePatterns = ["**/packages/testing/test/helpers/**"]
+coveragePathIgnorePatterns = [
+  "**/packages/testing/src/**",
+  "**/packages/testing/test/helpers/**"
+]

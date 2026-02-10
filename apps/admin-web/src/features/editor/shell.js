@@ -1,4 +1,4 @@
-import { createClient } from '../../../../../packages/sdk/src/client.js';
+import { createClient } from '@geekist/edgepress/sdk';
 import { createCanonicalSdkStore } from './gutenberg-integration.js';
 
 const SESSION_STORAGE_KEY = 'edgepress.admin.session.v1';

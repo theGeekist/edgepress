@@ -1,4 +1,4 @@
-import { BLOCKS_SCHEMA_VERSION, normalizeBlocksInput, normalizePublishProvenanceInput } from '../../../packages/domain/src/index.js';
+import { BLOCKS_SCHEMA_VERSION, normalizeBlocksInput, normalizePublishProvenanceInput } from '@geekist/edgepress/domain';
 import { error } from './http.js';
 
 export function normalizePublishProvenance(body) {

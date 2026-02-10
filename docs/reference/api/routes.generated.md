@@ -13,10 +13,12 @@ It documents required request/response keys (not full schemas).
 | POST | `/v1/auth/logout` | `refreshToken` | `ok` |
 | POST | `/v1/auth/refresh` | `refreshToken` | `accessToken`, `refreshToken` |
 | POST | `/v1/auth/token` | `username`, `password` | `accessToken`, `refreshToken`, `user` |
+| GET | `/v1/content-types` | - | `items` |
+| PUT | `/v1/content-types/:slug` | `label`, `kind`, `supports`, `fields`, `taxonomies`, `statusOptions` | `contentType` |
 | GET | `/v1/documents` | - | `items` |
-| POST | `/v1/documents` | `title`, `content`, `type`, `slug`, `featuredImageId`, `status`, `blocks` | `document`, `revision` |
+| POST | `/v1/documents` | `title`, `content`, `legacyHtml`, `type`, `slug`, `excerpt`, `featuredImageId`, `status`, `blocks`, `fields`, `termIds`, `raw` | `document`, `revision` |
 | DELETE | `/v1/documents/:id` | - | `ok` |
-| PATCH | `/v1/documents/:id` | `title`, `content`, `type`, `slug`, `featuredImageId`, `status`, `blocks` | `document`, `revision` |
+| PATCH | `/v1/documents/:id` | `title`, `content`, `legacyHtml`, `type`, `slug`, `excerpt`, `featuredImageId`, `status`, `blocks`, `fields`, `termIds`, `raw` | `document`, `revision` |
 | GET | `/v1/documents/:id/revisions` | - | `items` |
 | POST | `/v1/documents/:id/revisions` | - | `revision` |
 | POST | `/v1/forms/:formId/submit` | `payload` | `submissionId` |
@@ -36,3 +38,8 @@ It documents required request/response keys (not full schemas).
 | GET | `/v1/publish/:jobId` | - | `job` |
 | GET | `/v1/releases` | - | `items`, `activeRelease` |
 | POST | `/v1/releases/:id/activate` | - | `activeRelease` |
+| GET | `/v1/taxonomies` | - | `items` |
+| PUT | `/v1/taxonomies/:slug` | `label`, `hierarchical`, `objectTypes`, `constraints` | `taxonomy` |
+| GET | `/v1/terms` | - | `items` |
+| POST | `/v1/terms` | `taxonomySlug`, `slug`, `name`, `parentId` | `term` |
+| PUT | `/v1/terms/:id` | `taxonomySlug`, `slug`, `name`, `parentId` | `term` |

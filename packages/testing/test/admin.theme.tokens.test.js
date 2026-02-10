@@ -11,6 +11,8 @@ import {
   mergeEpThemes,
   toCssVars,
   toUiPalette,
+  toWpThemeJson,
+  applyCssVarsToDocument,
   defaultLightTheme
 } from '../../../apps/admin-web/src/features/theme/index.js';
 
@@ -140,4 +142,43 @@ test('toCssVars ignores non-theme ref namespaces', () => {
   });
   assert.equal(vars['--ep-color-accent'], '#2271b1');
   assert.equal(vars['--ep-color-wpCompat'], undefined);
+});
+
+test('toWpThemeJson emits typography and spacing presets from EP tokens', () => {
+  const out = toWpThemeJson({
+    name: 'EP Export',
+    tokens: {
+      color: { background: '#101010', text: '#f5f5f5' },
+      typography: {
+        'family.body': 'Inter, sans-serif',
+        'size.base': '16px'
+      },
+      spacing: {
+        md: '1rem'
+      },
+      palette: [{ slug: 'primary', value: '#2271b1', name: 'Primary' }]
+    }
+  });
+
+  assert.equal(out.title, 'EP Export');
+  assert.equal(out.settings.typography.fontFamilies[0].slug, 'body');
+  assert.equal(out.settings.typography.fontSizes[0].slug, 'base');
+  assert.equal(out.settings.spacing.spacingSizes[0].slug, 'md');
+  assert.equal(out.styles.color.background, '#101010');
+  assert.equal(out.styles.color.text, '#f5f5f5');
+});
+
+test('applyCssVarsToDocument is a no-op for invalid targets and sets vars when valid', () => {
+  assert.doesNotThrow(() => applyCssVarsToDocument({ '--ep-x': '1' }, null));
+
+  const calls = [];
+  const target = {
+    style: {
+      setProperty(key, value) {
+        calls.push([key, value]);
+      }
+    }
+  };
+  applyCssVarsToDocument({ '--ep-color-accent': '#2271b1' }, target);
+  assert.deepEqual(calls, [['--ep-color-accent', '#2271b1']]);
 });

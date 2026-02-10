@@ -1,5 +1,5 @@
 import http from 'node:http';
-import { createInMemoryPlatform } from '../../../packages/testing/src/store.js';
+import { createInMemoryPlatform } from '@geekist/edgepress/testing';
 import { createApiHandler } from '../../api/src/app.js';
 import { attachServerHooks } from '../../api/src/hooks-bootstrap.js';
 import { createAdminShell } from './features/editor';
