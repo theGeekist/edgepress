@@ -147,12 +147,14 @@ Exit criteria:
 - `Phase complete (2026-02-06)`: foundational admin IA/editor UX slice closed on branch `phase-10-admin-ui-foundations`; permalink canonicalization, navigation/media, and theme-system work moved to Phases 11-13.
 
 ## Phase 11 – Permalink and Route Substrate (priority next)
-- [ ] Make permalink/slug canonical in stored document model (not local-only UI metadata).
-- [ ] Define unique slug and collision policy by content type/status.
-- [ ] Define canonical URI strategy and publish artifact route mapping.
-- [ ] Wire private/live read resolution by canonical route identity, not implicit document-id assumptions.
-- [ ] Add migration strategy for existing documents and legacy route assumptions.
-- [ ] Add acceptance tests for route edits across draft -> preview -> publish -> live flows.
+- [x] Make permalink/slug canonical in stored document model (not local-only UI metadata).
+- [x] Define unique slug and collision policy by content type/status.
+- [x] Define canonical URI strategy and publish artifact route mapping.
+- [x] Wire private/live read resolution by canonical route identity, not implicit document-id assumptions.
+- [x] Add migration strategy for existing documents and legacy route assumptions.
+- [x] Add acceptance tests for route edits across draft -> preview -> publish -> live flows.
+- `Increment complete (2026-02-07)`: canonical slug persistence and uniqueness now enforced in document routes, publish artifact routes resolve by slug with doc-id fallback compatibility for private reads, and admin UI preserves in-editor slug edits (`apps/api-edge/src/features/document-routes.js`, `apps/api-edge/src/features/private-routes.js`, `packages/publish/src/publisher.js`, `apps/admin-web/src/features/documents/useDocumentsState.js`).
+- `Increment complete (2026-02-07)`: added acceptance coverage for slug route edits across republish + activation, including stable doc-id private-read compatibility (`packages/testing/test/api.behavior.test.js`).
 
 Exit criteria:
 - Permalinks are first-class persisted data and deterministically map to delivery routes.
