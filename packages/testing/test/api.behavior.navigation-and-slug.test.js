@@ -83,6 +83,18 @@ test('slug normalization transliterates diacritics for document create and patch
   assert.equal(updated.json.document.slug, 'senor-nino');
 });
 
+test('slug normalization preserves non-latin scripts', async () => {
+  const platform = createInMemoryPlatform();
+  const { handler, accessToken } = await authAsAdmin(platform);
+
+  const created = await requestJson(handler, 'POST', '/v1/documents', {
+    token: accessToken,
+    body: { title: 'こんにちは 世界', content: '<p>body</p>' }
+  });
+  assert.equal(created.res.status, 201);
+  assert.equal(created.json.document.slug, 'こんにちは-世界');
+});
+
 test('route edits are reflected after republish while doc-id private reads stay stable', async () => {
   const platform = createInMemoryPlatform();
   const { handler, accessToken } = await authAsAdmin(platform);
