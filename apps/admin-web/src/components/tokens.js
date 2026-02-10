@@ -122,8 +122,8 @@ export function createTransition(properties, duration = 'normal', easing = 'defa
 // ========== Helper: Check reduced motion preference ==========
 
 export function prefersReducedMotion() {
-  if (typeof window === 'undefined') return false;
-  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (typeof globalThis.window === 'undefined') return false;
+  return globalThis.window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
 // ========== Helper: Get safe transition duration ==========

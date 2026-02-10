@@ -16,9 +16,8 @@ function normalizeRichTextHtml(input) {
 function resolveImageData(node, context = {}) {
   const props = node?.props && typeof node.props === 'object' ? node.props : {};
   const mediaId = String(props.mediaId || '').trim();
-  const media = mediaId && typeof context.resolveMediaById === 'function'
-    ? context.resolveMediaById(mediaId)
-    : null;
+  const hasMediaResolver = mediaId && typeof context.resolveMediaById === 'function';
+  const media = hasMediaResolver ? context.resolveMediaById(mediaId) : null;
   const url = String(media?.url || props.url || '').trim();
   const alt = String(media?.alt || props.alt || '').trim();
   const caption = String(props.caption || media?.caption || '').trim();
@@ -55,9 +54,8 @@ export const imageImportTransform = {
       attrs.lightbox ||
       attrs.sizeSlug && attrs.width && attrs.height
     );
-    const lossiness = mediaId || url
-      ? (hasUnsupportedVisualAttrs ? 'partial' : 'none')
-      : 'partial';
+    const hasSource = Boolean(mediaId || url);
+    const lossiness = hasSource && !hasUnsupportedVisualAttrs ? 'none' : 'partial';
     return {
       blockKind: 'ep/image',
       props: {
@@ -143,8 +141,11 @@ const imageRenderer = {
     const widthAttr = safeWidth ? ` width="${safeWidth}"` : '';
     const heightAttr = safeHeight ? ` height="${safeHeight}"` : '';
     const imageTag = `<img src="${safeUrl}" alt="${safeAlt}"${imageClass}${titleAttr}${widthAttr}${heightAttr} />`;
+    const linkClassAttr = safeLinkClass ? ` class="${safeLinkClass}"` : '';
+    const linkTargetAttr = safeLinkTarget ? ` target="${safeLinkTarget}"` : '';
+    const linkRelAttr = safeRel ? ` rel="${safeRel}"` : '';
     const linkTag = safeHref
-      ? `<a${safeLinkClass ? ` class="${safeLinkClass}"` : ''} href="${safeHref}"${safeLinkTarget ? ` target="${safeLinkTarget}"` : ''}${safeRel ? ` rel="${safeRel}"` : ''}>${imageTag}</a>`
+      ? `<a${linkClassAttr} href="${safeHref}"${linkTargetAttr}${linkRelAttr}>${imageTag}</a>`
       : imageTag;
     return `<figure class="${figureClassNames.join(' ')}">${linkTag}${captionMarkup}</figure>`;
   }
