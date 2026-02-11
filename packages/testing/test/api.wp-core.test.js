@@ -53,7 +53,7 @@ test('wp-core: GET /pages/:id requires authentication', async () => {
   const platform = createInMemoryPlatform();
   const handler = createApiHandler(platform);
 
-  const res = await handler(new Request('http://test.local/wp/v2/pages/page_missing'));
+  const res = await handler(new Request('http://test.local/wp/v2/pages/999999999'));
   assert.equal(res.status, 401);
 });
 
