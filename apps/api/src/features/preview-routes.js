@@ -1,7 +1,31 @@
 import { assertPreviewNotExpired } from '@geekist/edgepress/domain';
+import { normalizeBlocksInput } from '@geekist/edgepress/domain/blocks.js';
+import { serialize } from '@wordpress/blocks';
 import { requireCapability } from '../auth.js';
 import { error, json } from '../http.js';
 import { parseTtlSeconds, signPreviewToken, verifyPreviewTokenSignature } from '../runtime-utils.js';
+
+// Reuse media resolution logic from publisher.
+function resolveImageBlocks(blocks, mediaById) {
+  if (!Array.isArray(blocks)) return [];
+  return blocks.map((block) => {
+    if (!block || typeof block !== 'object') return block;
+    const attributes = block.attributes && typeof block.attributes === 'object' ? { ...block.attributes } : {};
+    const mediaId = String(attributes.mediaId || attributes.id || '').trim();
+    if (block.name === 'core/image' && mediaId && mediaById.has(mediaId)) {
+      const media = mediaById.get(mediaId);
+      attributes.url = media.url || attributes.url || '';
+      if (!attributes.alt && media.alt) {
+        attributes.alt = media.alt;
+      }
+    }
+    return {
+      ...block,
+      attributes,
+      innerBlocks: resolveImageBlocks(block.innerBlocks, mediaById)
+    };
+  });
+}
 
 function escapeHtml(input) {
   return String(input || '')
@@ -46,7 +70,7 @@ function toCssVarBlock(themeVars) {
     .join('\n');
 }
 
-function buildPreviewHtml(doc, themeVars) {
+function buildPreviewHtml(doc, themeVars, serializedBlocks, featuredImageMarkup) {
   const cssVarBlock = toCssVarBlock(themeVars);
   return `<!doctype html>
 <html lang="en">
@@ -78,7 +102,7 @@ function buildPreviewHtml(doc, themeVars) {
   </head>
   <body>
     <main class="ep-preview-wrap">
-      <article><h1>${escapeHtml(doc.title)}</h1>${doc.content || ''}</article>
+      <article>${featuredImageMarkup}<h1>${escapeHtml(doc.title)}</h1>${serializedBlocks}</article>
     </main>
   </body>
 </html>`;
@@ -92,6 +116,32 @@ export function createPreviewRoutes({ runtime, store, previewStore, route, authz
         const doc = await store.getDocument(params.documentId);
         if (!doc) return error('DOCUMENT_NOT_FOUND', 'Document not found', 404);
         const themeVars = parseThemeVarsFromRequest(request);
+
+        // Load media for block resolution and featured image.
+        const mediaListed = typeof store.listMedia === 'function'
+          ? await store.listMedia({ page: 1, pageSize: 500 })
+          : { items: [] };
+        const mediaItems = Array.isArray(mediaListed) ? mediaListed : mediaListed?.items || [];
+        const mediaById = new Map(mediaItems.map((item) => [item.id, item]));
+
+        // Serialize blocks to HTML with media resolution, falling back to legacy content if blocks are empty.
+        let serializedBlocks;
+        if (Array.isArray(doc.blocks) && doc.blocks.length > 0) {
+          const canonicalBlocks = normalizeBlocksInput(doc.blocks);
+          const resolvedBlocks = resolveImageBlocks(canonicalBlocks, mediaById);
+          serializedBlocks = serialize(resolvedBlocks);
+        } else {
+          serializedBlocks = doc.content || doc.legacyHtml || '';
+        }
+
+        // Handle featured image.
+        const featuredImageId = String(doc.featuredImageId || '').trim();
+        const featuredImage = featuredImageId && mediaById.has(featuredImageId)
+          ? mediaById.get(featuredImageId)
+          : null;
+        const featuredImageMarkup = featuredImage?.url
+          ? `<figure><img src="${escapeHtml(featuredImage.url)}" alt="${escapeHtml(featuredImage.alt || '')}" /></figure>`
+          : '';
 
         const previewTtlSeconds = parseTtlSeconds(runtime.env('PREVIEW_TTL_SECONDS'), {
           fallback: 15 * 60,
@@ -109,7 +159,7 @@ export function createPreviewRoutes({ runtime, store, previewStore, route, authz
           releaseLikeRef,
           expiresAt,
           createdBy: user.id,
-          html: buildPreviewHtml(doc, themeVars)
+          html: buildPreviewHtml(doc, themeVars, serializedBlocks, featuredImageMarkup)
         });
 
         return json({
