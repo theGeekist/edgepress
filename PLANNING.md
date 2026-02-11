@@ -1,9 +1,9 @@
 # Phase Tracker
 
-This file turns the architectural story from `idea.md` into concrete phases with whitespace for completion tracking and dependency notes.
+This file turns the architectural story from `docs/internal/edgepress-content-extensibility-spec.md` into concrete phases with whitespace for completion tracking and dependency notes.
 
 ## Plan Alignment (Original + Revised)
-- Canonical baseline: `idea.md` plus the revised edge-portable constraints are both authoritative.
+- Canonical baseline: `docs/internal/edgepress-content-extensibility-spec.md` plus revised edge-portable constraints are authoritative.
 - Non-negotiable boundary: `apps/api` may only depend on runtime/storage ports; Cloudflare-specific bindings stay only in `packages/cloudflare`.
 - Runtime portability rule: edge runtime is an adapter/DI concern, not the product architecture.
 - API invariants in force: two-phase media (`init` + `finalize`), preview returns `{ previewUrl, expiresAt, releaseLikeRef }`, canonical `{ error: { code, message } }` envelope.
@@ -190,7 +190,12 @@ Exit criteria:
 - `Increment complete (2026-02-11)`: shipped canonical content model routes/entities for content types, taxonomies, terms (with parent/taxonomy and slug-collision validation), plus document/revision metadata snapshots (`fields`, `termIds`, `legacyHtml`, `excerpt`, `slug`, `status`, `featuredImageId`) (`apps/api/src/features/content-model-routes.js`, `apps/api/src/features/document-routes.js`, `packages/domain/src/entities.js`, `packages/testing/test/api.content-model.test.js`).
 - `Increment complete (2026-02-11)`: integrated Gutenberg host bootstrap path in admin editor with core-data entity registration and editor-provider wiring (`apps/admin-web/src/features/editor/gutenberg-host.js`, `apps/admin-web/src/features/editor/components/Canvas.jsx`, `packages/testing/test/editor.gutenberg-host.test.js`).
 - `Increment complete (2026-02-11)`: extended theme parity substrate with WP theme adapter + editor settings adapter + token runtime integration tests (`apps/admin-web/src/features/theme/{wpThemeAdapter.js,wpEditorSettingsAdapter.js,tokenRuntime.js}`, `packages/testing/test/admin.theme.editor-settings.test.js`, `packages/testing/test/admin.theme.schema.test.js`).
-- `Remaining in this phase`: embed validation policy hardening; navigation block parity; replacement of transitional featured-image/media-id controls; complete media/nav revision->preview->publish->live acceptance matrix; templates/patterns lifecycle; full editor/preview/live theme parity; and publish a strict WP compatibility profile (guaranteed/partial/out-of-scope) as a versioned artifact.
+- `Increment complete (2026-02-11)`: preview pipeline now serializes canonical blocks and resolves media references (image blocks + featured image) for preview HTML output, with legacy HTML fallback retained (`apps/api/src/features/preview-routes.js`).
+- `Increment complete (2026-02-11)`: WP façade update paths preserve canonical metadata fields and map `featured_media` consistently (`apps/api/src/features/wp-core-routes.js`).
+- `Increment complete (2026-02-11)`: published versioned WP REST compatibility profile for `/wp/v2` behavior (`docs/reference/wp-compatibility-profile.md`).
+- `Increment complete (2026-02-11)`: added acceptance flow matrix coverage for revision -> preview -> publish -> private delivery including media and taxonomy persistence (`packages/testing/test/api.flow.acceptance.test.js`).
+- `Increment complete (2026-02-11)`: editor chrome/workspace alignment pass landed for Gutenberg shell integration in admin layout (`apps/admin-web/src/features/editor/components/canvas.web.css`).
+- `Remaining in this phase`: embed validation policy hardening; navigation block parity; replacement of transitional featured-image/media-id controls; templates/patterns lifecycle; and complete editor/preview/live theme parity polish.
 
 ### Phase 12B Parallel Execution Plan (primary + agent-2)
 
@@ -205,7 +210,7 @@ Ownership split (to avoid conflicts):
 Conflict guardrails:
 - `Agent-2` must not modify `apps/admin-web/src/features/editor/**` or `apps/admin-web/src/features/theme/**`.
 - `Primary` should avoid editing `apps/api/src/features/*`, `packages/publish/src/publisher.js`, and `packages/testing/test/api.*` during agent-2 execution window.
-- `PLANNING.md` and `idea.md` are primary-owned and updated only after both tracks merge.
+- `PLANNING.md` and `docs/internal/edgepress-content-extensibility-spec.md` are primary-owned and updated only after both tracks merge.
 
 Execution order:
 1. Agent-2 branches from current phase tip (`phase12b-flow-compat-hardening`) and lands small commits grouped by: flow fixes -> tests -> docs.
@@ -333,7 +338,7 @@ Exit criteria:
 ## Dependencies & Notes
 - Ports + Domain must not depend on infrastructure; only `packages/cloudflare` uses Cloudflare-specific APIs. (`scripts/check-boundaries.js` enforces this.)
 - Canonical API tests currently validate required keys only. Replace `packages/contracts` with full schema before closing Phase 14.
-- Current docs (`idea.md`) imply Gutenberg usability improvements, but execution tracking now lives in `Phase 10` above for explicit ownership.
+- Current docs (`docs/internal/edgepress-content-extensibility-spec.md`) imply Gutenberg usability improvements, but execution tracking now lives in `Phase 10` above for explicit ownership.
 - WP façade status: `/wp/v2` compatibility routes are active as adapter views over canonical entities; strict profile publication/versioning remains pending in Phase 14.
 - Canonical model status: content model entities (`contentTypes`, `taxonomies`, `terms`, `fields`, `termIds`, `raw`, `legacyHtml`) are live; continue treating WP routes as compatibility adapters, not canonical schema drivers.
 - Concurrency caveat: KV-backed pointer/history updates in the reference Cloudflare adapter are not strongly atomic under concurrent writers; use D1 transaction boundaries or a Durable Object single-writer path when moving from reference to production guarantees.

@@ -24,7 +24,7 @@ function escapeHtml(input) {
     .replaceAll("'", '&#39;');
 }
 
-function resolveImageBlocks(blocks, mediaById) {
+export function resolveImageBlocks(blocks, mediaById) {
   if (!Array.isArray(blocks)) return [];
   return blocks.map((block) => {
     if (!block || typeof block !== 'object') return block;
