@@ -12,7 +12,7 @@ All API errors are returned as:
 
 <<< @/snippets/api-error-envelope.ts
 
-Implementation: `apps/api-edge/src/http.js`
+Implementation: `apps/api/src/http.js`
 
 ## Capability gating
 
@@ -24,7 +24,7 @@ Capability enforcement rules:
 - Invalid token signature: `AUTH_INVALID_TOKEN` (401)
 - Missing capability: `FORBIDDEN` (403)
 
-Implementation: `apps/api-edge/src/auth.js`
+Implementation: `apps/api/src/auth.js`
 
 ## Preview expiry
 
@@ -45,7 +45,7 @@ Publishing produces an immutable release manifest:
 Implementation:
 
 - `packages/domain/src/invariants.js` (`assertReleaseManifestImmutable`)
-- `packages/adapters-cloudflare/src/release-store.js` (D1/KV/in-memory behavior)
+- `packages/cloudflare/src/release-store.js` (D1/KV/in-memory behavior)
 
 ## Publish provenance normalization
 
@@ -71,4 +71,4 @@ Implementation: `packages/domain/src/provenance.js`
 ## Source of truth
 
 - `packages/domain/src/invariants.js`
-- `apps/api-edge/src/http.js`
+- `apps/api/src/http.js`

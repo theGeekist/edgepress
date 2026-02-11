@@ -73,7 +73,7 @@ Decouple Gutenberg into a standalone, workers-first CMS by replacing the invisib
 ```
 edgepress/
 ├── apps/
-│   ├── api-edge/              # Edge Functions API (platform-agnostic)
+│   ├── api/              # Edge Functions API (platform-agnostic)
 │   └── admin-web/             # WordPress-like admin with Gutenberg
 ├── packages/
 │   ├── ports/                 # Port interface contracts
@@ -81,7 +81,7 @@ edgepress/
 │   ├── publish/               # Release compilation pipeline
 │   ├── sdk/                   # Canonical API client
 │   ├── testing/               # In-memory adapters + tests
-│   └── adapters-cloudflare/   # Cloudflare reference implementation
+│   └── cloudflare/   # Cloudflare reference implementation
 ├── docs/                     # Documentation
 ├── idea.md                   # Architectural vision
 └── PLANNING.md               # Phase tracker & roadmap
@@ -249,8 +249,8 @@ bun run docs:gen                # Generate API reference
 
 1. **Domain**: Add entity/invariant to `packages/domain/`
 2. **Ports**: Define interface in `packages/ports/`
-3. **Adapters**: Implement in `packages/adapters-cloudflare/` AND `packages/testing/` (for tests)
-4. **API**: Add route to `apps/api-edge/src/features/`
+3. **Adapters**: Implement in `packages/cloudflare/` AND `packages/testing/` (for tests)
+4. **API**: Add route to `apps/api/src/features/`
 5. **Admin**: Add state/hooks to `apps/admin-web/src/features/`
 6. **SDK**: Add client method to `packages/sdk/src/client.js`
 7. **Tests**: Add to `packages/testing/test/`
@@ -260,7 +260,7 @@ See `docs/skills-reference.md` for detailed patterns.
 
 ### Boundary Enforcement
 
-**Critical Rule**: `apps/api-edge` and `packages/*` (except `adapters-cloudflare`) cannot import Cloudflare-specific APIs.
+**Critical Rule**: `apps/api` and `packages/*` (except `cloudflare`) cannot import Cloudflare-specific APIs.
 
 **Why**: Ensures core remains platform-agnostic. You can swap Cloudflare → AWS by changing only the adapter.
 

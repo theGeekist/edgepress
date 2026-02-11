@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createCloudflareReferencePlatform } from '../../cloudflare/src/index.js';
-import { createApiHandler } from '../../../apps/api-edge/src/app.js';
+import { createApiHandler } from '../../../apps/api/src/app.js';
 import { requestJson } from '../src/testUtils.js';
 import { createFakeD1, createFakeKV } from './helpers/cloudflareFakes.js';
 

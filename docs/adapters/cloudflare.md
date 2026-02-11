@@ -10,7 +10,7 @@ Wrangler config:
 
 Adapter code:
 
-- `packages/adapters-cloudflare/src/worker.js`
+- `packages/cloudflare/src/worker.js`
 
 ## Bindings
 
@@ -34,8 +34,8 @@ When `D1` is not available, it falls back to KV (if present), then in-memory.
 
 Implementation:
 
-- `packages/adapters-cloudflare/src/release-store.js`
-- `packages/adapters-cloudflare/src/d1-sql.js`
+- `packages/cloudflare/src/release-store.js`
+- `packages/cloudflare/src/d1-sql.js`
 
 ## Local and deployed smoke tests
 

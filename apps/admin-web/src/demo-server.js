@@ -1,7 +1,7 @@
 import http from 'node:http';
-import { createInMemoryPlatform } from '../../../packages/testing/src/store.js';
-import { createApiHandler } from '../../api-edge/src/app.js';
-import { attachServerHooks } from '../../api-edge/src/hooks-bootstrap.js';
+import { createInMemoryPlatform } from '@geekist/edgepress/testing';
+import { createApiHandler } from '../../api/src/app.js';
+import { attachServerHooks } from '../../api/src/hooks-bootstrap.js';
 import { createAdminShell } from './features/editor';
 
 const platform = createInMemoryPlatform();

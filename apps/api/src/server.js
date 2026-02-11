@@ -1,5 +1,5 @@
 import http from 'node:http';
-import { createInMemoryPlatform } from '../../../packages/testing/src/store.js';
+import { createInMemoryPlatform } from '@geekist/edgepress/testing';
 import { createApiHandler } from './app.js';
 import { attachServerHooks } from './hooks-bootstrap.js';
 
@@ -28,5 +28,5 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(port, () => {
-  console.log(`api-edge listening on http://localhost:${port}`);
+  console.log(`api listening on http://localhost:${port}`);
 });
