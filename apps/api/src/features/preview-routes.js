@@ -1,30 +1,27 @@
 import { assertPreviewNotExpired } from '@geekist/edgepress/domain';
 import { normalizeBlocksInput } from '@geekist/edgepress/domain/blocks.js';
+import { resolveImageBlocks } from '@geekist/edgepress/publish';
 import { serialize } from '@wordpress/blocks';
 import { requireCapability } from '../auth.js';
 import { error, json } from '../http.js';
 import { parseTtlSeconds, signPreviewToken, verifyPreviewTokenSignature } from '../runtime-utils.js';
 
-// Reuse media resolution logic from publisher.
-function resolveImageBlocks(blocks, mediaById) {
-  if (!Array.isArray(blocks)) return [];
-  return blocks.map((block) => {
-    if (!block || typeof block !== 'object') return block;
-    const attributes = block.attributes && typeof block.attributes === 'object' ? { ...block.attributes } : {};
-    const mediaId = String(attributes.mediaId || attributes.id || '').trim();
-    if (block.name === 'core/image' && mediaId && mediaById.has(mediaId)) {
-      const media = mediaById.get(mediaId);
-      attributes.url = media.url || attributes.url || '';
-      if (!attributes.alt && media.alt) {
-        attributes.alt = media.alt;
-      }
+function collectMediaIds(blocks, featuredImageId) {
+  const ids = new Set();
+  const walk = (items) => {
+    if (!Array.isArray(items)) return;
+    for (const block of items) {
+      if (!block || typeof block !== 'object') continue;
+      const attrs = block.attributes && typeof block.attributes === 'object' ? block.attributes : {};
+      const mediaId = String(attrs.mediaId || attrs.id || '').trim();
+      if (mediaId) ids.add(mediaId);
+      walk(block.innerBlocks);
     }
-    return {
-      ...block,
-      attributes,
-      innerBlocks: resolveImageBlocks(block.innerBlocks, mediaById)
-    };
-  });
+  };
+  walk(blocks);
+  const featured = String(featuredImageId || '').trim();
+  if (featured) ids.add(featured);
+  return ids;
 }
 
 function escapeHtml(input) {
@@ -117,12 +114,17 @@ export function createPreviewRoutes({ runtime, store, previewStore, route, authz
         if (!doc) return error('DOCUMENT_NOT_FOUND', 'Document not found', 404);
         const themeVars = parseThemeVarsFromRequest(request);
 
-        // Load media for block resolution and featured image.
-        const mediaListed = typeof store.listMedia === 'function'
-          ? await store.listMedia({ page: 1, pageSize: 500 })
-          : { items: [] };
-        const mediaItems = Array.isArray(mediaListed) ? mediaListed : mediaListed?.items || [];
-        const mediaById = new Map(mediaItems.map((item) => [item.id, item]));
+        // Load only media referenced by blocks/featured image to avoid pagination truncation.
+        const requestedIds = collectMediaIds(doc.blocks, doc.featuredImageId);
+        const mediaById = new Map();
+        if (requestedIds.size > 0 && typeof store.getMedia === 'function') {
+          await Promise.all(
+            Array.from(requestedIds).map(async (mediaId) => {
+              const media = await store.getMedia(mediaId);
+              if (media) mediaById.set(media.id, media);
+            })
+          );
+        }
 
         // Serialize blocks to HTML with media resolution, falling back to legacy content if blocks are empty.
         let serializedBlocks;

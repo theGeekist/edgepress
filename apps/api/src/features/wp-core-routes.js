@@ -21,6 +21,18 @@ function parseFieldString(value) {
   return '';
 }
 
+function toWpStatus(status) {
+  const value = String(status || '').trim();
+  if (!value) return 'draft';
+  return value === 'published' ? 'publish' : value;
+}
+
+function fromWpStatus(status) {
+  const value = String(status || '').trim();
+  if (!value) return 'draft';
+  return value === 'publish' ? 'published' : value;
+}
+
 function toWpPost(doc, requestUrl) {
   const type = doc?.type === 'post' ? 'post' : 'page';
   const title = String(doc?.title || '');
@@ -38,7 +50,7 @@ function toWpPost(doc, requestUrl) {
     modified,
     modified_gmt: modified,
     slug,
-    status: doc?.status || 'draft',
+    status: toWpStatus(doc?.status),
     type,
     link: `${siteOrigin}${permalinkPath}`,
     title: { raw: title, rendered: title },
@@ -318,7 +330,7 @@ export function createWpCoreRoutes({ runtime, store, route, authzErrorResponse }
           type: 'post',
           slug: String(body.slug || ''),
           featuredImageId: body.featured_media || '',
-          status: String(body.status || 'draft'),
+          status: fromWpStatus(body.status),
           createdBy: user.id
         });
         return json(toWpPost(created, request.url), 201);
@@ -341,7 +353,7 @@ export function createWpCoreRoutes({ runtime, store, route, authzErrorResponse }
           type: 'page',
           slug: String(body.slug || ''),
           featuredImageId: body.featured_media || '',
-          status: String(body.status || 'draft'),
+          status: fromWpStatus(body.status),
           createdBy: user.id
         });
         return json(toWpPost(created, request.url), 201);
@@ -365,13 +377,13 @@ export function createWpCoreRoutes({ runtime, store, route, authzErrorResponse }
           legacyHtml: nextContent,
           slug: body.slug ?? existing.slug,
           featuredImageId: body.featured_media ?? existing.featuredImageId,
-          status: body.status ?? existing.status,
+          status: body.status != null ? fromWpStatus(body.status) : existing.status,
           excerpt: existing.excerpt || '',
           fields: existing.fields || {},
           termIds: existing.termIds || [],
           raw: existing.raw || {},
           blocks: existing.blocks || [],
-          blocksSchemaVersion: existing.blocksSchemaVersion
+          blocksSchemaVersion: body.blocksSchemaVersion ?? existing.blocksSchemaVersion ?? 1
         });
         return json(toWpPost(updated, request.url));
       } catch (e) {
@@ -394,13 +406,13 @@ export function createWpCoreRoutes({ runtime, store, route, authzErrorResponse }
           legacyHtml: nextContent,
           slug: body.slug ?? existing.slug,
           featuredImageId: body.featured_media ?? existing.featuredImageId,
-          status: body.status ?? existing.status,
+          status: body.status != null ? fromWpStatus(body.status) : existing.status,
           excerpt: existing.excerpt || '',
           fields: existing.fields || {},
           termIds: existing.termIds || [],
           raw: existing.raw || {},
           blocks: existing.blocks || [],
-          blocksSchemaVersion: existing.blocksSchemaVersion
+          blocksSchemaVersion: body.blocksSchemaVersion ?? existing.blocksSchemaVersion ?? 1
         });
         return json(toWpPost(updated, request.url));
       } catch (e) {
