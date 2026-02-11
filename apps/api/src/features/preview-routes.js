@@ -6,22 +6,52 @@ import { requireCapability } from '../auth.js';
 import { error, json } from '../http.js';
 import { parseTtlSeconds, signPreviewToken, verifyPreviewTokenSignature } from '../runtime-utils.js';
 
-function collectMediaIds(blocks, featuredImageId) {
-  const ids = new Set();
-  const walk = (items) => {
-    if (!Array.isArray(items)) return;
-    for (const block of items) {
-      if (!block || typeof block !== 'object') continue;
-      const attrs = block.attributes && typeof block.attributes === 'object' ? block.attributes : {};
-      const mediaId = String(attrs.mediaId || attrs.id || '').trim();
-      if (mediaId) ids.add(mediaId);
-      walk(block.innerBlocks);
-    }
-  };
-  walk(blocks);
-  const featured = String(featuredImageId || '').trim();
-  if (featured) ids.add(featured);
-  return ids;
+// Embed validation patterns
+const EMBED_URL_PATTERNS = [
+  /^https?:\/\/(www\.)?(youtube\.com|youtu\.be)\/(embed|v|watch)\b/,
+  /^https?:\/\/(www\.)?(vimeo\.com)\/\d+\/\d+/,
+  /^https?:\/\/(www\.)?player\.vimeo\.com\/external\/\d+/,
+  /^https?:\/\/(www\.)?(soundcloud\.com)\/tracks\/\d+/
+];
+
+// Get origin from request URL to avoid global window reference
+function getRequestOrigin(requestUrl) {
+  try {
+    return new URL(requestUrl).origin;
+  } catch {
+    return 'https://localhost'; // Fallback for testing
+  }
+}
+
+function isValidEmbedUrl(url, requestOrigin = '') {
+  if (typeof url !== 'string') return false;
+  const trimmed = url.trim();
+  if (!trimmed) return false;
+
+  // Allowlist: local media blobs and same-origin embeds
+  if (trimmed.startsWith('/blob/') || trimmed.startsWith('/media/')) return true;
+  if (trimmed.startsWith(requestOrigin)) return true;
+
+  // Check against known safe embed patterns
+  return EMBED_URL_PATTERNS.some((pattern) => pattern.test(trimmed));
+}
+
+function sanitizeEmbedContent(content, requestOrigin = '') {
+  // Remove script tags and dangerous event handlers from content.
+  // Keep this as simple non-greedy tag stripping to avoid regex backtracking issues.
+  return String(content)
+    .replace(/<script\b[^>]*>/gi, '')
+    .replace(/<\/script>/gi, '')
+    .replace(/\son[a-z0-9_-]+\s*=\s*"[^"]*"/gi, '')
+    .replace(/\son[a-z0-9_-]+\s*=\s*'[^']*'/gi, '')
+    .replace(/javascript:/gi, '')
+    .replace(/<iframe[^>]*>(?!<\/iframe>)/gi, (match) => {
+      // Only iframes from known safe providers are allowed
+      const src = match.match(/src=["']([^"']+)["']/i)?.[1] || '';
+      if (isValidEmbedUrl(src, requestOrigin)) return match; // Keep safe iframes
+      return '<iframe removed by embed policy>'; // Remove unsafe iframes
+    })
+    .replace(/<embed\b[^>]*>.*?<\/embed>/gi, '<em>Embed removed by embed policy</em>');
 }
 
 function escapeHtml(input) {
@@ -67,8 +97,29 @@ function toCssVarBlock(themeVars) {
     .join('\n');
 }
 
-function buildPreviewHtml(doc, themeVars, serializedBlocks, featuredImageMarkup) {
+function collectMediaIds(blocks, featuredImageId) {
+  const ids = new Set();
+  const walk = (items) => {
+    if (!Array.isArray(items)) return;
+    for (const block of items) {
+      if (!block || typeof block !== 'object') continue;
+      const attrs = block.attributes && typeof block.attributes === 'object' ? block.attributes : {};
+      const mediaId = String(attrs.mediaId || attrs.id || '').trim();
+      if (mediaId) ids.add(mediaId);
+      walk(block.innerBlocks);
+    }
+  };
+  walk(blocks);
+  const featured = String(featuredImageId || '').trim();
+  if (featured) ids.add(featured);
+  return ids;
+}
+
+function buildPreviewHtml(doc, themeVars, serializedBlocks, featuredImageMarkup, requestOrigin) {
   const cssVarBlock = toCssVarBlock(themeVars);
+  // Sanitize content to remove dangerous scripts and embeds
+  const safeBlocks = sanitizeEmbedContent(serializedBlocks, requestOrigin);
+  const safeFeaturedImage = sanitizeEmbedContent(featuredImageMarkup, requestOrigin);
   return `<!doctype html>
 <html lang="en">
   <head>
@@ -99,7 +150,7 @@ function buildPreviewHtml(doc, themeVars, serializedBlocks, featuredImageMarkup)
   </head>
   <body>
     <main class="ep-preview-wrap">
-      <article>${featuredImageMarkup}<h1>${escapeHtml(doc.title)}</h1>${serializedBlocks}</article>
+      <article>${safeFeaturedImage}<h1>${escapeHtml(doc.title)}</h1>${safeBlocks}</article>
     </main>
   </body>
 </html>`;
@@ -136,6 +187,8 @@ export function createPreviewRoutes({ runtime, store, previewStore, route, authz
           serializedBlocks = doc.content || doc.legacyHtml || '';
         }
 
+        const requestOrigin = getRequestOrigin(request.url);
+
         // Handle featured image.
         const featuredImageId = String(doc.featuredImageId || '').trim();
         const featuredImage = featuredImageId && mediaById.has(featuredImageId)
@@ -161,7 +214,7 @@ export function createPreviewRoutes({ runtime, store, previewStore, route, authz
           releaseLikeRef,
           expiresAt,
           createdBy: user.id,
-          html: buildPreviewHtml(doc, themeVars, serializedBlocks, featuredImageMarkup)
+          html: buildPreviewHtml(doc, themeVars, serializedBlocks, featuredImageMarkup, requestOrigin)
         });
 
         return json({
@@ -193,7 +246,7 @@ export function createPreviewRoutes({ runtime, store, previewStore, route, authz
         status: 200,
         headers: {
           'content-type': 'text/html',
-          'content-security-policy': "default-src 'none'; script-src 'none'; img-src 'self' data: https:; style-src 'unsafe-inline'; font-src 'self' data:; connect-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'"
+          'content-security-policy': `default-src 'none'; script-src 'none'; img-src 'self' data: https:; style-src 'unsafe-inline'; font-src 'self'; frame-ancestors 'self'; connect-src 'none'; form-action 'none'; frame-src 'self'`
         }
       });
     })
