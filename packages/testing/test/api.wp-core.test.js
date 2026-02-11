@@ -138,6 +138,7 @@ test('wp-core: GET /types/:type returns single type record', async () => {
   assert.equal(pageType.res.status, 200);
   assert.equal(pageType.json.slug, 'page');
 
+  // Intentional WP-compat fallback: unknown types normalize to page instead of 404.
   const invalidType = await requestJson(handler, 'GET', '/wp/v2/types/invalid', { token: accessToken });
   assert.equal(invalidType.res.status, 200);
   assert.equal(invalidType.json.slug, 'page');

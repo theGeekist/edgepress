@@ -24,6 +24,7 @@ test('preview: preview route handles themeVars parameter validation', async () =
 
   const largePayload = '--ep-x:'.repeat(10000);
   const oversized = await requestJson(handler, 'GET', `/v1/preview/${created.json.document.id}?themeVars=${largePayload}`, { token: accessToken });
+  // Oversized/invalid themeVars are intentionally ignored (best-effort), not request-fatal.
   assert.equal(oversized.res.status, 200);
 });
 

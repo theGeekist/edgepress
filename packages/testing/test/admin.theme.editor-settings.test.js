@@ -68,9 +68,9 @@ test('toWpEditorSettings emits editor root CSS from theme tokens', () => {
   });
 
   const css = settings.styles[0].css;
-  assert.ok(css.includes('font-size:72px'));
-  assert.ok(css.includes('font-size:28px'));
-  assert.ok(css.includes('max-width:900px'));
-  assert.ok(css.includes('max-width:1300px'));
-  assert.ok(css.includes('color:#8899aa'));
+  assert.match(css, /font-size:\s*72px/);
+  assert.match(css, /font-size:\s*28px/);
+  assert.match(css, /max-width:\s*900px/);
+  assert.match(css, /max-width:\s*1300px/);
+  assert.match(css, /color:\s*#8899aa/);
 });

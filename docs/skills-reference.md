@@ -224,11 +224,11 @@ bun run lint
 | Port | Cloudflare Service | Implementation File |
 |------|-------------------|---------------------|
 | RuntimePort | Workers runtime | `runtime.js` |
-| StructuredStore | D1 (SQLite) | `app-store.js`, `d1-sql.js` |
+| StructuredStore | D1 (SQLite) | `store.js`, `d1-sql.js` |
 | BlobStore | R2 (object storage) | `io-stores.js` |
 | CacheStore | KV (key-value) | `io-stores.js` |
 | ReleaseStore | D1 + KV hybrid | `release-store.js` |
-| PreviewStore | D1 | Part of `app-store.js` |
+| PreviewStore | D1 | Part of `store.js` |
 
 #### Worker Composition Root
 
