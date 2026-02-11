@@ -23,7 +23,7 @@ function getRequestOrigin(requestUrl) {
   }
 }
 
-function isValidEmbedUrl(url, _requestOrigin) {
+function isValidEmbedUrl(url, requestOrigin = '') {
   if (typeof url !== 'string') return false;
   const trimmed = url.trim();
   if (!trimmed) return false;
@@ -36,17 +36,19 @@ function isValidEmbedUrl(url, _requestOrigin) {
   return EMBED_URL_PATTERNS.some((pattern) => pattern.test(trimmed));
 }
 
-function sanitizeEmbedContent(content) {
-  // Remove script tags and dangerous event handlers from content
+function sanitizeEmbedContent(content, requestOrigin = '') {
+  // Remove script tags and dangerous event handlers from content.
+  // Keep this as simple non-greedy tag stripping to avoid regex backtracking issues.
   return String(content)
-    .replace(/<script\b[^>]*>.*?<\/script>/gi, '')
-    .replace(/on\w+.*?=\s*"/gi, '')
-    .replace(/onerror\s*=\s*"/gi, '')
+    .replace(/<script\b[^>]*>/gi, '')
+    .replace(/<\/script>/gi, '')
+    .replace(/\son[a-z0-9_-]+\s*=\s*"[^"]*"/gi, '')
+    .replace(/\son[a-z0-9_-]+\s*=\s*'[^']*'/gi, '')
     .replace(/javascript:/gi, '')
     .replace(/<iframe[^>]*>(?!<\/iframe>)/gi, (match) => {
       // Only iframes from known safe providers are allowed
       const src = match.match(/src=["']([^"']+)["']/i)?.[1] || '';
-      if (isValidEmbedUrl(src, getRequestOrigin())) return match; // Keep safe iframes
+      if (isValidEmbedUrl(src, requestOrigin)) return match; // Keep safe iframes
       return '<iframe removed by embed policy>'; // Remove unsafe iframes
     })
     .replace(/<embed\b[^>]*>.*?<\/embed>/gi, '<em>Embed removed by embed policy</em>');
@@ -113,12 +115,11 @@ function collectMediaIds(blocks, featuredImageId) {
   return ids;
 }
 
-// eslint-disable-next-line no-unused-vars -- buildPreviewHtml takes requestOrigin but passes it to isValidEmbedUrl
 function buildPreviewHtml(doc, themeVars, serializedBlocks, featuredImageMarkup, requestOrigin) {
   const cssVarBlock = toCssVarBlock(themeVars);
   // Sanitize content to remove dangerous scripts and embeds
-  const safeBlocks = sanitizeEmbedContent(serializedBlocks);
-  const safeFeaturedImage = sanitizeEmbedContent(featuredImageMarkup);
+  const safeBlocks = sanitizeEmbedContent(serializedBlocks, requestOrigin);
+  const safeFeaturedImage = sanitizeEmbedContent(featuredImageMarkup, requestOrigin);
   return `<!doctype html>
 <html lang="en">
   <head>
@@ -186,8 +187,6 @@ export function createPreviewRoutes({ runtime, store, previewStore, route, authz
           serializedBlocks = doc.content || doc.legacyHtml || '';
         }
 
-        // Sanitize content to remove dangerous embeds and scripts
-        serializedBlocks = sanitizeEmbedContent(serializedBlocks);
         const requestOrigin = getRequestOrigin(request.url);
 
         // Handle featured image.
@@ -198,9 +197,6 @@ export function createPreviewRoutes({ runtime, store, previewStore, route, authz
         const featuredImageMarkup = featuredImage?.url
           ? `<figure><img src="${escapeHtml(featuredImage.url)}" alt="${escapeHtml(featuredImage.alt || '')}" /></figure>`
           : '';
-
-        // Sanitize featured image markup
-        const safeFeaturedImage = sanitizeEmbedContent(featuredImageMarkup);
 
         const previewTtlSeconds = parseTtlSeconds(runtime.env('PREVIEW_TTL_SECONDS'), {
           fallback: 15 * 60,
@@ -218,7 +214,7 @@ export function createPreviewRoutes({ runtime, store, previewStore, route, authz
           releaseLikeRef,
           expiresAt,
           createdBy: user.id,
-          html: buildPreviewHtml(doc, themeVars, serializedBlocks, safeFeaturedImage, getRequestOrigin(request.url))
+          html: buildPreviewHtml(doc, themeVars, serializedBlocks, featuredImageMarkup, requestOrigin)
         });
 
         return json({
