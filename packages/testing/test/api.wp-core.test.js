@@ -1,8 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createApiHandler } from '../../../apps/api/src/app.js';
 import { createInMemoryPlatform } from '../src/store.js';
-import { authAsAdmin, requestJson } from '../src/testUtils.js';
+import { authAsAdmin, createHandler, requestJson } from '../src/testUtils.js';
 
 test('wp-core: POST /posts with various content formats parses correctly', async () => {
   const platform = createInMemoryPlatform();
@@ -43,7 +42,7 @@ test('wp-core: POST /posts with various content formats parses correctly', async
 
 test('wp-core: GET /posts/:id requires authentication', async () => {
   const platform = createInMemoryPlatform();
-  const handler = createApiHandler(platform);
+  const handler = createHandler(platform);
 
   const res = await handler(new Request('http://test.local/wp/v2/posts/999999999'));
   assert.equal(res.status, 401);
@@ -51,7 +50,7 @@ test('wp-core: GET /posts/:id requires authentication', async () => {
 
 test('wp-core: GET /pages/:id requires authentication', async () => {
   const platform = createInMemoryPlatform();
-  const handler = createApiHandler(platform);
+  const handler = createHandler(platform);
 
   const res = await handler(new Request('http://test.local/wp/v2/pages/999999999'));
   assert.equal(res.status, 401);
@@ -91,8 +90,11 @@ test('wp-core: GET /pages returns pages with WP-compatible format', async () => 
   assert.equal(pages.res.status, 200);
   assert.ok(Array.isArray(pages.json));
   assert.ok(pages.json.length > 0);
-  assert.ok(pages.json[0].title);
-  assert.ok(pages.json[0].content);
+  const page = pages.json[0];
+  assert.ok(typeof page.id === 'number');
+  assert.ok(page.link);
+  assert.ok(page.title?.raw);
+  assert.ok(page.content?.raw);
 });
 
 test('wp-core: GET /settings returns settings object', async () => {

@@ -1,5 +1,9 @@
 import { createApiHandler } from '../../../apps/api/src/app.js';
 
+export function createHandler(platform) {
+  return createApiHandler(platform);
+}
+
 export async function requestJson(handler, method, path, { body, token, headers } = {}) {
   const reqHeaders = new Headers(headers || {});
   if (body !== undefined) reqHeaders.set('content-type', 'application/json');
@@ -21,7 +25,7 @@ export async function requestJson(handler, method, path, { body, token, headers 
 }
 
 export async function authAsAdmin(platform) {
-  const handler = createApiHandler(platform);
+  const handler = createHandler(platform);
   const { json, res } = await requestJson(handler, 'POST', '/v1/auth/token', {
     body: { username: 'admin', password: 'admin' }
   });
