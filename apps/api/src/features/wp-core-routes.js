@@ -44,7 +44,7 @@ function toWpPost(doc, requestUrl) {
     title: { raw: title, rendered: title },
     content: { raw: content, rendered: content, protected: false },
     excerpt: { raw: excerpt, rendered: excerpt, protected: false },
-    featured_media: Number.isFinite(Number(doc?.featuredImageId)) ? Number(doc.featuredImageId) : 0,
+    featured_media: doc?.featuredImageId ? toWpNumericId(doc.featuredImageId) : 0,
     meta: {}
   };
 }
@@ -365,7 +365,13 @@ export function createWpCoreRoutes({ runtime, store, route, authzErrorResponse }
           legacyHtml: nextContent,
           slug: body.slug ?? existing.slug,
           featuredImageId: body.featured_media ?? existing.featuredImageId,
-          status: body.status ?? existing.status
+          status: body.status ?? existing.status,
+          excerpt: existing.excerpt || '',
+          fields: existing.fields || {},
+          termIds: existing.termIds || [],
+          raw: existing.raw || {},
+          blocks: existing.blocks || [],
+          blocksSchemaVersion: existing.blocksSchemaVersion
         });
         return json(toWpPost(updated, request.url));
       } catch (e) {
@@ -388,7 +394,13 @@ export function createWpCoreRoutes({ runtime, store, route, authzErrorResponse }
           legacyHtml: nextContent,
           slug: body.slug ?? existing.slug,
           featuredImageId: body.featured_media ?? existing.featuredImageId,
-          status: body.status ?? existing.status
+          status: body.status ?? existing.status,
+          excerpt: existing.excerpt || '',
+          fields: existing.fields || {},
+          termIds: existing.termIds || [],
+          raw: existing.raw || {},
+          blocks: existing.blocks || [],
+          blocksSchemaVersion: existing.blocksSchemaVersion
         });
         return json(toWpPost(updated, request.url));
       } catch (e) {
