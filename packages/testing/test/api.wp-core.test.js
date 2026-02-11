@@ -90,6 +90,9 @@ test('wp-core: GET /pages returns pages with WP-compatible format', async () => 
   const pages = await requestJson(handler, 'GET', '/wp/v2/pages', { token: accessToken });
   assert.equal(pages.res.status, 200);
   assert.ok(Array.isArray(pages.json));
+  assert.ok(pages.json.length > 0);
+  assert.ok(pages.json[0].title);
+  assert.ok(pages.json[0].content);
 });
 
 test('wp-core: GET /settings returns settings object', async () => {
@@ -110,6 +113,7 @@ test('wp-core: GET /themes returns active theme', async () => {
   const res = await requestJson(handler, 'GET', '/wp/v2/themes', { token: accessToken });
   assert.equal(res.res.status, 200);
   assert.ok(Array.isArray(res.json));
+  assert.ok(res.json.length > 0, 'Expected at least one theme');
   assert.equal(res.json[0].status, 'active');
 });
 
