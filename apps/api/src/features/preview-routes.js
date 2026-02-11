@@ -23,7 +23,7 @@ function getRequestOrigin(requestUrl) {
   }
 }
 
-function isValidEmbedUrl(url, requestOrigin) {
+function isValidEmbedUrl(url, _requestOrigin) {
   if (typeof url !== 'string') return false;
   const trimmed = url.trim();
   if (!trimmed) return false;
@@ -113,6 +113,7 @@ function collectMediaIds(blocks, featuredImageId) {
   return ids;
 }
 
+// eslint-disable-next-line no-unused-vars -- buildPreviewHtml takes requestOrigin but passes it to isValidEmbedUrl
 function buildPreviewHtml(doc, themeVars, serializedBlocks, featuredImageMarkup, requestOrigin) {
   const cssVarBlock = toCssVarBlock(themeVars);
   // Sanitize content to remove dangerous scripts and embeds
