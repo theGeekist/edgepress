@@ -5,13 +5,14 @@ import { authAsAdmin, requestJson } from '../src/testUtils.js';
 
 async function uploadAndFinalizeMedia(handler, accessToken, options = {}) {
   const init = await requestJson(handler, 'POST', '/v1/media/init', { token: accessToken, body: {} });
+  assert.equal(init.res.status, 201, 'media init failed');
   const mediaId = init.json.mediaId;
   const uploadToken = init.json.uploadToken;
   const bytes = options.bytes || new Uint8Array([1, 2, 3, 4]);
   const mimeType = options.uploadMimeType || 'image/jpeg';
   const filename = options.filename || 'test.jpg';
 
-  await handler(new Request(`http://test.local/uploads/${mediaId}`, {
+  const uploadRes = await handler(new Request(`http://test.local/uploads/${mediaId}`, {
     method: 'PUT',
     headers: {
       authorization: `Bearer ${accessToken}`,
@@ -20,6 +21,7 @@ async function uploadAndFinalizeMedia(handler, accessToken, options = {}) {
     },
     body: bytes
   }));
+  assert.equal(uploadRes.status, 200, 'media upload failed');
 
   const finalize = await requestJson(handler, 'POST', `/v1/media/${mediaId}/finalize`, {
     token: accessToken,

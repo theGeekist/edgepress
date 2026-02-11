@@ -12,7 +12,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 function loadWpThemeSchema() {
-  const schemaPath = path.resolve(__dirname, '../../../gutenberg/schemas/json/theme.json');
+  const schemaPath = path.resolve(__dirname, './fixtures/gutenberg-theme.schema.json');
   return JSON.parse(readFileSync(schemaPath, 'utf8'));
 }
 

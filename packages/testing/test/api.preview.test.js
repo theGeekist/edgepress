@@ -22,7 +22,10 @@ test('preview: preview route handles themeVars parameter validation', async () =
   const existing = await requestJson(handler, 'GET', `/v1/preview/${created.json.document.id}`, { token: accessToken });
   assert.equal(existing.res.status, 200);
 
-  const largePayload = '--ep-x:'.repeat(10000);
+  const largeObj = Object.fromEntries(
+    Array.from({ length: 1200 }, (_, i) => [`--ep-var-${i}`, '#000000'])
+  );
+  const largePayload = encodeURIComponent(JSON.stringify(largeObj));
   const oversized = await requestJson(handler, 'GET', `/v1/preview/${created.json.document.id}?themeVars=${largePayload}`, { token: accessToken });
   // Oversized/invalid themeVars are intentionally ignored (best-effort), not request-fatal.
   assert.equal(oversized.res.status, 200);
@@ -48,6 +51,8 @@ test('preview: preview route requires valid signature', async () => {
 
   const invalidSig = await handler(new Request(`http://test.local/preview/${token}?sig=invalid`));
   assert.equal(invalidSig.status, 401);
+  const invalidSigBody = await invalidSig.json();
+  assert.equal(invalidSigBody.error.code, 'PREVIEW_TOKEN_INVALID');
 });
 
 test('preview: preview route handles non-existent preview token', async () => {
