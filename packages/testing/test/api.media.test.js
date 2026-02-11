@@ -45,6 +45,7 @@ async function uploadAndFinalizeMedia(handler, accessToken, options = {}) {
 
 test('media: GET /v1/media supports pagination and search', async () => {
   const platform = createInMemoryPlatform();
+  platform.blobStore.signedReadUrl = async (path, ttlSeconds = 300) => `/blob/${path}?ttl=${ttlSeconds}`;
   const { handler, accessToken } = await authAsAdmin(platform);
 
   const empty = await requestJson(handler, 'GET', '/v1/media', { token: accessToken });
@@ -56,6 +57,19 @@ test('media: GET /v1/media supports pagination and search', async () => {
   assert.equal(paged.res.status, 200);
   assert.equal(paged.json.pagination.page, 1);
   assert.equal(paged.json.pagination.pageSize, 10);
+
+  for (let i = 0; i < 12; i += 1) {
+    const uploaded = await uploadAndFinalizeMedia(handler, accessToken, {
+      filename: `asset-${i}.jpg`
+    });
+    assert.equal(uploaded.finalize.res.status, 200);
+  }
+
+  const capped = await requestJson(handler, 'GET', '/v1/media?page=1&pageSize=5', { token: accessToken });
+  assert.equal(capped.res.status, 200);
+  assert.equal(capped.json.pagination.pageSize, 5);
+  assert.ok(capped.json.pagination.totalItems >= 12);
+  assert.ok(capped.json.items.length <= 5);
 });
 
 test('media: GET /v1/media/:id returns 404 for missing media', async () => {
