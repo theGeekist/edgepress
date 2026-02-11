@@ -172,21 +172,25 @@ Exit criteria:
 - Navigation and media are first-class data models with stable API/store contracts and admin substrate flows.
 - Block-level authoring/render parity work is explicitly tracked in Phase 12B.
 
-## Phase 12B – Core Blocks and Gutenberg Parity (next)
+## Phase 12B – Core Blocks and Gutenberg Parity (in progress)
 - [x] Port/reuse core WordPress blocks and primitives needed for parity-first authoring.
 - [ ] Implement foundational block set end-to-end: rich text, image+caption, embed (with embed validation policy).
 - [ ] Implement Gutenberg navigation block parity and menu rendering semantics (no bespoke parallel pipeline).
 - [ ] Replace transitional featured-image/media-id controls with block-parity media selection primitives.
 - [ ] Ensure media/nav block flows survive revision -> preview -> publish -> live without special cases.
-- [ ] Introduce `theme.json` as first-class design token source for editor/preview/site.
+- [x] Introduce `theme.json` as first-class design token source for editor/preview/site.
 - [x] Define token resolution model and fallback policy (theme defaults vs content overrides).
 - [ ] Add templates/patterns strategy and lifecycle (registration, versioning, migration).
 - [ ] Apply theme parity across admin editing chrome, preview skin, and published output.
-- [ ] Define WP compatibility profile scope needed for block/editor parity (`wp.*` guaranteed/partial/out-of-scope).
+- [x] Define WP compatibility profile scope needed for block/editor parity (`wp.*` guaranteed/partial/out-of-scope).
 - `Increment complete (2026-02-07)`: landed canonical parity substrate with versioned canonical nodes/codecs, deterministic transform/renderer registries, fallback node (`ep/unknown`) + diagnostics, and golden transform tests (`apps/admin-web/src/features/editor/parity/{canonical.js,registries.js,resolver.js,pipeline.js,fallback.js,diagnostics.js}`, `packages/testing/test/editor.parity.transforms.test.js`).
 - `Increment complete (2026-02-07)`: ported initial WP block mappings into EP canonical/render pipelines covering paragraph, image, embed, heading, quote, separator, spacer, and layout primitives (group/columns/column/row), with deterministic publish/preview/editor targets (`apps/admin-web/src/features/editor/parity/mappings/{coreParagraph.js,coreImage.js,coreContent.js,coreLayout.js}`, `apps/admin-web/src/features/editor/parity/packs/core.js`).
 - `Increment complete (2026-02-07)`: added theme/token substrate for EP-first styling with semantic style refs, WP `theme.json` adapter origin preservation (presets vs custom), token runtime resolution/fallback behavior, and contract tests (`apps/admin-web/src/features/theme/*`, `packages/testing/test/admin.theme.tokens.test.js`).
-- `Remaining in this phase`: embed validation policy, navigation block parity, replacement of transitional featured-image controls, full media/nav revision->preview->publish->live acceptance coverage, patterns/templates lifecycle, full theme parity across editor/preview/live, and explicit WP compatibility profile publication.
+- `Increment complete (2026-02-11)`: shipped WP core compatibility façade for Gutenberg host bootstrap including settings/themes/types and post/page list/read/update/create endpoints with numeric WP-ID mapping fallback (`apps/api/src/features/wp-core-routes.js`, `packages/testing/test/api.wp-core.test.js`, `packages/testing/test/api.behavior.test.js`).
+- `Increment complete (2026-02-11)`: shipped canonical content model routes/entities for content types, taxonomies, terms (with parent/taxonomy and slug-collision validation), plus document/revision metadata snapshots (`fields`, `termIds`, `legacyHtml`, `excerpt`, `slug`, `status`, `featuredImageId`) (`apps/api/src/features/content-model-routes.js`, `apps/api/src/features/document-routes.js`, `packages/domain/src/entities.js`, `packages/testing/test/api.content-model.test.js`).
+- `Increment complete (2026-02-11)`: integrated Gutenberg host bootstrap path in admin editor with core-data entity registration and editor-provider wiring (`apps/admin-web/src/features/editor/gutenberg-host.js`, `apps/admin-web/src/features/editor/components/Canvas.jsx`, `packages/testing/test/editor.gutenberg-host.test.js`).
+- `Increment complete (2026-02-11)`: extended theme parity substrate with WP theme adapter + editor settings adapter + token runtime integration tests (`apps/admin-web/src/features/theme/{wpThemeAdapter.js,wpEditorSettingsAdapter.js,tokenRuntime.js}`, `packages/testing/test/admin.theme.editor-settings.test.js`, `packages/testing/test/admin.theme.schema.test.js`).
+- `Remaining in this phase`: embed validation policy hardening; navigation block parity; replacement of transitional featured-image/media-id controls; complete media/nav revision->preview->publish->live acceptance matrix; templates/patterns lifecycle; full editor/preview/live theme parity; and publish a strict WP compatibility profile (guaranteed/partial/out-of-scope) as a versioned artifact.
 
 Exit criteria:
 - Core block authoring uses WP-compatible primitives rather than custom transitional controls.
@@ -298,7 +302,7 @@ Exit criteria:
 - [ ] Add known degradations register and release-cut checklist.
 - [ ] Normalize API versioning/envelope/pagination rules and publish as stable guarantees.
 - [ ] Add webhook delivery surface for publish completed + release activated events.
-- [ ] Ship WP REST façade + `wp.*` compatibility profile (guaranteed/partial/out-of-scope), excluding block/editor parity scope already tracked in Phase 12B.
+- [ ] Harden and version the shipped WP REST façade + publish compatibility profile (guaranteed/partial/out-of-scope), excluding block/editor parity scope tracked in Phase 12B.
 
 Exit criteria:
 - Platform assembly, API schema, runtime parity, and compatibility guarantees are all versioned artifacts.
@@ -308,6 +312,8 @@ Exit criteria:
 - Ports + Domain must not depend on infrastructure; only `packages/cloudflare` uses Cloudflare-specific APIs. (`scripts/check-boundaries.js` enforces this.)
 - Canonical API tests currently validate required keys only. Replace `packages/contracts` with full schema before closing Phase 14.
 - Current docs (`idea.md`) imply Gutenberg usability improvements, but execution tracking now lives in `Phase 10` above for explicit ownership.
+- WP façade status: `/wp/v2` compatibility routes are active as adapter views over canonical entities; strict profile publication/versioning remains pending in Phase 14.
+- Canonical model status: content model entities (`contentTypes`, `taxonomies`, `terms`, `fields`, `termIds`, `raw`, `legacyHtml`) are live; continue treating WP routes as compatibility adapters, not canonical schema drivers.
 - Concurrency caveat: KV-backed pointer/history updates in the reference Cloudflare adapter are not strongly atomic under concurrent writers; use D1 transaction boundaries or a Durable Object single-writer path when moving from reference to production guarantees.
 - Hash caveat: current publisher hashing is intentionally non-cryptographic (`hashString`) for deterministic fingerprints and testability; do not treat `releaseHash`/`contentHash` as security primitives.
 - Block-hash caveat: missing blocks (`blocks` absent/non-array) map to a deterministic empty-block hash, while structurally invalid block arrays are logged and omitted from `manifest.blockHashes`.
