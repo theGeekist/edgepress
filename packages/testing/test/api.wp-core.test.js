@@ -168,7 +168,7 @@ test('wp-core: POST /posts/:id updates existing post', async () => {
   assert.equal(updated.res.status, 200);
   assert.equal(updated.json.title.raw, 'Updated Title');
   assert.equal(updated.json.content.raw, 'updated content');
-  assert.equal(updated.json.status, 'published');
+  assert.equal(updated.json.status, 'publish');
 });
 
 test('wp-core: POST /pages/:id updates existing page', async () => {

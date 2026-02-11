@@ -2,7 +2,7 @@
 
 **Version**: 1.0.0
 **Schema Version**: 1
-**Last Updated**: 2025-02-11
+**Last Updated**: 2026-02-11
 
 This document describes the compatibility level between EdgePress and the WordPress REST API (WP v2). It is intended for developers integrating WordPress clients or plugins with EdgePress.
 
@@ -53,7 +53,7 @@ Entity responses (posts, pages) include these guaranteed fields:
   modified: string,        // ISO 8601 modification date
   modified_gmt: string,    // Same as modified (UTC)
   slug: string,            // URL slug
-  status: string,          // draft, published, trash, etc.
+  status: string,          // draft, publish, trash, etc.
   type: string,            // 'post' or 'page'
   link: string,            // Full permalink URL
   title: {                 // Title object
@@ -77,10 +77,10 @@ Entity responses (posts, pages) include these guaranteed fields:
 
 ### ID Mapping
 
-EdgePress uses string internal IDs (e.g., `doc_abc123`, `med_xyz789`) while WordPress uses numeric IDs. The façade provides deterministic bidirectional mapping:
+EdgePress uses string internal IDs (e.g., `doc_abc123`, `med_xyz789`) while WordPress uses numeric IDs. The façade provides deterministic forward mapping with best-effort reverse lookup:
 
 - **Internal → WP**: Hash-based deterministic mapping to 31-bit positive integer
-- **WP → Internal**: Reverse lookup through document list (O(n) for n documents)
+- **WP → Internal**: Reverse lookup through document list (O(n) scan; first match wins). Hash collisions are theoretically possible at scale.
 
 Both internal IDs (e.g., `doc_123`) and WP numeric IDs work in `/:id` parameters.
 

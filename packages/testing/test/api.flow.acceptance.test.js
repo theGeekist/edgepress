@@ -50,6 +50,7 @@ test('media blocks and featured images survive revision->preview->publish->priva
     token: accessToken,
     body: {
       title: 'Media Flow Test',
+      slug: 'media-flow-test',
       content: '<p>Legacy content</p>',
       featuredImageId: mediaId,
       blocks: [
@@ -99,9 +100,11 @@ test('media blocks and featured images survive revision->preview->publish->priva
   const manifest = await platform.releaseStore.getManifest(releaseId);
   assert.ok(manifest);
   assert.ok(manifest.artifacts.length >= 1);
+  const routeSlug = String(docCreated.json.document.slug || '').trim();
+  assert.ok(routeSlug.length > 0, 'Document slug should be non-empty');
 
   // Verify artifact contains the HTML with resolved media
-  const artifact = manifest.artifacts.find((a) => a.route === docCreated.json.document.slug);
+  const artifact = manifest.artifacts.find((a) => a.route === routeSlug);
   assert.ok(artifact);
 
   const blob = await platform.blobStore.getBlob(artifact.path);
@@ -202,7 +205,9 @@ test('taxonomies and terms survive revision->preview->publish->private flow', as
   });
   assert.equal(revisions.res.status, 200);
   assert.ok(revisions.json.items.length >= 2);
-  const latestRevision = revisions.json.items[revisions.json.items.length - 1];
+  const latestRevision = [...revisions.json.items].sort(
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+  )[revisions.json.items.length - 1];
   assert.deepEqual(latestRevision.termIds, [term2.json.term.id]);
 
   // Verify we can list documents and find our document with its terms
