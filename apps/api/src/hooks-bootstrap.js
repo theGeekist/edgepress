@@ -1,4 +1,4 @@
-import { getSharedHooksRegistry, resetSharedHooksRegistry } from '../../../packages/hooks/src/index.js';
+import { getSharedHooksRegistry, resetSharedHooksRegistry } from '@geekist/edgepress/hooks';
 import { HOOK_NAMES } from './hooks.js';
 
 const SERVER_HOOK_REGISTRARS_KEY = '__edgepress_server_hook_registrars__';

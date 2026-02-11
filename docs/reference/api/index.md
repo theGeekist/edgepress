@@ -4,12 +4,12 @@ title: API
 
 # API
 
-This section documents the API surface that is implemented in `apps/api-edge` and validated by contract tests.
+This section documents the API surface that is implemented in `apps/api` and validated by contract tests.
 
 Current source of truth:
 
 - `packages/contracts/src/index.js` (contract schemas)
-- `apps/api-edge/src/app.js` (implementation)
+- `apps/api/src/app.js` (implementation)
 
 ## Conventions
 

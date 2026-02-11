@@ -60,6 +60,31 @@ test('import resolver is deterministic by priority then lexical id tie-break', (
   assert.equal(winner.id, 'a.transform');
 });
 
+test('import resolver ignores throwing canHandle and unknown block targets', () => {
+  const registry = createImportTransformRegistry([
+    {
+      id: 'throws.transform',
+      priority: 20,
+      wpBlockNames: ['core/paragraph'],
+      canHandle: () => {
+        throw new Error('bad transform');
+      },
+      toCanonical: () => ({ blockKind: 'ep/paragraph' })
+    },
+    {
+      id: 'valid.transform',
+      priority: 10,
+      wpBlockNames: ['core/paragraph'],
+      canHandle: () => true,
+      toCanonical: () => ({ blockKind: 'ep/paragraph' })
+    }
+  ]);
+
+  const winner = resolveImportTransform(registry, { wpBlockName: 'core/paragraph', node: {} });
+  assert.equal(winner.id, 'valid.transform');
+  assert.equal(resolveImportTransform(registry, { wpBlockName: 'core/image', node: {} }), null);
+});
+
 test('import apply falls back when no transform matches', () => {
   const registry = createImportTransformRegistry();
   const result = applyImportTransform(
@@ -108,6 +133,59 @@ test('renderer resolver supports explicit target fallback chain', () => {
   assert.equal(rendered.rendererId, 'paragraph.preview');
   assert.equal(rendered.targetUsed, 'preview');
   assert.equal(rendered.output, '<p>preview</p>');
+});
+
+test('renderer resolver normalizes invalid target to publish and handles canHandle throws', () => {
+  const registry = createRendererRegistry([
+    {
+      id: 'throws.renderer',
+      priority: 20,
+      blockKinds: ['ep/paragraph'],
+      targets: ['publish'],
+      canHandle: () => {
+        throw new Error('broken renderer');
+      },
+      render: () => '<p>broken</p>'
+    },
+    {
+      id: 'publish.renderer',
+      priority: 10,
+      blockKinds: ['ep/paragraph'],
+      targets: ['publish'],
+      canHandle: () => true,
+      render: () => '<p>ok</p>'
+    }
+  ]);
+
+  const resolved = resolveRenderer(registry, {
+    blockKind: 'ep/paragraph',
+    target: 'unsupported-target',
+    node: {}
+  });
+  assert.equal(resolved.targetUsed, 'publish');
+  assert.equal(resolved.renderer.id, 'publish.renderer');
+});
+
+test('registries enforce transform contracts', () => {
+  const imports = createImportTransformRegistry();
+  const renderers = createRendererRegistry();
+
+  assert.throws(
+    () => imports.register({ id: '', toCanonical: () => ({ blockKind: 'ep/x' }) }),
+    /transform id is required/
+  );
+  assert.throws(
+    () => imports.register({ id: 'x' }),
+    /toCanonical is required/
+  );
+  assert.throws(
+    () => renderers.register({ id: '', render: () => null }),
+    /transform id is required/
+  );
+  assert.throws(
+    () => renderers.register({ id: 'r' }),
+    /render is required/
+  );
 });
 
 test('diagnostics report tracks counts and supports deterministic sorting', () => {

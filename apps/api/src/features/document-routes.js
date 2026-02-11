@@ -1,4 +1,4 @@
-import { BLOCKS_SCHEMA_VERSION } from '../../../../packages/domain/src/index.js';
+import { BLOCKS_SCHEMA_VERSION } from '@geekist/edgepress/domain';
 import { requireCapability } from '../auth.js';
 import { error, json, readJson } from '../http.js';
 import { normalizeBlocksForWrite } from '../request-validation.js';

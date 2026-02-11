@@ -29,13 +29,13 @@
     "./testing": "./packages/testing/src/store.js",
     "./testing/*": "./packages/testing/src/*.js",
     "./testing/src/*": "./packages/testing/src/*",
-    "./adapters-cloudflare": "./packages/adapters-cloudflare/src/index.js",
-    "./adapters-cloudflare/*": "./packages/adapters-cloudflare/src/*.js",
-    "./adapters-cloudflare/src/*": "./packages/adapters-cloudflare/src/*"
+    "./cloudflare": "./packages/cloudflare/src/index.js",
+    "./cloudflare/*": "./packages/cloudflare/src/*.js",
+    "./cloudflare/src/*": "./packages/cloudflare/src/*"
   },
   "scripts": {
     "test": "bun test",
-    "start:api": "bun apps/api-edge/src/server.js",
+    "start:api": "bun apps/api/src/server.js",
     "start:api:worker": "wrangler dev",
     "check:boundaries": "bun scripts/check-boundaries.js",
     "docs:dev": "bun run --filter docs dev",

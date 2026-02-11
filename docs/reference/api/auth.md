@@ -8,8 +8,8 @@ Endpoints live under `/v1/auth/*`.
 
 Source:
 
-- `apps/api-edge/src/app.js`
-- `apps/api-edge/src/auth.js`
+- `apps/api/src/app.js`
+- `apps/api/src/auth.js`
 
 ## Endpoints
 

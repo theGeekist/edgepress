@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createAdminShell } from '../../../apps/admin-web/src/features/editor/shell.js';
 import { createInMemoryPlatform } from '../src/store.js';
-import { createApiHandler } from '../../../apps/api-edge/src/app.js';
+import { createApiHandler } from '../../../apps/api/src/app.js';
 
 function createLocalFetch(handler) {
   return async (url, init = {}) => {

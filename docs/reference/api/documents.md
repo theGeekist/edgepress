@@ -8,7 +8,7 @@ Endpoints live under `/v1/documents/*`.
 
 Source:
 
-- `apps/api-edge/src/app.js`
+- `apps/api/src/app.js`
 - `packages/domain/src/entities.js`
 
 ## Endpoints
