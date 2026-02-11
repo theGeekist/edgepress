@@ -42,6 +42,7 @@ export function createFakeD1({ allRows = {}, firstRows = {} } = {}) {
       return api;
     },
     async batch(ops) {
+      // Minimal fake: records that batch was invoked; it does not execute statements.
       calls.push({ kind: 'batch', count: ops.length });
       return [];
     }

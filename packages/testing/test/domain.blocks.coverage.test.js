@@ -3,9 +3,15 @@ import assert from 'node:assert/strict';
 
 import { normalizeBlocksInput } from '../../domain/src/blocks.js';
 
-test('normalizeBlocksInput covers validation and defaults branches', () => {
+test('normalizeBlocksInput returns empty list when undefined', () => {
   assert.deepEqual(normalizeBlocksInput(undefined), []);
+});
+
+test('normalizeBlocksInput validates non-array input', () => {
   assert.throws(() => normalizeBlocksInput({}), /blocks must be an array/);
+});
+
+test('normalizeBlocksInput validates each block entry shape', () => {
   assert.throws(() => normalizeBlocksInput([1]), /must be an object/);
   assert.throws(() => normalizeBlocksInput([{ name: '' }]), /must be a non-empty string/);
   assert.throws(
@@ -16,7 +22,9 @@ test('normalizeBlocksInput covers validation and defaults branches', () => {
     () => normalizeBlocksInput([{ name: 'core/paragraph', attributes: 'bad' }]),
     /attributes must be an object/
   );
+});
 
+test('normalizeBlocksInput applies defaults and deterministic key order', () => {
   const normalized = normalizeBlocksInput([{
     name: 'core/group',
     attributes: { z: 1, a: { b: 2, a: 1 } },

@@ -6,7 +6,7 @@ title: Concepts
 
 EdgePress is organized around a few ideas:
 
-- The API edge handler is platform-agnostic; infra details sit behind `ports` and adapters.
+- The API handler is platform-agnostic; infra details sit behind `ports` and adapters.
 - The security model is capability-based. Endpoints require a specific capability string.
 - Documents produce revisions. Publishing produces releases.
 - Releases are immutable: publish writes artifacts + a manifest, then you can atomically switch the active release.

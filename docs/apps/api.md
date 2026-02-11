@@ -1,8 +1,8 @@
 ---
-title: API Edge
+title: API
 ---
 
-# API Edge
+# API
 
 Entry point:
 

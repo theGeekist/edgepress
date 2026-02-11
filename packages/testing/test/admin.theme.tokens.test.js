@@ -100,6 +100,7 @@ test('theme runtime merges overlays and emits css vars + ui palette', () => {
   const merged = mergeEpThemes(defaultLightTheme, {
     tokens: {
       color: { accent: '#ff5500' },
+      palette: [{ slug: 'brand', name: 'Brand', value: '#ff5500' }],
       spacing: { md: '14px' }
     },
     surfaces: {
@@ -109,6 +110,7 @@ test('theme runtime merges overlays and emits css vars + ui palette', () => {
 
   const vars = toCssVars(merged);
   assert.equal(vars['--ep-color-accent'], '#ff5500');
+  assert.equal(vars['--ep-palette-brand'], '#ff5500');
   assert.equal(vars['--ep-space-md'], '14px');
   assert.equal(vars['--ep-surface-topbar'], '#222');
 

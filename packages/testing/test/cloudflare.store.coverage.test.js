@@ -36,7 +36,7 @@ test('cloudflare navigation adapters cover d1 and kv branches', async () => {
 });
 
 test('cloudflare documents/content-model adapters cover d1 and kv branches', async () => {
-  const now = createRuntime();
+  const runtime = createRuntime();
   const D1_SQL = {
     selectDocuments: 'selectDocuments',
     selectDocumentById: 'selectDocumentById',
@@ -81,7 +81,7 @@ test('cloudflare documents/content-model adapters cover d1 and kv branches', asy
     }
   });
 
-  const docsD1 = createDocumentsD1(d1, D1_SQL, parseJsonSafe, now, async () => {});
+  const docsD1 = createDocumentsD1(d1, D1_SQL, parseJsonSafe, runtime, async () => {});
   assert.equal((await docsD1.listDocuments()).items.length, 1);
   assert.equal((await docsD1.getDocument('doc_1')).id, 'doc_1');
   assert.equal((await docsD1.updateDocument('missing', { title: 'x' })), null);
@@ -93,7 +93,7 @@ test('cloudflare documents/content-model adapters cover d1 and kv branches', asy
   await docsD1.deleteDocument('doc_1', { permanent: true });
   await docsD1.createRevision({ id: 'rev_2', documentId: 'doc_1', title: 'Doc', content: '' });
 
-  const cmD1 = createContentModelD1(d1, D1_SQL, parseJsonSafe, now, async () => {});
+  const cmD1 = createContentModelD1(d1, D1_SQL, parseJsonSafe, runtime, async () => {});
   assert.equal((await cmD1.listContentTypes()).length, 1);
   assert.equal((await cmD1.getContentType('post')).slug, 'post');
   await cmD1.upsertContentType({ id: 'ct_2', slug: 'page', label: 'Page', fields: [] });
@@ -107,7 +107,7 @@ test('cloudflare documents/content-model adapters cover d1 and kv branches', asy
 
   const { appKey, kvGetJson, kvPutJson, kvIndexAdd, kvDelete } = createKvHelpers();
 
-  const docsKv = createDocumentsKv(appKey, kvGetJson, kvPutJson, async () => {}, kvIndexAdd, now);
+  const docsKv = createDocumentsKv(appKey, kvGetJson, kvPutJson, async () => {}, kvIndexAdd, runtime);
   await docsKv.createDocument({ id: 'doc_kv', title: 'KV', content: '' });
   assert.equal((await docsKv.listDocuments()).items.length, 1);
   assert.equal((await docsKv.getDocument('doc_kv')).id, 'doc_kv');
@@ -117,7 +117,7 @@ test('cloudflare documents/content-model adapters cover d1 and kv branches', asy
   assert.equal((await docsKv.getRevision('rev_kv')).id, 'rev_kv');
   await docsKv.deleteDocument('doc_kv', { permanent: true }, kvDelete);
 
-  const cmKv = createContentModelKv(appKey, kvGetJson, kvPutJson, async () => {}, kvIndexAdd, now);
+  const cmKv = createContentModelKv(appKey, kvGetJson, kvPutJson, async () => {}, kvIndexAdd, runtime);
   await cmKv.upsertContentType({ id: 'ct_kv', slug: 'post', label: 'Post', fields: [] });
   await cmKv.upsertTaxonomy({ id: 'tx_kv', slug: 'category', label: 'Category', hierarchical: true });
   await cmKv.upsertTerm({ id: 'term_kv', taxonomySlug: 'category', slug: 'news', name: 'News' });
