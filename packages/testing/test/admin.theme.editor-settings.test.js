@@ -69,7 +69,7 @@ test('toWpEditorSettings emits editor root CSS from theme tokens', () => {
 
   const css = settings.styles[0].css;
   assert.match(css, /font-size:\s*72px/);
-  assert.match(css, /font-size:\s*28px/);
+  assert.match(css, /font-size:\s*1.125rem/);
   assert.match(css, /max-width:\s*900px/);
   assert.match(css, /max-width:\s*1300px/);
   assert.match(css, /color:\s*#8899aa/);

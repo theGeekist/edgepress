@@ -261,8 +261,8 @@ function toWpThemeVars(palette, adminThemeVars = {}, contentThemeVars = {}) {
     '--ep-site-canvas-text': canvasText,
     '--ep-site-canvas-muted': canvasMuted,
     '--ep-site-canvas-border': canvasBorder,
-    '--ep-site-title-size': contentThemeVars['--ep-site-typography-display-size'] || 'clamp(3.2rem, 6vw, 5.2rem)',
-    '--ep-site-body-size': contentThemeVars['--ep-site-typography-body-size'] || 'clamp(1.1rem, 2.2vw, 1.9rem)'
+    '--ep-site-title-size': contentThemeVars['--ep-site-typography-display-size'] || 'clamp(3rem, 5.8vw, 5rem)',
+    '--ep-site-body-size': contentThemeVars['--ep-site-typography-body-size'] || '1.125rem'
   };
 }
 

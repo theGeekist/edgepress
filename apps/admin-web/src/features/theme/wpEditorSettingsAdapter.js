@@ -71,8 +71,8 @@ function toSpacingPresets(theme) {
 function buildEditorRootStyles(theme) {
   const textColor = pickString(theme.tokens.color?.text, '#1e1e1e');
   const background = pickString(theme.surfaces?.surfaceMuted || theme.tokens.color?.background, '#ffffff');
-  const titleSize = pickString(theme.tokens.typography?.['size.display'] || theme.tokens.typography?.['size.xxl'], 'clamp(2.75rem, 6vw, 5rem)');
-  const bodySize = pickString(theme.tokens.typography?.['size.lg'] || theme.tokens.typography?.['size.base'], '1.75rem');
+  const titleSize = pickString(theme.tokens.typography?.['size.display'] || theme.tokens.typography?.['size.xxl'], 'clamp(3rem, 5.8vw, 5rem)');
+  const bodySize = pickString(theme.tokens.typography?.['size.base'] || theme.tokens.typography?.['size.md'], '1.125rem');
   const fontFamily = pickString(theme.tokens.typography?.['family.body'], 'inherit');
   const muted = pickString(theme.tokens.color?.textMuted, '#757575');
   const contentSize = pickString(theme.tokens.layout?.contentSize, '840px');
