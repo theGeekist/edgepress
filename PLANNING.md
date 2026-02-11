@@ -192,6 +192,28 @@ Exit criteria:
 - `Increment complete (2026-02-11)`: extended theme parity substrate with WP theme adapter + editor settings adapter + token runtime integration tests (`apps/admin-web/src/features/theme/{wpThemeAdapter.js,wpEditorSettingsAdapter.js,tokenRuntime.js}`, `packages/testing/test/admin.theme.editor-settings.test.js`, `packages/testing/test/admin.theme.schema.test.js`).
 - `Remaining in this phase`: embed validation policy hardening; navigation block parity; replacement of transitional featured-image/media-id controls; complete media/nav revision->preview->publish->live acceptance matrix; templates/patterns lifecycle; full editor/preview/live theme parity; and publish a strict WP compatibility profile (guaranteed/partial/out-of-scope) as a versioned artifact.
 
+### Phase 12B Parallel Execution Plan (primary + agent-2)
+
+Ownership split (to avoid conflicts):
+- `Primary (this branch)`: editor/theme parity completion.
+  - File scope: `apps/admin-web/src/features/editor/**`, `apps/admin-web/src/features/theme/**`, `apps/admin-web/src/scenes/web/ContentScene.jsx`, `apps/admin-web/src/components/ui/AdminLayout.jsx`.
+  - Deliverables: WP-like editor behavior/layout parity, admin chrome vs site-canvas theming separation, removal of remaining transitional editor controls.
+- `Agent-2 (worktree/branch)`: media/nav + WP compatibility flow hardening.
+  - File scope: `apps/api/src/features/{wp-core-routes.js,preview-routes.js,publish-routes.js,private-routes.js,media-routes.js,navigation-routes.js,document-routes.js}`, `packages/publish/src/publisher.js`, `packages/testing/test/{api.behavior.test.js,api.wp-core.test.js,api.preview.test.js,api.publish.test.js,release.preview.private.test.js}`, `docs/**` compatibility profile docs.
+  - Deliverables: media/nav revision->preview->publish->live acceptance guarantees, WP façade behavior hardening, explicit compatibility profile publication.
+
+Conflict guardrails:
+- `Agent-2` must not modify `apps/admin-web/src/features/editor/**` or `apps/admin-web/src/features/theme/**`.
+- `Primary` should avoid editing `apps/api/src/features/*`, `packages/publish/src/publisher.js`, and `packages/testing/test/api.*` during agent-2 execution window.
+- `PLANNING.md` and `idea.md` are primary-owned and updated only after both tracks merge.
+
+Execution order:
+1. Agent-2 branches from current phase tip (`phase12b-flow-compat-hardening`) and lands small commits grouped by: flow fixes -> tests -> docs.
+2. Agent-2 runs `bun lint` + targeted tests before PR.
+3. Merge agent-2 PR into this phase branch first.
+4. Finish primary editor/theme parity on top.
+5. Run full `bun lint` + full test suite and close Phase 12B checkboxes/increments in one final doc pass.
+
 Exit criteria:
 - Core block authoring uses WP-compatible primitives rather than custom transitional controls.
 - Navigation/media behaviors are owned by block parity and produce deterministic publish/live output.
