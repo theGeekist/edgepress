@@ -101,17 +101,6 @@ export function ContentSettingsPanel({ palette, hasSelection, meta, onUpdateMeta
           </View>
         </View>
       </MetaBox>
-
-      <MetaBox title="Featured Image" palette={palette}>
-        <Text style={[style.label, { color: palette.text }]}>Media ID</Text>
-        <ThemedTextInput
-          palette={palette}
-          value={meta.featuredImageId}
-          onChangeText={(next) => onUpdateMeta({ featuredImageId: next })}
-          placeholder="med_xxxxx"
-          editable={hasSelection}
-        />
-      </MetaBox>
     </View>
   );
 }
