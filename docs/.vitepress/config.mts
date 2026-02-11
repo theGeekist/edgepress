@@ -13,7 +13,6 @@ export default defineConfig({
       { text: "Workflows", link: "/guide/workflows/auth" },
       { text: "Architecture", link: "/architecture/overview" },
       { text: "Reference", link: "/reference/api/" },
-      { text: "Appendix", link: "/appendix/idea" },
       { text: "Contributing", link: "/contributing" }
     ],
     sidebar: {
@@ -98,13 +97,15 @@ export default defineConfig({
           ]
         }
       ],
-      "/appendix/": [
+      "/internal/": [
         {
-          text: "Appendix",
+          text: "Internal",
           items: [
-            { text: "Idea (raw)", link: "/appendix/idea" },
-            { text: "Planning (raw)", link: "/appendix/planning" },
-            { text: "Admin README (raw)", link: "/appendix/admin-web-readme" }
+            { text: "Index", link: "/internal/" },
+            { text: "Platform Spec", link: "/internal/edgepress-content-extensibility-spec" },
+            { text: "Planning", link: "/internal/planning" },
+            { text: "Content Model Draft (Historical)", link: "/internal/content-model-v2" },
+            { text: "Idea (sunset)", link: "/internal/idea" }
           ]
         }
       ]

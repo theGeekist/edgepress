@@ -32,4 +32,4 @@ This page is intentionally user-facing: what exists now, what is next, and what 
 
 For full planning context and historical notes:
 
-- [/appendix/planning](/appendix/planning)
+- [/internal/planning](/internal/planning)
