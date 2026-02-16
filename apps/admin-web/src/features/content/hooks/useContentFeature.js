@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useDocumentsState } from './useDocumentsState.js';
 import { useReleaseLoopState } from './useReleaseLoopState.js';
 import { useContentRouteState } from './useContentRouteState.js';
@@ -22,6 +22,10 @@ export function useContentFeature({
   const docs = useDocumentsState(shell);
   const loop = useReleaseLoopState(shell);
   const route = useContentRouteState({ appSection, setAppSection });
+  const docsListSignature = useMemo(
+    () => docs.docs.map((item) => item.id).join('|'),
+    [docs.docs]
+  );
 
   const actions = useContentActions({
     docs,
@@ -47,11 +51,12 @@ export function useContentFeature({
     docs.refresh().catch((nextError) => {
       setError(asErrorMessage(nextError));
     });
+  // docs is intentionally excluded to avoid an object-identity refresh loop.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     authUser,
     appSection,
     route.contentView,
-    docs,
     docs.contentSearch,
     docs.contentTypeFilter,
     docs.contentStatusFilter,
@@ -92,17 +97,15 @@ export function useContentFeature({
       .catch((nextError) => {
         setError(asErrorMessage(nextError));
       });
+  // docs/loop/editor/route containers are intentionally excluded; only stable primitives drive this effect.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     authUser,
     appSection,
-    docs,
     route.contentView,
     route.contentDocumentId,
     docs.selectedId,
-    docs.docs,
-    editor,
-    loop,
-    route,
+    docsListSignature,
     setError
   ]);
 
@@ -117,7 +120,9 @@ export function useContentFeature({
       return;
     }
     route.setContentDocumentId(docs.selectedId);
-  }, [appSection, route, route.contentView, route.contentDocumentId, docs.selectedId]);
+    // route container is intentionally excluded to avoid object-identity loops.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appSection, route.contentView, route.contentDocumentId, route.setContentDocumentId, docs.selectedId]);
 
   async function hydrate() {
     const items = await docs.refresh();

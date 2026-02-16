@@ -56,7 +56,7 @@ export function useNavigationMenuEditor({ navigation, actions, menuKey = 'primar
     stableSignature(normalizeForSave('Primary Menu', []))
   );
   const [uiState, setUiState] = useState({
-    isLoading: false,
+    isLoading: true,
     isSaving: false,
     isDirty: false
   });

@@ -79,8 +79,7 @@ export default [
     files: ['apps/admin-web/src/**/*.jsx', 'apps/admin-web/src/**/*.js'],
     settings: {
       react: {
-        version: '18.3',
-        pragma: 'React'
+        version: '18.3.1'
       }
     },
     plugins: {
