@@ -26,7 +26,8 @@
       "@geekist/edgepress/testing": ["./packages/testing/src"],
       "@geekist/edgepress/testing/*": ["./packages/testing/src/*"],
       "@geekist/edgepress/cloudflare": ["./packages/cloudflare/src"],
-      "@geekist/edgepress/cloudflare/*": ["./packages/cloudflare/src/*"]
+      "@geekist/edgepress/cloudflare/*": ["./packages/cloudflare/src/*"],
+      "@geekist/edgepress/cap-wp-core": ["./packages/cap-wp-core/src"]
     }
   }
 }

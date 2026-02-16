@@ -1,4 +1,4 @@
-import { createInMemoryPlatform } from '../../testing/src/store.js';
+import { createInMemoryPlatform } from '@geekist/edgepress/testing';
 import { createCloudflareRuntime } from './runtime.js';
 import { createBlobStore, createCacheStore } from './io-stores.js';
 import { createReleaseStore } from './release-store.js';

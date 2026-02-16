@@ -10,7 +10,7 @@ Wrangler config:
 
 Adapter code:
 
-- `packages/cloudflare/src/worker.js`
+- `apps/api/src/worker.js`
 
 ## Bindings
 

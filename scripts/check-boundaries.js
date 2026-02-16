@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { execSync } from 'node:child_process';
+import path from 'node:path';
 
 const blocked = [
   'cloudflare',
@@ -8,25 +9,57 @@ const blocked = [
   'R2Bucket',
   'DurableObjectNamespace'
 ];
+const blockedTokenAllowlist = new Set([
+  'apps/api/src/worker.js'
+]);
 
-const files = execSync("find apps packages -type f \\( -name '*.js' -o -name '*.ts' \\)", {
+const files = execSync("find apps packages -type f \\( -name '*.js' -o -name '*.mjs' -o -name '*.ts' -o -name '*.jsx' \\)", {
   encoding: 'utf8'
 })
   .trim()
   .split('\n')
-  .filter(Boolean)
-  .filter((f) =>
-    !f.startsWith('packages/cloudflare/')
-  );
+  .filter(Boolean);
   
 const scannedFiles = files.filter((f) => !f.includes('/test/'));
+const importFromRegex = /(?:import|export)\s[^'"]*?from\s*['"]([^'"]+)['"]/g;
+const dynamicImportRegex = /import\s*\(\s*['"]([^'"]+)['"]\s*\)/g;
+
+function resolveRelativeImport(file, spec) {
+  if (!spec.startsWith('.')) return null;
+  return path.normalize(path.join(path.dirname(file), spec));
+}
 
 let failed = false;
 for (const file of scannedFiles) {
   const text = readFileSync(file, 'utf8');
   for (const token of blocked) {
-    if (text.includes(token)) {
+    if (!file.startsWith('packages/cloudflare/') && !blockedTokenAllowlist.has(file) && text.includes(token)) {
       console.error(`Boundary violation in ${file}: contains '${token}'`);
+      failed = true;
+    }
+  }
+
+  const importSpecs = [
+    ...Array.from(text.matchAll(importFromRegex), (match) => match[1]),
+    ...Array.from(text.matchAll(dynamicImportRegex), (match) => match[1])
+  ];
+
+  for (const spec of importSpecs) {
+    if (!spec) continue;
+
+    if (spec.startsWith('@geekist/edgepress/') && spec.includes('/src/')) {
+      console.error(`Boundary violation in ${file}: deep internal import '${spec}' is not allowed.`);
+      failed = true;
+    }
+    if (spec.startsWith('@geekist/edgepress/cap-') && spec.split('/').length > 3) {
+      console.error(`Boundary violation in ${file}: capability import '${spec}' must use package root only.`);
+      failed = true;
+    }
+
+    const resolvedRelative = resolveRelativeImport(file, spec);
+    const testingAppImportException = file.startsWith('packages/testing/');
+    if (file.startsWith('packages/') && resolvedRelative?.startsWith('apps/') && !testingAppImportException) {
+      console.error(`Boundary violation in ${file}: packages must not import app code ('${spec}').`);
       failed = true;
     }
   }

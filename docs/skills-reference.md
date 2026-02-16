@@ -232,7 +232,7 @@ bun run lint
 
 #### Worker Composition Root
 
-**Location**: `packages/cloudflare/src/worker.js`
+**Location**: `apps/api/src/worker.js`
 
 ```javascript
 // Platform composition

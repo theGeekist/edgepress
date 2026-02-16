@@ -1,5 +1,5 @@
 name = "gcms-api"
-main = "packages/cloudflare/src/worker.js"
+main = "apps/api/src/worker.js"
 compatibility_date = "2026-02-06"
 compatibility_flags = ["nodejs_compat"]
 workers_dev = true
