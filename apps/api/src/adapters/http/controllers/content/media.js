@@ -1,76 +1,15 @@
 import { requireCapability } from '@geekist/edgepress/api-core/auth.js';
 import { error, json, readJson } from '@geekist/edgepress/api-core/http.js';
-
-function sanitizeFilename(input) {
-  const candidate = String(input || '')
-    .replace(/\0/g, '')
-    .replace(/[\\/]+/g, '/')
-    .split('/')
-    .pop()
-    ?.replace(/\.\.+/g, '.')
-    .trim();
-  return candidate || 'asset.bin';
-}
-
-function inferExtensionFromMimeType(mimeType) {
-  const normalized = String(mimeType || '').toLowerCase().trim();
-  if (!normalized) return '';
-  const map = {
-    'image/jpeg': 'jpg',
-    'image/jpg': 'jpg',
-    'image/png': 'png',
-    'image/webp': 'webp',
-    'image/gif': 'gif',
-    'image/svg+xml': 'svg',
-    'application/pdf': 'pdf',
-    'text/plain': 'txt'
-  };
-  return map[normalized] || '';
-}
-
-function ensureFilenameExtension(filename, mimeType) {
-  const safe = sanitizeFilename(filename);
-  if (/\.[a-z0-9]+$/i.test(safe)) return safe;
-  const ext = inferExtensionFromMimeType(mimeType);
-  return ext ? `${safe}.${ext}` : safe;
-}
-
-function normalizeBlobBody(bytes) {
-  if (bytes instanceof Uint8Array || bytes instanceof ArrayBuffer) return bytes;
-  if (typeof bytes === 'string') return bytes;
-  if (bytes == null) return '';
-  return String(bytes);
-}
+import { createMediaFeature } from '@geekist/edgepress/content';
 
 export function createMediaRoutes({ runtime, store, blobStore, route, authzErrorResponse }) {
-  function resolveAbsoluteUrl(request, maybeRelative) {
-    if (!maybeRelative) return '';
-    if (/^https?:\/\//i.test(maybeRelative)) return maybeRelative;
-    const origin = new URL(request.url).origin;
-    return new URL(maybeRelative, origin).toString();
-  }
-
-  async function createMediaSessionRoute(request) {
-    const user = await requireCapability({ runtime, store, request, capability: 'media:write' });
-    const mediaId = `med_${runtime.uuid()}`;
-    const uploadToken = `up_${runtime.uuid()}`;
-    const session = await store.createMediaSession({
-      id: mediaId,
-      createdBy: user.id,
-      uploadToken
-    });
-    return json({
-      mediaId: session.id,
-      uploadUrl: resolveAbsoluteUrl(request, session.uploadUrl),
-      uploadToken: session.uploadToken,
-      requiredHeaders: session.requiredHeaders
-    }, 201);
-  }
+  const mediaFeature = createMediaFeature({ runtime, store, blobStore });
 
   return [
     route('POST', '/v1/media', async (request) => {
       try {
-        return await createMediaSessionRoute(request);
+        const user = await requireCapability({ runtime, store, request, capability: 'media:write' });
+        return json(await mediaFeature.createMediaSession({ request, userId: user.id }), 201);
       } catch (e) {
         return authzErrorResponse(e);
       }
@@ -78,7 +17,8 @@ export function createMediaRoutes({ runtime, store, blobStore, route, authzError
 
     route('POST', '/v1/media/init', async (request) => {
       try {
-        return await createMediaSessionRoute(request);
+        const user = await requireCapability({ runtime, store, request, capability: 'media:write' });
+        return json(await mediaFeature.createMediaSession({ request, userId: user.id }), 201);
       } catch (e) {
         return authzErrorResponse(e);
       }
@@ -88,35 +28,9 @@ export function createMediaRoutes({ runtime, store, blobStore, route, authzError
       try {
         await requireCapability({ runtime, store, request, capability: 'media:write' });
         const body = await readJson(request);
-        const existing = await store.getMedia(params.id);
-        if (!existing) return error('MEDIA_NOT_FOUND', 'Media not found', 404);
-        if (existing.uploadToken !== body.uploadToken) {
-          return error('MEDIA_UPLOAD_TOKEN_INVALID', 'Upload token invalid', 401);
-        }
-
-        const uploadPath = `uploads/${params.id}/original`;
-        const uploadedBlob = await blobStore.getBlob(uploadPath);
-        const contentType = body.mimeType || uploadedBlob?.metadata?.contentType || 'application/octet-stream';
-        const sanitizedFilename = ensureFilenameExtension(body.filename, contentType);
-        const path = `media/${params.id}/${sanitizedFilename}`;
-        const bytes = uploadedBlob?.bytes;
-        if (!(bytes instanceof Uint8Array) && !(bytes instanceof ArrayBuffer) && typeof bytes !== 'string') {
-          return error('MEDIA_UPLOAD_MISSING_BYTES', 'Uploaded media bytes are missing', 400);
-        }
-        await blobStore.putBlob(path, bytes, { contentType });
-        const signedUrl = resolveAbsoluteUrl(request, await blobStore.signedReadUrl(path, 3600));
-        const media = await store.finalizeMedia(params.id, {
-          filename: sanitizedFilename,
-          mimeType: contentType,
-          size: body.size || 0,
-          url: signedUrl,
-          width: body.width,
-          height: body.height,
-          alt: body.alt || '',
-          caption: body.caption || '',
-          description: body.description || ''
-        });
-        return json({ media });
+        const result = await mediaFeature.finalizeMedia({ request, mediaId: params.id, body });
+        if (result.error) return error(result.error.code, result.error.message, result.error.status);
+        return json(result);
       } catch (e) {
         return authzErrorResponse(e);
       }
@@ -125,17 +39,14 @@ export function createMediaRoutes({ runtime, store, blobStore, route, authzError
     route('PUT', '/uploads/:id', async (request, params) => {
       try {
         await requireCapability({ runtime, store, request, capability: 'media:write' });
-        const existing = await store.getMedia(params.id);
-        if (!existing) return error('MEDIA_NOT_FOUND', 'Media not found', 404);
-        const uploadToken = request.headers.get('x-upload-token') || '';
-        if (!uploadToken || uploadToken !== existing.uploadToken) {
-          return error('MEDIA_UPLOAD_TOKEN_INVALID', 'Upload token invalid', 401);
-        }
-        const contentType = request.headers.get('content-type') || 'application/octet-stream';
-        const bytes = new Uint8Array(await request.arrayBuffer());
-        const uploadPath = `uploads/${params.id}/original`;
-        await blobStore.putBlob(uploadPath, bytes, { contentType });
-        return json({ ok: true, uploadPath });
+        const result = await mediaFeature.uploadBlob({
+          mediaId: params.id,
+          uploadToken: request.headers.get('x-upload-token') || '',
+          bodyBytes: new Uint8Array(await request.arrayBuffer()),
+          contentType: request.headers.get('content-type') || 'application/octet-stream'
+        });
+        if (result.error) return error(result.error.code, result.error.message, result.error.status);
+        return json(result);
       } catch (e) {
         return authzErrorResponse(e);
       }
@@ -147,33 +58,15 @@ export function createMediaRoutes({ runtime, store, blobStore, route, authzError
       } catch (e) {
         return authzErrorResponse(e);
       }
-      const path = params.path;
-      const blob = await blobStore.getBlob(path);
-      if (!blob) {
-        return error('BLOB_NOT_FOUND', 'Blob not found', 404);
-      }
-      const contentType = blob?.metadata?.contentType || 'application/octet-stream';
-      const bytes = blob?.bytes;
-      const body = normalizeBlobBody(bytes);
-      return new Response(body, { status: 200, headers: { 'content-type': contentType } });
+      const blob = await mediaFeature.readBlob({ path: params.path });
+      if (blob.error) return error(blob.error.code, blob.error.message, blob.error.status);
+      return new Response(blob.body, { status: 200, headers: { 'content-type': blob.contentType } });
     }),
 
     route('GET', '/v1/media', async (request) => {
       try {
         await requireCapability({ runtime, store, request, capability: 'document:read' });
-        const url = new URL(request.url);
-        const payload = await store.listMedia({
-          q: url.searchParams.get('q') || '',
-          mimeType: url.searchParams.get('mimeType') || '',
-          sortBy: url.searchParams.get('sortBy') || 'updatedAt',
-          sortDir: url.searchParams.get('sortDir') || 'desc',
-          page: Number(url.searchParams.get('page') || 1),
-          pageSize: Number(url.searchParams.get('pageSize') || 20)
-        });
-        return json({
-          items: payload?.items || [],
-          pagination: payload?.pagination || { page: 1, pageSize: 20, totalItems: 0, totalPages: 1 }
-        });
+        return json(await mediaFeature.listMedia({ url: new URL(request.url) }));
       } catch (e) {
         return authzErrorResponse(e);
       }
@@ -182,9 +75,9 @@ export function createMediaRoutes({ runtime, store, blobStore, route, authzError
     route('GET', '/v1/media/:id', async (request, params) => {
       try {
         await requireCapability({ runtime, store, request, capability: 'document:read' });
-        const media = await store.getMedia(params.id);
-        if (!media) return error('MEDIA_NOT_FOUND', 'Media not found', 404);
-        return json({ media });
+        const result = await mediaFeature.getMedia({ mediaId: params.id });
+        if (result.error) return error(result.error.code, result.error.message, result.error.status);
+        return json(result);
       } catch (e) {
         return authzErrorResponse(e);
       }
@@ -194,13 +87,9 @@ export function createMediaRoutes({ runtime, store, blobStore, route, authzError
       try {
         await requireCapability({ runtime, store, request, capability: 'media:write' });
         const body = await readJson(request);
-        const media = await store.updateMedia(params.id, {
-          alt: body.alt,
-          caption: body.caption,
-          description: body.description
-        });
-        if (!media) return error('MEDIA_NOT_FOUND', 'Media not found', 404);
-        return json({ media });
+        const result = await mediaFeature.updateMedia({ mediaId: params.id, body });
+        if (result.error) return error(result.error.code, result.error.message, result.error.status);
+        return json(result);
       } catch (e) {
         return authzErrorResponse(e);
       }
@@ -209,9 +98,9 @@ export function createMediaRoutes({ runtime, store, blobStore, route, authzError
     route('DELETE', '/v1/media/:id', async (request, params) => {
       try {
         await requireCapability({ runtime, store, request, capability: 'media:write' });
-        const deleted = await store.deleteMedia(params.id);
-        if (!deleted) return error('MEDIA_NOT_FOUND', 'Media not found', 404);
-        return json({ ok: true, deleted: true });
+        const result = await mediaFeature.deleteMedia({ mediaId: params.id });
+        if (result.error) return error(result.error.code, result.error.message, result.error.status);
+        return json(result);
       } catch (e) {
         return authzErrorResponse(e);
       }

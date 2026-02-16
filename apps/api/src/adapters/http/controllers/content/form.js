@@ -1,24 +1,20 @@
 import { error, json, readJson } from '@geekist/edgepress/api-core/http.js';
+import { createFormsFeature } from '@geekist/edgepress/content';
 
 export function createFormRoutes({ runtime, store, route, authzErrorResponse }) {
+  const forms = createFormsFeature({ runtime, store });
+
   return [
     route('POST', '/v1/forms/:formId/submit', async (request, params) => {
       try {
-        const ctx = runtime.requestContext(request);
-        if (runtime.rateLimit) {
-          const limit = await runtime.rateLimit(`form:${params.formId}:${ctx.ipHash}`, { max: 5, windowMs: 60000 });
-          if (!limit.allowed) {
-            return error('RATE_LIMITED', 'Too many submissions', 429);
-          }
-        }
         const body = await readJson(request);
-        const submission = await store.createFormSubmission({
-          id: `sub_${runtime.uuid()}`,
+        const result = await forms.submitForm({
           formId: params.formId,
-          payload: body.payload || {},
-          requestContext: ctx
+          body,
+          requestContext: runtime.requestContext(request)
         });
-        return json({ submissionId: submission.id }, 202);
+        if (result.error) return error(result.error.code, result.error.message, result.error.status);
+        return json(result, 202);
       } catch (e) {
         return authzErrorResponse(e);
       }
