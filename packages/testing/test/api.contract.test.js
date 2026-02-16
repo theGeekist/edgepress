@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { routes, assertKeys } from '@geekist/edgepress/contracts';
 import { createInMemoryPlatform } from '../src/store.js';
-import { authAsAdmin, requestJson } from '../src/testUtils.js';
+import { authAsAdmin, requestJson } from './helpers/testUtils.js';
 
 async function createSampleDocument(handler, token, { title = 'Sample', content = '<p>body</p>' } = {}) {
   const created = await requestJson(handler, 'POST', '/v1/documents', {

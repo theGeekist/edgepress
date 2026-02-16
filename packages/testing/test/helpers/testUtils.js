@@ -1,4 +1,4 @@
-import { createApiHandler } from '../../../apps/api/src/app.js';
+import { createApiHandler } from '../../../../apps/api/src/app.js';
 
 export function createHandler(platform) {
   return createApiHandler(platform);

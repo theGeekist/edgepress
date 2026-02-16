@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { execSync } from 'node:child_process';
 import { createCloudflareReferencePlatform } from '../../cloudflare/src/index.js';
 import { createApiHandler } from '../../../apps/api/src/app.js';
-import { requestJson } from '../src/testUtils.js';
+import { requestJson } from './helpers/testUtils.js';
 import { createFakeD1, createFakeKV, createFakeR2 } from './helpers/cloudflareFakes.js';
 
 test('boundary check blocks Cloudflare terms outside cloudflare', async () => {

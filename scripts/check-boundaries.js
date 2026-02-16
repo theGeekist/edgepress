@@ -57,8 +57,7 @@ for (const file of scannedFiles) {
     }
 
     const resolvedRelative = resolveRelativeImport(file, spec);
-    const testingAppImportException = file.startsWith('packages/testing/');
-    if (file.startsWith('packages/') && resolvedRelative?.startsWith('apps/') && !testingAppImportException) {
+    if (file.startsWith('packages/') && resolvedRelative?.startsWith('apps/')) {
       console.error(`Boundary violation in ${file}: packages must not import app code ('${spec}').`);
       failed = true;
     }
