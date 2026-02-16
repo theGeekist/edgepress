@@ -41,6 +41,7 @@ export function AppearanceScene({ palette, actions, appearanceSubsection = 'appe
 
   const subsectionTitles = {
     themes: 'Themes',
+    menus: 'Menus',
     widgets: 'Widgets'
   };
   const title = subsectionTitles[subsection] || 'Appearance';

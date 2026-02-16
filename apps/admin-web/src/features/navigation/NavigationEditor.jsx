@@ -121,11 +121,11 @@ const styles = StyleSheet.create({
     }
 });
 
-export const navigationEditorPropTypes = NavigationEditor.propTypes;
-
 NavigationEditor.propTypes = {
   palette: PropTypes.shape(palettePropTypes).isRequired,
-  docs: PropTypes.array.isRequired,
+  docs: PropTypes.shape({
+    docs: PropTypes.array
+  }).isRequired,
   navigation: PropTypes.shape({
     items: PropTypes.array.isRequired,
     menuTitle: PropTypes.string.isRequired,
@@ -141,3 +141,5 @@ NavigationEditor.propTypes = {
     onAddMenuItem: PropTypes.func.isRequired
   }).isRequired
 };
+
+export const navigationEditorPropTypes = NavigationEditor.propTypes;

@@ -15,14 +15,10 @@ export function AdminScene({
   contentView,
   mediaView,
   onSectionChange,
-  onOpenContentList,
   docs,
   media,
   editor,
-  loop,
   navigation,
-  previewLink,
-  saveState,
   settings,
   actions,
   isMobile,
@@ -39,14 +35,9 @@ export function AdminScene({
           theme={theme}
           siteTheme={settings?.siteTheme || theme}
           contentView={contentView}
-          onOpenContentList={onOpenContentList}
           docs={docs}
           editor={editor}
-          loop={loop}
-          previewLink={previewLink}
-          saveState={saveState}
           actions={actions}
-          isMobile={isMobile}
         />
       );
     }

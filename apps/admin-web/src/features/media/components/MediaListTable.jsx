@@ -230,7 +230,7 @@ MediaListTable.propTypes = {
     setSearch: PropTypes.func.isRequired,
     isUploading: PropTypes.bool.isRequired,
     pagination: PropTypes.object.isRequired,
-    setPagination: PropTypes.func.isRequired,
+    setPage: PropTypes.func.isRequired,
     isLoading: PropTypes.bool.isRequired
   }).isRequired,
   onEditMedia: PropTypes.func.isRequired,

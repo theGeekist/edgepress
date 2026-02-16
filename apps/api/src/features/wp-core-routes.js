@@ -59,11 +59,7 @@ function toWpPost(doc, requestUrl) {
     title: { raw: title, rendered: title },
     content: { raw: content, rendered: content, protected: false },
     excerpt: { raw: excerpt, rendered: excerpt, protected: false },
-<<<<<<< HEAD
     featured_media: featuredMedia,
-=======
-    featured_media: featuredMedia,
->>>>>>> 81f0265 (refactored and closing out phase 12)
     meta: {}
   };
 }

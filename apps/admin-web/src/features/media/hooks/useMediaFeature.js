@@ -33,7 +33,9 @@ export function useMediaFeature({
     media.refresh().catch((nextError) => {
       setError(asErrorMessage(nextError));
     });
-  }, [authUser, appSection, media, media.search, media.mimeTypeFilter, media.page, setError]);
+    // media is intentionally excluded to avoid an object-identity refresh loop.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authUser, appSection, media.search, media.mimeTypeFilter, media.page, setError]);
 
   return {
     media,

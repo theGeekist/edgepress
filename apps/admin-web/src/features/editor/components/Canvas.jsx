@@ -344,6 +344,10 @@ export function EditorCanvas({ blocks, setBlocks, palette, theme, siteTheme, tit
   const p = palette || DEFAULT_PALETTE;
   const adminThemeVars = useMemo(() => toCssVars(theme || {}, { prefix: '--ep-admin' }), [theme]);
   const contentThemeVars = useMemo(() => toCssVars(siteTheme || theme || {}, { prefix: '--ep-site' }), [siteTheme, theme]);
+  const editorSettings = useMemo(
+    () => toWpEditorSettings(siteTheme || theme || {}, { allowedBlockTypes: SUPPORTED_BLOCK_TYPES }),
+    [siteTheme, theme]
+  );
 
   return (
     <View style={styles.container}>
@@ -363,7 +367,7 @@ export function EditorCanvas({ blocks, setBlocks, palette, theme, siteTheme, tit
                 postId={postId || 'editor-local'}
                 title={title}
                 content={String(serialize(Array.isArray(blocks) ? blocks : []))}
-                settings={toWpEditorSettings(siteTheme || theme || {}, { allowedBlockTypes: SUPPORTED_BLOCK_TYPES })}
+                settings={editorSettings}
               />
             </div>
           </View>

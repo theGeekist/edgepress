@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 function normalizeKind(item) {
   if (item?.kind === 'external' || item?.kind === 'internal') {
@@ -49,6 +49,7 @@ function stableSignature(payload) {
 }
 
 export function useNavigationMenuEditor({ navigation, actions, menuKey = 'primary' }) {
+  const newItemCounterRef = useRef(0);
   const [menuTitle, setMenuTitle] = useState('Primary Menu');
   const [items, setItems] = useState([]);
   const [baselineSignature, setBaselineSignature] = useState(
@@ -85,8 +86,9 @@ export function useNavigationMenuEditor({ navigation, actions, menuKey = 'primar
   const addItem = useCallback((partialItem) => {
     setItems((prev) => {
       const next = normalizeItems(prev);
+      newItemCounterRef.current += 1;
       next.push({
-        id: `new_${Date.now()}`,
+        id: `new_${Date.now()}_${newItemCounterRef.current}`,
         label: String(partialItem?.label || ''),
         kind: normalizeKind(partialItem),
         documentId: partialItem?.documentId ? String(partialItem.documentId) : null,
@@ -109,7 +111,7 @@ export function useNavigationMenuEditor({ navigation, actions, menuKey = 'primar
     setUiState((prev) => ({ ...prev, isSaving: true }));
     const payload = normalizeForSave(menuTitle, items);
     try {
-      await actions.onSaveNavigationMenu(menuKey, payload);
+      await actions.onSaveNavigationMenu(payload, menuKey);
       setBaselineSignature(stableSignature(payload));
       setUiState((prev) => ({ ...prev, isSaving: false, isDirty: false }));
       return true;
