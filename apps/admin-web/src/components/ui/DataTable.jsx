@@ -61,7 +61,7 @@ export function DataTable({
                 );
             })}
 
-            {data.length === 0 && renderEmpty && (
+            {safeData.length === 0 && renderEmpty && (
                 <View style={styles.empty}>
                     {renderEmpty()}
                 </View>

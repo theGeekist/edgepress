@@ -127,18 +127,13 @@ NavigationEditor.propTypes = {
     docs: PropTypes.array
   }).isRequired,
   navigation: PropTypes.shape({
-    items: PropTypes.array.isRequired,
-    menuTitle: PropTypes.string.isRequired,
-    setItems: PropTypes.func.isRequired,
-    saveMenu: PropTypes.func.isRequired,
-    uiState: PropTypes.shape({
-      isLoading: PropTypes.bool.isRequired,
-      isSaving: PropTypes.bool.isRequired,
-      isDirty: PropTypes.bool.isRequired
+    menu: PropTypes.shape({
+      title: PropTypes.string,
+      items: PropTypes.array
     }).isRequired
   }).isRequired,
   actions: PropTypes.shape({
-    onAddMenuItem: PropTypes.func.isRequired
+    onSaveNavigationMenu: PropTypes.func
   }).isRequired
 };
 

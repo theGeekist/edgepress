@@ -14,7 +14,7 @@ export function MenuItemCard({ item, depth, onUpdate, onRemove, drag, dragHandle
             <View style={[
                 styles.header,
                 {
-                    backgroundColor: isActive ? palette.accentMuted : palette.surface,
+                    backgroundColor: isActive ? palette.surfaceMuted : palette.surface,
                     borderColor: palette.border
                 }
             ]}>

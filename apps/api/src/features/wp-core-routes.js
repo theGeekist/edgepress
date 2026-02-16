@@ -1,5 +1,11 @@
 import { requireCapability } from '../auth.js';
 import { json, readJson } from '../http.js';
+import {
+  loadDocumentByType,
+  resolveInternalIdForWpId,
+  resolveInternalMediaIdForWpId,
+  toWpNumericId
+} from './wp-core-id-map.js';
 import { toPostTypeRecord, toWpTaxonomyRecord } from './wp-core-records.js';
 
 function notFoundEntity(entityType = 'post') {
@@ -64,52 +70,8 @@ function toWpPost(doc, requestUrl) {
   };
 }
 
-function toWpNumericId(internalId) {
-  const text = String(internalId || '');
-  // Deterministic non-zero 31-bit hash for WP-facing numeric entity IDs.
-  let hash = 0;
-  for (let i = 0; i < text.length; i += 1) {
-    hash = ((hash * 31) + text.charCodeAt(i)) | 0;
-  }
-  const value = Math.abs(hash) % 2147483647;
-  return value === 0 ? 1 : value;
-}
-
-async function resolveInternalIdForWpId(store, type, idParam) {
-  const raw = String(idParam || '').trim();
-  if (!raw) return null;
-  if (raw.startsWith('doc_')) {
-    const byInternal = await loadDocumentByType(store, type, raw);
-    return byInternal ? raw : null;
-  }
-  const numeric = Number.parseInt(raw, 10);
-  if (!Number.isFinite(numeric)) return null;
-  const rows = await listByType(store, type);
-  const match = rows.find((doc) => toWpNumericId(doc.id) === numeric);
-  return match?.id || null;
-}
-
 function normalizeTypeParam(typeParam) {
   return String(typeParam || '').trim().toLowerCase();
-}
-
-async function loadDocumentByType(store, type, id) {
-  const doc = await store.getDocument(id);
-  if (!doc) return null;
-  if ((doc.type || 'page') !== type) return null;
-  return doc;
-}
-
-async function listByType(store, type) {
-  const listed = await store.listDocuments({
-    type,
-    status: 'all',
-    sortBy: 'updatedAt',
-    sortDir: 'desc',
-    page: 1,
-    pageSize: 100
-  });
-  return Array.isArray(listed?.items) ? listed.items : [];
 }
 
 export function createWpCoreRoutes({ runtime, store, route, authzErrorResponse }) {
@@ -419,6 +381,7 @@ export function createWpCoreRoutes({ runtime, store, route, authzErrorResponse }
         const body = await readJson(request);
         const id = `doc_${runtime.uuid()}`;
         const content = parseFieldString(body.content);
+        const featuredImageId = await resolveInternalMediaIdForWpId(store, body.featured_media);
         const created = await store.createDocument({
           id,
           title: parseFieldString(body.title) || 'Untitled',
@@ -426,7 +389,7 @@ export function createWpCoreRoutes({ runtime, store, route, authzErrorResponse }
           legacyHtml: content,
           type: 'post',
           slug: String(body.slug || ''),
-          featuredImageId: body.featured_media || '',
+          featuredImageId,
           status: fromWpStatus(body.status),
           createdBy: user.id
         });
@@ -442,6 +405,7 @@ export function createWpCoreRoutes({ runtime, store, route, authzErrorResponse }
         const body = await readJson(request);
         const id = `doc_${runtime.uuid()}`;
         const content = parseFieldString(body.content);
+        const featuredImageId = await resolveInternalMediaIdForWpId(store, body.featured_media);
         const created = await store.createDocument({
           id,
           title: parseFieldString(body.title) || 'Untitled',
@@ -449,7 +413,7 @@ export function createWpCoreRoutes({ runtime, store, route, authzErrorResponse }
           legacyHtml: content,
           type: 'page',
           slug: String(body.slug || ''),
-          featuredImageId: body.featured_media || '',
+          featuredImageId,
           status: fromWpStatus(body.status),
           createdBy: user.id
         });
@@ -468,12 +432,15 @@ export function createWpCoreRoutes({ runtime, store, route, authzErrorResponse }
         if (!existing) return notFoundEntity('post');
         const body = await readJson(request);
         const nextContent = parseFieldString(body.content) || existing.legacyHtml || existing.content;
+        const featuredImageId = body.featured_media == null
+          ? existing.featuredImageId
+          : await resolveInternalMediaIdForWpId(store, body.featured_media);
         const updated = await store.updateDocument(internalId, {
           title: parseFieldString(body.title) || existing.title,
           content: nextContent,
           legacyHtml: nextContent,
           slug: body.slug ?? existing.slug,
-          featuredImageId: body.featured_media ?? existing.featuredImageId,
+          featuredImageId,
           status: body.status != null ? fromWpStatus(body.status) : existing.status,
           excerpt: existing.excerpt || '',
           fields: existing.fields || {},
@@ -497,12 +464,15 @@ export function createWpCoreRoutes({ runtime, store, route, authzErrorResponse }
         if (!existing) return notFoundEntity('page');
         const body = await readJson(request);
         const nextContent = parseFieldString(body.content) || existing.legacyHtml || existing.content;
+        const featuredImageId = body.featured_media == null
+          ? existing.featuredImageId
+          : await resolveInternalMediaIdForWpId(store, body.featured_media);
         const updated = await store.updateDocument(internalId, {
           title: parseFieldString(body.title) || existing.title,
           content: nextContent,
           legacyHtml: nextContent,
           slug: body.slug ?? existing.slug,
-          featuredImageId: body.featured_media ?? existing.featuredImageId,
+          featuredImageId,
           status: body.status != null ? fromWpStatus(body.status) : existing.status,
           excerpt: existing.excerpt || '',
           fields: existing.fields || {},

@@ -49,6 +49,7 @@ function stableSignature(payload) {
 }
 
 export function useNavigationMenuEditor({ navigation, actions, menuKey = 'primary' }) {
+  const onSaveNavigationMenu = actions?.onSaveNavigationMenu;
   const newItemCounterRef = useRef(0);
   const [menuTitle, setMenuTitle] = useState('Primary Menu');
   const [items, setItems] = useState([]);
@@ -105,13 +106,13 @@ export function useNavigationMenuEditor({ navigation, actions, menuKey = 'primar
   }, []);
 
   const saveMenu = useCallback(async () => {
-    if (!actions?.onSaveNavigationMenu) {
+    if (!onSaveNavigationMenu) {
       return false;
     }
     setUiState((prev) => ({ ...prev, isSaving: true }));
     const payload = normalizeForSave(menuTitle, items);
     try {
-      await actions.onSaveNavigationMenu(payload, menuKey);
+      await onSaveNavigationMenu(payload, menuKey);
       setBaselineSignature(stableSignature(payload));
       setUiState((prev) => ({ ...prev, isSaving: false, isDirty: false }));
       return true;
@@ -119,7 +120,7 @@ export function useNavigationMenuEditor({ navigation, actions, menuKey = 'primar
       setUiState((prev) => ({ ...prev, isSaving: false }));
       throw error;
     }
-  }, [actions, items, menuKey, menuTitle]);
+  }, [items, menuKey, menuTitle, onSaveNavigationMenu]);
 
   return {
     menuTitle,
