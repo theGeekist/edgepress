@@ -14,11 +14,10 @@ function createRuntime(logs = []) {
 test('publish workflow logs update and completed-action failures while returning failed job', async () => {
   const logs = [];
   const runtime = createRuntime(logs);
-  const job = { id: 'job_fixed123', status: 'queued' };
 
   const store = {
-    async createPublishJob() {
-      return { ...job };
+    async createPublishJob(input) {
+      return { ...input };
     },
     async updatePublishJob() {
       throw new Error('db down');
@@ -46,7 +45,9 @@ test('publish workflow logs update and completed-action failures while returning
   });
 
   assert.equal(result.responseStatus, 500);
-  assert.equal(result.job.id, 'job_fixed123');
+  assert.ok(typeof result.job.id === 'string' && result.job.id.length > 0);
   assert.ok(logs.some((entry) => entry.event === 'publish_job_update_failed'));
   assert.ok(logs.some((entry) => entry.event === 'publish_complete_action_failed'));
+  assert.ok(logs.some((entry) => entry.event === 'publish_job_update_failed' && entry.level === 'error'));
+  assert.ok(logs.some((entry) => entry.event === 'publish_complete_action_failed' && entry.level === 'error'));
 });

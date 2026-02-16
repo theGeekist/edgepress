@@ -4,4 +4,4 @@ export {
   createFakeD1,
   parseJsonSafe,
   createKvHelpers
-} from '../test/helpers/coverage-fakes.js';
+} from './helpers/coverage-fakes.js';

@@ -19,7 +19,7 @@ export function createRuntimePlatform() {
       return new Date();
     },
     uuid() {
-      return crypto.randomUUID().replace(/-/g, '').slice(0, 12);
+      return crypto.randomUUID();
     },
     log(level, event, meta) {
       if (processEnv.NODE_ENV !== 'test') {
@@ -28,11 +28,12 @@ export function createRuntimePlatform() {
     },
     requestContext(request) {
       const url = request ? new URL(request.url) : null;
+      const nowTs = this.now().getTime();
       return {
         traceId: request?.headers.get('x-trace-id') || this.uuid(),
         ipHash: request?.headers.get('x-ip-hash') || 'ip_local',
         userAgentHash: request?.headers.get('x-ua-hash') || 'ua_local',
-        requestId: url ? `${url.pathname}:${Date.now()}` : `req:${Date.now()}`
+        requestId: url ? `${url.pathname}:${nowTs}` : `req:${nowTs}`
       };
     },
     waitUntil(promise) {

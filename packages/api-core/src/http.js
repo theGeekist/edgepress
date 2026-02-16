@@ -13,9 +13,9 @@ export function error(code, message, status = 400) {
 }
 
 export async function readJson(request) {
+  const text = await request.text();
+  if (!text) return {};
   try {
-    const text = await request.text();
-    if (!text) return {};
     return JSON.parse(text);
   } catch {
     const err = new Error('Request body must be valid JSON');

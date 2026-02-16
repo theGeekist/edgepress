@@ -191,7 +191,7 @@ Exit criteria:
 - `Increment complete (2026-02-11)`: published versioned WP REST compatibility profile for `/wp/v2` behavior (`docs/reference/wp-compatibility-profile.md`).
 - `Increment complete (2026-02-11)`: added acceptance flow matrix coverage for revision -> preview -> publish -> private delivery including media and taxonomy persistence (`apps/api/test/api.flow.acceptance.test.js`).
 - `Increment complete (2026-02-11)`: editor chrome/workspace alignment pass landed for Gutenberg shell integration in admin layout (`apps/admin-web/src/features/editor/components/canvas.web.css`).
-- `Phase closeout note (2026-02-17)`: architecture/package refactors and controller-thinning are complete in this branch; remaining product-parity work is moved to Phase 12C.
+- `Phase closeout note (planned)`: architecture/package refactors and controller-thinning are complete in this branch; remaining product-parity work is moved to Phase 12C.
 
 ## Phase 12C – Product Parity Completion (next branch)
 - [ ] Implement foundational block set end-to-end hardening: rich text, image+caption, embed validation policy finalization.
@@ -206,9 +206,11 @@ Exit criteria:
 - All remaining product parity items are closed without reopening architecture/package boundary decisions.
 - Media/navigation/theme/templates behavior is parity-complete across editor, preview, and live delivery.
 
-### Phase 12B Parallel Execution Plan (primary + agent-2)
+### Archived — Phase 12B Parallel Execution Plan (primary + agent-2)
 
-Ownership split (to avoid conflicts):
+ARCHIVED: Phase 12B completed on 2026-02-11; retained for historical reference only.
+
+Ownership split (to avoid conflicts at the time):
 - `Primary (this branch)`: editor/theme parity completion.
   - File scope: `apps/admin-web/src/features/editor/**`, `apps/admin-web/src/features/theme/**`, `apps/admin-web/src/scenes/web/ContentScene.jsx`, `apps/admin-web/src/components/ui/AdminLayout.jsx`.
   - Deliverables: WP-like editor behavior/layout parity, admin chrome vs site-canvas theming separation, removal of remaining transitional editor controls.
@@ -216,12 +218,12 @@ Ownership split (to avoid conflicts):
   - File scope: `apps/api/src/adapters/http/controllers/{wp-core,content}`, `apps/api/src/orchestration/{publish-workflow.js,release-workflow.js}`, `apps/api/test/{api.behavior.test.js,api.wp-core.test.js,api.preview.test.js,api.publish.test.js,release.preview.private.test.js}`, `docs/**` compatibility profile docs.
   - Deliverables: media/nav revision->preview->publish->live acceptance guarantees, WP façade behavior hardening, explicit compatibility profile publication.
 
-Conflict guardrails:
+Conflict guardrails that were used:
 - `Agent-2` must not modify `apps/admin-web/src/features/editor/**` or `apps/admin-web/src/features/theme/**`.
 - `Primary` should avoid editing `apps/api/src/adapters/http/controllers/**`, `apps/api/src/orchestration/{publish-workflow.js,release-workflow.js}`, and `apps/api/test/api.*` during agent-2 execution window.
 - `PLANNING.md` and `docs/internal/edgepress-content-extensibility-spec.md` are primary-owned and updated only after both tracks merge.
 
-Execution order:
+Execution order that was used:
 1. Agent-2 branches from current phase tip (`phase12b-flow-compat-hardening`) and lands small commits grouped by: flow fixes -> tests -> docs.
 2. Agent-2 runs `bun lint` + targeted tests before PR.
 3. Merge agent-2 PR into this phase branch first.
