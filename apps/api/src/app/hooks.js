@@ -73,6 +73,10 @@ export function resolveHooks(platform) {
   return getSharedHooksRegistry();
 }
 
+export function __resetHooksFallbackWarningForTests() {
+  delete globalThis[WARNED_HOOKS_FALLBACK_KEY];
+}
+
 export function applyFilters(hooks, hookName, payload) {
   if (!hooks || typeof hooks.applyFilters !== 'function') return payload;
   return hooks.applyFilters(hookName, payload);

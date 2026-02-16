@@ -12,7 +12,8 @@ export function createPrivateRoutes({ runtime, store, cacheStore, blobStore, rel
         const routeId = decodeURIComponent(params.route);
         const result = await delivery.getPrivateRoute({ routeId, user });
         if (result.error) return error(result.error.code, result.error.message, result.error.status);
-        return json(result);
+        const { route, html, releaseId } = result;
+        return json({ route, html, releaseId });
       } catch (e) {
         return authzErrorResponse(e);
       }

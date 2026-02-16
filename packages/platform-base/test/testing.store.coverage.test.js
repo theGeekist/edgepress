@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 import { createContentModelFeature } from '../src/store/content-model.js';
 import { createDocumentsFeature } from '../src/store/documents.js';
-import { createInMemoryState, createRuntime } from '../../testing/test/helpers/coverage-fakes.js';
+import { createInMemoryState, createRuntime } from '../../testing/src/coverage-fakes.js';
 
 test('testing store content-model/documents feature branches are covered', async () => {
   const state = createInMemoryState();
@@ -53,7 +53,7 @@ test('testing store content-model preserves createdAt on updates and supports ge
   const runtime = {
     now() {
       tick += 1;
-      return new Date(`2026-02-11T00:00:0${tick}.000Z`);
+      return new Date(`2026-02-11T00:00:${String(tick).padStart(2, '0')}.000Z`);
     }
   };
   const contentModel = createContentModelFeature(state, runtime);

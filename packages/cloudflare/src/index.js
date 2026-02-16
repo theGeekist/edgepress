@@ -18,9 +18,10 @@ export { D1_SQL } from './d1-sql.js';
  * @typedef {{ TOKEN_KEY?: string, PREVIEW_TOKEN_KEY?: string, PRIVATE_CACHE_SCOPE_KEY?: string, BOOTSTRAP_ADMIN_USERNAME?: string, BOOTSTRAP_ADMIN_PASSWORD?: string, BOOTSTRAP_ADMIN_ROLE?: string, KV?: KVNamespace & { __keys?: string[] }, R2_BUCKET?: R2Bucket & { createSignedUrl?: (path: string, ttlSeconds: number) => string }, D1?: D1Database }} CloudflareEnv
  */
 export function createCloudflareReferencePlatform(env = /** @type {CloudflareEnv} */ ({}), options = {}) {
+  const processEnv = typeof process !== 'undefined' && process?.env ? process.env : {};
   const seedDefaults = typeof options.seedDefaults === 'boolean'
     ? options.seedDefaults
-    : process.env.NODE_ENV === 'test';
+    : processEnv.NODE_ENV === 'test';
   const base = createInMemoryPlatform({ seedDefaults });
   const r2 = env.R2_BUCKET;
   const kv = env.KV;
@@ -28,9 +29,9 @@ export function createCloudflareReferencePlatform(env = /** @type {CloudflareEnv
   /** @type {ExecutionContext | null} */
   const ctx = options.ctx || null;
 
-  const bootstrapAdminUsername = env.BOOTSTRAP_ADMIN_USERNAME || process.env.BOOTSTRAP_ADMIN_USERNAME || null;
-  const bootstrapAdminPassword = env.BOOTSTRAP_ADMIN_PASSWORD || process.env.BOOTSTRAP_ADMIN_PASSWORD || null;
-  const bootstrapAdminRole = env.BOOTSTRAP_ADMIN_ROLE || process.env.BOOTSTRAP_ADMIN_ROLE || 'admin';
+  const bootstrapAdminUsername = env.BOOTSTRAP_ADMIN_USERNAME || processEnv.BOOTSTRAP_ADMIN_USERNAME || null;
+  const bootstrapAdminPassword = env.BOOTSTRAP_ADMIN_PASSWORD || processEnv.BOOTSTRAP_ADMIN_PASSWORD || null;
+  const bootstrapAdminRole = env.BOOTSTRAP_ADMIN_ROLE || processEnv.BOOTSTRAP_ADMIN_ROLE || 'admin';
 
   const bootstrapAdmin = bootstrapAdminUsername && bootstrapAdminPassword
     ? {

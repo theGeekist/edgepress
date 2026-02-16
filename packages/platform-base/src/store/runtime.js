@@ -52,7 +52,10 @@ export function createRuntimePlatform() {
     },
     async hmacVerify(input, signature, keyRef = 'TOKEN_KEY') {
       const signed = await this.hmacSign(input, keyRef);
-      return signed === signature;
+      const expected = Buffer.from(signed, 'utf8');
+      const actual = Buffer.from(String(signature || ''), 'utf8');
+      if (expected.length !== actual.length) return false;
+      return crypto.timingSafeEqual(expected, actual);
     },
     base64urlEncode(value) {
       const payload = typeof value === 'string' ? value : JSON.stringify(value);

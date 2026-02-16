@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createInMemoryPlatform } from '../../../packages/testing/src/store.js';
-import { authAsAdmin, requestJson } from '../../../packages/testing/test/helpers/testUtils.js';
+import { authAsAdmin, requestJson } from '../../../packages/testing/src/test-utils.js';
 
 test('content-model: GET /v1/content-types returns content types list', async () => {
   const platform = createInMemoryPlatform();
@@ -269,7 +269,7 @@ test('content-model routes: authz and invalid-json branches are normalized', asy
     assert.equal(response.res.status, 401);
   }
 
-  // readJson currently falls back to {} on malformed input instead of throwing.
+  // Malformed JSON should return a canonical INVALID_JSON envelope.
   const malformed = await handler(new Request('http://test.local/v1/content-types/article', {
     method: 'PUT',
     headers: {
@@ -278,5 +278,7 @@ test('content-model routes: authz and invalid-json branches are normalized', asy
     },
     body: '{bad'
   }));
-  assert.equal(malformed.status, 200);
+  assert.equal(malformed.status, 400);
+  const malformedBody = await malformed.json();
+  assert.equal(malformedBody.error.code, 'INVALID_JSON');
 });

@@ -3,7 +3,7 @@ function normalizeSlug(input) {
   let slug = '';
   let previousDash = false;
   for (const char of normalized) {
-    const isAlnum = (char >= 'a' && char <= 'z') || (char >= '0' && char <= '9');
+    const isAlnum = /[\p{Letter}\p{Number}]/u.test(char);
     if (isAlnum) {
       slug += char;
       previousDash = false;
@@ -44,9 +44,10 @@ export function createContentModelFeature({ runtime, store }) {
   async function upsertContentType({ paramsSlug, body }) {
     const slug = normalizeSlug(paramsSlug || body.slug);
     if (!slug) return { error: { code: 'CONTENT_TYPE_INVALID_SLUG', message: 'Content type slug is required', status: 400 } };
+    const existing = await store.getContentType(slug);
     const statusOptions = normalizeStringArray(body.statusOptions);
     const item = await store.upsertContentType({
-      id: body.id || `ct_${runtime.uuid()}`,
+      id: body.id || existing?.id || `ct_${runtime.uuid()}`,
       slug,
       label: body.label || slug,
       kind: body.kind || 'content',
@@ -65,6 +66,7 @@ export function createContentModelFeature({ runtime, store }) {
   async function upsertTaxonomy({ paramsSlug, body }) {
     const slug = normalizeSlug(paramsSlug || body.slug);
     if (!slug) return { error: { code: 'TAXONOMY_INVALID_SLUG', message: 'Taxonomy slug is required', status: 400 } };
+    const existing = await store.getTaxonomy(slug);
     const objectTypes = await validateObjectTypes(store, normalizeStringArray(body.objectTypes));
     const hierarchical = Boolean(body.hierarchical);
     const constraints = normalizeObject(body.constraints);
@@ -72,7 +74,7 @@ export function createContentModelFeature({ runtime, store }) {
       constraints.allowParent = false;
     }
     const item = await store.upsertTaxonomy({
-      id: body.id || `tax_${runtime.uuid()}`,
+      id: body.id || existing?.id || `tax_${runtime.uuid()}`,
       slug,
       label: body.label || slug,
       hierarchical,

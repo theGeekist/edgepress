@@ -27,7 +27,7 @@ export function applyDocumentQuery(allDocuments, query) {
     if (q && !String(doc.title || '').toLowerCase().includes(q)) return false;
     if (query?.slug) {
       const slug = String(query.slug || '').trim().toLowerCase();
-      if (slug && String(doc.slug || '').toLowerCase() !== slug) return false;
+      if (slug && String(doc.slug || '').trim().toLowerCase() !== slug) return false;
     }
     return true;
   });

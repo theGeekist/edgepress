@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import { execSync } from 'node:child_process';
 import { createCloudflareReferencePlatform } from '../../cloudflare/src/index.js';
 import { createApiHandler } from '../../../apps/api/src/app/create-api-handler.js';
-import { requestJson } from '../../testing/test/helpers/testUtils.js';
-import { createFakeD1, createFakeKV, createFakeR2 } from '../../testing/test/helpers/cloudflareFakes.js';
+import { requestJson } from '../../testing/src/test-utils.js';
+import { createFakeD1, createFakeKV, createFakeR2 } from '../../testing/src/cf-fakes.js';
 
 test('boundary check blocks Cloudflare terms outside cloudflare', async () => {
   const out = execSync('node scripts/check-boundaries.js', { encoding: 'utf8', cwd: process.cwd() });

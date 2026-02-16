@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createInMemoryPlatform } from '../../../packages/testing/src/store.js';
-import { authAsAdmin, requestJson } from '../../../packages/testing/test/helpers/testUtils.js';
+import { authAsAdmin, requestJson } from '../../../packages/testing/src/test-utils.js';
 
 test('media blocks and featured images survive revision->preview->publish->private flow', async () => {
   const platform = createInMemoryPlatform();

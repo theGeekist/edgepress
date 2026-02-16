@@ -18,7 +18,10 @@ export async function readJson(request) {
     if (!text) return {};
     return JSON.parse(text);
   } catch {
-    return {};
+    const err = new Error('Request body must be valid JSON');
+    err.code = 'INVALID_JSON';
+    err.status = 400;
+    throw err;
   }
 }
 

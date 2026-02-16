@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { registerWpCoreMetaRoutes } from '../../../apps/api/src/adapters/http/controllers/wp-core/meta.js';
-import { registerWpCoreSchemaRoutes } from '../../../apps/api/src/adapters/http/controllers/wp-core/schema.js';
+import { registerWpCoreMetaRoutes } from '../src/adapters/http/controllers/wp-core/meta.js';
+import { registerWpCoreSchemaRoutes } from '../src/adapters/http/controllers/wp-core/schema.js';
 
 function createCollector() {
   const handlers = new Map();

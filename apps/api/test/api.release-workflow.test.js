@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createRelease } from '../../../apps/api/src/orchestration/release-workflow.js';
+import { createRelease } from '../src/orchestration/release-workflow.js';
 
 function createRuntime() {
   return {

@@ -1,9 +1,18 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { HOOK_NAMES, resolveHooks, applyFilters, doAction } from '../../../apps/api/src/app/hooks.js';
+import {
+  HOOK_NAMES,
+  resolveHooks,
+  applyFilters,
+  doAction,
+  __resetHooksFallbackWarningForTests
+} from '../src/app/hooks.js';
 import { createHooksRegistry } from '../../../packages/hooks/src/index.js';
 import { createInMemoryPlatform } from '../../../packages/testing/src/store.js';
-import { authAsAdmin, requestJson } from '../../../packages/testing/test/helpers/testUtils.js';
+import { authAsAdmin, requestJson } from '../../../packages/testing/src/test-utils.js';
+
+// Intentional duplication with packages/api-core hook-branch tests:
+// app hooks and api-core hooks are independently testable modules with mirrored behavior.
 
 async function createDoc(handler, token, suffix = 'hook') {
   const created = await requestJson(handler, 'POST', '/v1/documents', {
@@ -193,7 +202,7 @@ test('resolveHooks requires the broader WordPress-compatible method surface', ()
 });
 
 test('resolveHooks warns once for partial registry and doAction logs sync hook errors', () => {
-  delete globalThis.__edgepress_warned_hooks_fallback__;
+  __resetHooksFallbackWarningForTests();
   const logs = [];
   const partial = { addAction() {} };
 

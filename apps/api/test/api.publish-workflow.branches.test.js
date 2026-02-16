@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { runPublishWorkflow } from '../../../apps/api/src/orchestration/publish-workflow.js';
+import { runPublishWorkflow } from '../src/orchestration/publish-workflow.js';
 
 function createRuntime(logs = []) {
   return {

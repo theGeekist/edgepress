@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createInMemoryPlatform } from '../../../packages/testing/src/store.js';
-import { authAsAdmin, requestJson } from '../../../packages/testing/test/helpers/testUtils.js';
+import { authAsAdmin, requestJson } from '../../../packages/testing/src/test-utils.js';
 import { createUser } from '@geekist/edgepress/domain/entities.js';
 
 async function seedDoc(handler, token) {
@@ -153,11 +153,14 @@ test('private route reads static artifact and uses auth-scoped cache', async () 
 
   const first = await requestJson(handler, 'GET', `/v1/private/${encodeURIComponent(docId)}`, { token: accessToken });
   assert.equal(first.res.status, 200);
-  assert.equal(first.json.cache, 'miss');
+  assert.equal(typeof first.json.route, 'string');
+  assert.equal(typeof first.json.html, 'string');
+  assert.equal(typeof first.json.releaseId, 'string');
+  assert.equal(first.json.cache, undefined);
 
   const second = await requestJson(handler, 'GET', `/v1/private/${encodeURIComponent(docId)}`, { token: accessToken });
   assert.equal(second.res.status, 200);
-  assert.equal(second.json.cache, 'hit');
+  assert.equal(second.json.cache, undefined);
 });
 
 test('private route cache scope is isolated by auth capabilities', async () => {
@@ -178,13 +181,13 @@ test('private route cache scope is isolated by auth capabilities', async () => {
 
   const firstA = await requestJson(handler, 'GET', `/v1/private/${encodeURIComponent(docId)}`, { token: accessToken });
   assert.equal(firstA.res.status, 200);
-  assert.equal(firstA.json.cache, 'miss');
+  assert.equal(firstA.json.cache, undefined);
 
   const firstB = await requestJson(handler, 'GET', `/v1/private/${encodeURIComponent(docId)}`, { token: accessTokenB });
   assert.equal(firstB.res.status, 200);
-  assert.equal(firstB.json.cache, 'miss');
+  assert.equal(firstB.json.cache, undefined);
 
   const secondB = await requestJson(handler, 'GET', `/v1/private/${encodeURIComponent(docId)}`, { token: accessTokenB });
   assert.equal(secondB.res.status, 200);
-  assert.equal(secondB.json.cache, 'hit');
+  assert.equal(secondB.json.cache, undefined);
 });

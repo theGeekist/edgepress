@@ -9,7 +9,7 @@ import {
   createKvHelpers,
   createRuntime,
   parseJsonSafe
-} from '../../testing/test/helpers/coverage-fakes.js';
+} from '../../testing/src/coverage-fakes.js';
 
 test('cloudflare navigation adapters cover d1 and kv branches', async () => {
   const D1_SQL = {

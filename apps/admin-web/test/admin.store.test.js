@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createCanonicalSdkStore } from '../../../apps/admin-web/src/features/editor/gutenberg-integration.js';
 import { createInMemoryPlatform } from '../../../packages/testing/src/store.js';
 import { createApiHandler } from '../../../apps/api/src/app/create-api-handler.js';
-import { authAsAdmin } from '../../../packages/testing/test/helpers/testUtils.js';
+import { authAsAdmin } from '../../../packages/testing/src/test-utils.js';
 
 function createLocalFetch(handler) {
   return async (url, init = {}) => {

@@ -2,12 +2,9 @@ export function createAuthFeature({ runtime, store }) {
   function credentialsMatch(expected, supplied) {
     const a = String(expected ?? '');
     const b = String(supplied ?? '');
-    if (a.length !== b.length) {
-      return false;
-    }
-    let diff = 0;
+    let diff = a.length ^ b.length;
     for (let index = 0; index < a.length; index += 1) {
-      diff |= a.charCodeAt(index) ^ b.charCodeAt(index);
+      diff |= a.charCodeAt(index) ^ (b.charCodeAt(index) || 0);
     }
     return diff === 0;
   }

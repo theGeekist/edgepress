@@ -7,6 +7,8 @@ import {
   doAction
 } from '../../api-core/src/hooks.js';
 
+// Intentional duplication with apps/api hook-branch tests:
+// api-core hooks and app hooks are independently testable modules with mirrored behavior.
 test('resolveHooks logs fallback warning once for partial registries', () => {
   __resetHooksFallbackWarningForTests();
   const logs = [];

@@ -7,7 +7,7 @@ import {
   resolveInternalMediaIdForWpId,
   toPostTypeRecord,
   toWpTaxonomyRecord
-} from '../../wp-core/src/index.js';
+} from '../src/index.js';
 
 test('wp-core id map handles empty/unknown ids and paginated lookups', async () => {
   assert.equal(toWpNumericId(''), 1);
@@ -42,7 +42,8 @@ test('wp-core id map handles empty/unknown ids and paginated lookups', async () 
   };
 
   assert.equal(await loadDocumentByType(store, 'post', 'doc_page'), null);
-  assert.equal(await loadDocumentByType(store, 'post', 'doc_post').then((d) => d.id), 'doc_post');
+  const doc = await loadDocumentByType(store, 'post', 'doc_post');
+  assert.equal(doc.id, 'doc_post');
 
   assert.equal(await resolveInternalIdForWpId(store, 'post', ''), null);
   assert.equal(await resolveInternalIdForWpId(store, 'post', 'doc_post'), 'doc_post');

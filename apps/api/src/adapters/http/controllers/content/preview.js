@@ -23,12 +23,16 @@ export function createPreviewRoutes({ runtime, store, previewStore, route, authz
     }),
 
     route('GET', '/preview/:token', async (request, params) => {
-      const result = await previews.renderPreview({ request, token: params.token });
-      if (result.error) return error(result.error.code, result.error.message, result.error.status);
-      return new Response(result.html, {
-        status: 200,
-        headers: result.headers
-      });
+      try {
+        const result = await previews.renderPreview({ request, token: params.token });
+        if (result.error) return error(result.error.code, result.error.message, result.error.status);
+        return new Response(result.html, {
+          status: 200,
+          headers: result.headers
+        });
+      } catch (e) {
+        return error('PREVIEW_ERROR', e?.message || 'Preview rendering failed', 500);
+      }
     })
   ];
 }

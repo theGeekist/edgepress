@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createInMemoryPlatform } from '../../../packages/testing/src/store.js';
-import { authAsAdmin, createHandler, requestJson } from '../../../packages/testing/test/helpers/testUtils.js';
+import { createInMemoryPlatform } from '@geekist/edgepress/testing';
+import { authAsAdmin, createHandler, requestJson } from '@geekist/edgepress/testing/test-utils.js';
 
 test('wp-core: POST /posts with various content formats parses correctly', async () => {
   const platform = createInMemoryPlatform();
