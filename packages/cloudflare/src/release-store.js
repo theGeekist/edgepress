@@ -245,6 +245,51 @@ export function createReleaseStore({
       }
       return releaseId;
     },
+    async activateIfNone(releaseId) {
+      if (!(await hasManifest(releaseId))) {
+        throw new Error('Unknown releaseId');
+      }
+      const previousReleaseId = await getActiveReleaseInternal();
+      if (previousReleaseId) return null;
+
+      if (d1) {
+        await ensureD1ReleaseSchema();
+        const activatedAt = runtime.now().toISOString();
+        const result = await d1.prepare(D1_SQL.upsertActiveReleaseIfNone).bind(releaseId).run();
+        const changed = Number(result?.meta?.changes || 0) > 0;
+        if (!changed) return null;
+        await d1
+          .prepare(D1_SQL.insertHistory)
+          .bind(
+            JSON.stringify({
+              type: 'activated',
+              releaseId,
+              previousReleaseId: null,
+              at: activatedAt
+            }),
+            activatedAt
+          )
+          .run();
+        return releaseId;
+      }
+
+      if (kv?.put) {
+        const current = await kv.get(releasePointerKey);
+        if (current) return null;
+        await kv.put(releasePointerKey, releaseId);
+      } else {
+        if (releaseState.activeRelease) return null;
+        releaseState.activeRelease = releaseId;
+      }
+
+      await appendReleaseHistory({
+        type: 'activated',
+        releaseId,
+        previousReleaseId: null,
+        at: runtime.now().toISOString()
+      });
+      return releaseId;
+    },
     async getActiveRelease() {
       return getActiveReleaseInternal();
     },

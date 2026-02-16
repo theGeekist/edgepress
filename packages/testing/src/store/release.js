@@ -51,6 +51,20 @@ export function createReleaseFeature(state, runtime) {
       });
       return state.activeRelease;
     },
+    async activateIfNone(releaseId) {
+      if (!state.releases.has(releaseId)) {
+        throw new Error('Unknown releaseId');
+      }
+      if (state.activeRelease) return null;
+      state.activeRelease = releaseId;
+      state.releaseHistory.push({
+        type: 'activated',
+        releaseId,
+        previousReleaseId: null,
+        at: runtime.now().toISOString()
+      });
+      return state.activeRelease;
+    },
     async getActiveRelease() {
       return state.activeRelease;
     },

@@ -14,6 +14,8 @@ export const D1_SQL = {
   selectActiveRelease: 'SELECT active_release_id FROM release_state WHERE id = 1',
   upsertActiveRelease:
     'INSERT INTO release_state (id, active_release_id) VALUES (1, ?) ON CONFLICT(id) DO UPDATE SET active_release_id = excluded.active_release_id',
+  upsertActiveReleaseIfNone:
+    'INSERT INTO release_state (id, active_release_id) VALUES (1, ?) ON CONFLICT(id) DO UPDATE SET active_release_id = excluded.active_release_id WHERE release_state.active_release_id IS NULL',
   selectHistory: 'SELECT event_json FROM release_history ORDER BY id ASC',
   createAppUsers:
     'CREATE TABLE IF NOT EXISTS app_users (id TEXT PRIMARY KEY, username TEXT NOT NULL UNIQUE, user_json TEXT NOT NULL)',

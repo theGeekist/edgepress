@@ -43,5 +43,6 @@ export function assertPlatformContracts(platform) {
   assertContractMethod(platform.cacheStore, 'get');
   assertContractMethod(platform.releaseStore, 'writeArtifact');
   assertContractMethod(platform.releaseStore, 'writeManifest');
+  assertContractMethod(platform.releaseStore, 'activateIfNone');
   assertContractMethod(platform.previewStore, 'createPreview');
 }
