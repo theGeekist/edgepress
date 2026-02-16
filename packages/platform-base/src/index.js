@@ -14,7 +14,8 @@ import { createCacheStoreFeature } from './store/cache.js';
 import { createPreviewStoreFeature } from './store/preview.js';
 import { createCoordinationFeature } from './store/coordination.js';
 
-export function createInMemoryPlatform() {
+export function createInMemoryPlatform(options = {}) {
+  const seedDefaults = options.seedDefaults !== false;
   const state = createInMemoryState();
   const runtime = createRuntimePlatform();
 
@@ -61,43 +62,45 @@ export function createInMemoryPlatform() {
     ...navigation
   };
 
-  // Seed default data
-  const defaultAdminPassword = ['a', 'd', 'm', 'i', 'n'].join('');
-  store.seedUser(createUser({ id: 'u_admin', username: 'admin', password: defaultAdminPassword, role: 'admin' }));
-  store.upsertContentType({
-    id: 'ct_page',
-    slug: 'page',
-    label: 'Page',
-    supports: { title: true, editor: true, excerpt: true, featuredImage: true, revisions: true },
-    fields: [],
-    taxonomies: ['category', 'post_tag'],
-    statusOptions: ['draft', 'published', 'trash']
-  });
-  store.upsertContentType({
-    id: 'ct_post',
-    slug: 'post',
-    label: 'Post',
-    supports: { title: true, editor: true, excerpt: true, featuredImage: true, revisions: true },
-    fields: [],
-    taxonomies: ['category', 'post_tag'],
-    statusOptions: ['draft', 'published', 'trash']
-  });
-  store.upsertTaxonomy({
-    id: 'tax_category',
-    slug: 'category',
-    label: 'Categories',
-    hierarchical: true,
-    objectTypes: ['page', 'post'],
-    constraints: { maxDepth: null, uniqueTermNameWithinSiblings: true }
-  });
-  store.upsertTaxonomy({
-    id: 'tax_post_tag',
-    slug: 'post_tag',
-    label: 'Tags',
-    hierarchical: false,
-    objectTypes: ['page', 'post'],
-    constraints: { maxDepth: null, uniqueTermNameWithinSiblings: false }
-  });
+  if (seedDefaults) {
+    // Seed default data for local development and test harnesses.
+    const defaultAdminPassword = ['a', 'd', 'm', 'i', 'n'].join('');
+    store.seedUser(createUser({ id: 'u_admin', username: 'admin', password: defaultAdminPassword, role: 'admin' }));
+    store.upsertContentType({
+      id: 'ct_page',
+      slug: 'page',
+      label: 'Page',
+      supports: { title: true, editor: true, excerpt: true, featuredImage: true, revisions: true },
+      fields: [],
+      taxonomies: ['category', 'post_tag'],
+      statusOptions: ['draft', 'published', 'trash']
+    });
+    store.upsertContentType({
+      id: 'ct_post',
+      slug: 'post',
+      label: 'Post',
+      supports: { title: true, editor: true, excerpt: true, featuredImage: true, revisions: true },
+      fields: [],
+      taxonomies: ['category', 'post_tag'],
+      statusOptions: ['draft', 'published', 'trash']
+    });
+    store.upsertTaxonomy({
+      id: 'tax_category',
+      slug: 'category',
+      label: 'Categories',
+      hierarchical: true,
+      objectTypes: ['page', 'post'],
+      constraints: { maxDepth: null, uniqueTermNameWithinSiblings: true }
+    });
+    store.upsertTaxonomy({
+      id: 'tax_post_tag',
+      slug: 'post_tag',
+      label: 'Tags',
+      hierarchical: false,
+      objectTypes: ['page', 'post'],
+      constraints: { maxDepth: null, uniqueTermNameWithinSiblings: false }
+    });
+  }
 
   return { runtime, store, blobStore, cacheStore, releaseStore, previewStore, coordination, state };
 }

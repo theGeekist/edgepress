@@ -1,7 +1,13 @@
 export function createFormsFeature({ runtime, store }) {
+  function isPlainObject(value) {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+    const proto = Object.getPrototypeOf(value);
+    return proto === Object.prototype || proto === null;
+  }
+
   async function submitForm({ formId, body, requestContext }) {
     const payload = body?.payload;
-    if (payload !== undefined && (payload === null || typeof payload !== 'object' || Array.isArray(payload))) {
+    if (payload !== undefined && !isPlainObject(payload)) {
       return { error: { code: 'FORM_PAYLOAD_INVALID', message: 'Form payload must be an object', status: 400 } };
     }
 

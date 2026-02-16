@@ -1,4 +1,4 @@
-import { error, json, readJson } from '@geekist/edgepress/api-core/http.js';
+import { error, json } from '@geekist/edgepress/api-core/http.js';
 import { createFormsFeature } from '@geekist/edgepress/content';
 
 export function createFormRoutes({ runtime, store, route }) {
@@ -7,7 +7,15 @@ export function createFormRoutes({ runtime, store, route }) {
   return [
     route('POST', '/v1/forms/:formId/submit', async (request, params) => {
       try {
-        const body = await readJson(request);
+        const raw = await request.text();
+        let body = {};
+        if (raw) {
+          try {
+            body = JSON.parse(raw);
+          } catch {
+            return error('INVALID_JSON', 'Request body must be valid JSON', 400);
+          }
+        }
         const result = await forms.submitForm({
           formId: params.formId,
           body,

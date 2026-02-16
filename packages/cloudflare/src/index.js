@@ -18,7 +18,10 @@ export { D1_SQL } from './d1-sql.js';
  * @typedef {{ TOKEN_KEY?: string, PREVIEW_TOKEN_KEY?: string, PRIVATE_CACHE_SCOPE_KEY?: string, BOOTSTRAP_ADMIN_USERNAME?: string, BOOTSTRAP_ADMIN_PASSWORD?: string, BOOTSTRAP_ADMIN_ROLE?: string, KV?: KVNamespace & { __keys?: string[] }, R2_BUCKET?: R2Bucket & { createSignedUrl?: (path: string, ttlSeconds: number) => string }, D1?: D1Database }} CloudflareEnv
  */
 export function createCloudflareReferencePlatform(env = /** @type {CloudflareEnv} */ ({}), options = {}) {
-  const base = createInMemoryPlatform();
+  const seedDefaults = typeof options.seedDefaults === 'boolean'
+    ? options.seedDefaults
+    : process.env.NODE_ENV === 'test';
+  const base = createInMemoryPlatform({ seedDefaults });
   const r2 = env.R2_BUCKET;
   const kv = env.KV;
   const d1 = env.D1;
