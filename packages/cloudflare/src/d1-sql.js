@@ -6,6 +6,8 @@ export const D1_SQL = {
   createReleaseHistory:
     'CREATE TABLE IF NOT EXISTS release_history (id INTEGER PRIMARY KEY AUTOINCREMENT, event_json TEXT NOT NULL, created_at TEXT NOT NULL)',
   insertHistory: 'INSERT INTO release_history (event_json, created_at) VALUES (?, ?)',
+  insertHistoryIfLastWriteChanged:
+    'INSERT INTO release_history (event_json, created_at) SELECT ?, ? WHERE changes() > 0',
   selectManifestId: 'SELECT release_id FROM release_manifests WHERE release_id = ?',
   selectManifestById: 'SELECT manifest_json FROM release_manifests WHERE release_id = ?',
   selectAllManifests:
@@ -14,6 +16,8 @@ export const D1_SQL = {
   selectActiveRelease: 'SELECT active_release_id FROM release_state WHERE id = 1',
   upsertActiveRelease:
     'INSERT INTO release_state (id, active_release_id) VALUES (1, ?) ON CONFLICT(id) DO UPDATE SET active_release_id = excluded.active_release_id',
+  upsertActiveReleaseIfNone:
+    'INSERT INTO release_state (id, active_release_id) VALUES (1, ?) ON CONFLICT(id) DO UPDATE SET active_release_id = excluded.active_release_id WHERE release_state.active_release_id IS NULL',
   selectHistory: 'SELECT event_json FROM release_history ORDER BY id ASC',
   createAppUsers:
     'CREATE TABLE IF NOT EXISTS app_users (id TEXT PRIMARY KEY, username TEXT NOT NULL UNIQUE, user_json TEXT NOT NULL)',

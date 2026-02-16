@@ -12,7 +12,7 @@ All API errors are returned as:
 
 <<< @/snippets/api-error-envelope.ts
 
-Implementation: `apps/api/src/http.js`
+Implementation: `packages/api-core/src/http.js`
 
 ## Capability gating
 
@@ -24,7 +24,7 @@ Capability enforcement rules:
 - Invalid token signature: `AUTH_INVALID_TOKEN` (401)
 - Missing capability: `FORBIDDEN` (403)
 
-Implementation: `apps/api/src/auth.js`
+Implementation: `packages/api-core/src/auth.js`
 
 ## Preview expiry
 
@@ -64,11 +64,11 @@ Implementation: `packages/domain/src/provenance.js`
 
 ## Tests that prove behavior
 
-- `packages/testing/test/api.behavior.test.js`
-- `packages/testing/test/api.contract.test.js`
-- `packages/testing/test/release.preview.private.test.js`
+- `apps/api/test/api.behavior.test.js`
+- `apps/api/test/api.contract.test.js`
+- `apps/api/test/release.preview.private.test.js`
 
 ## Source of truth
 
 - `packages/domain/src/invariants.js`
-- `apps/api/src/http.js`
+- `packages/api-core/src/http.js`

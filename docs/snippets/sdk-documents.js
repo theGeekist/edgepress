@@ -1,4 +1,4 @@
-import { createClient } from "../../apps/admin-web/src/adapters/api-client.js";
+import { createClient } from "@geekist/edgepress/admin-api-client";
 
 let accessToken = "<accessToken>";
 

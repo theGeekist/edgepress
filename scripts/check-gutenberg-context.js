@@ -3,7 +3,7 @@ import { execSync } from 'node:child_process';
 import path from 'node:path';
 
 const root = process.cwd();
-const linkPath = path.join(root, 'gutenberg');
+const linkPath = path.join(root, '.gutenberg');
 
 const requiredFiles = [
   'packages/block-editor/README.md',
@@ -19,12 +19,12 @@ function fail(message) {
 }
 
 if (!existsSync(linkPath)) {
-  fail('gutenberg context: missing ./gutenberg link/path');
+  fail('gutenberg context: missing ./.gutenberg link/path');
 }
 
 const stat = lstatSync(linkPath);
 if (!stat.isSymbolicLink()) {
-  fail('gutenberg context: ./gutenberg exists but is not a symlink');
+  fail('gutenberg context: ./.gutenberg exists but is not a symlink');
 }
 
 const target = realpathSync(linkPath);

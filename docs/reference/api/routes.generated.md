@@ -4,7 +4,7 @@ title: Routes (generated)
 
 # Routes (generated)
 
-This page is generated from `packages/testing/src/api-contracts.js`.
+This page is generated from `packages/api-core/src/api-contracts.js`.
 
 It documents required request/response keys (not full schemas).
 

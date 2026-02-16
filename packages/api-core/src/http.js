@@ -13,12 +13,15 @@ export function error(code, message, status = 400) {
 }
 
 export async function readJson(request) {
+  const text = await request.text();
+  if (!text) return {};
   try {
-    const text = await request.text();
-    if (!text) return {};
     return JSON.parse(text);
   } catch {
-    return {};
+    const err = new Error('Request body must be valid JSON');
+    err.code = 'INVALID_JSON';
+    err.status = 400;
+    throw err;
   }
 }
 

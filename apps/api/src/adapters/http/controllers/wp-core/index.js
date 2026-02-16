@@ -20,11 +20,13 @@ export function createWpCoreRoutes({ runtime, store, route, authzErrorResponse, 
     route('GET', '/v1', async (request) => {
       try {
         await requireCapability({ runtime, store, request, capability: 'document:read' });
+        // WordPress core-data probes /v1 for site root metadata.
+        const origin = new URL(request.url).origin;
         return json({
           name: 'GCMS Site',
           description: '',
-          url: new URL(request.url).origin,
-          home: new URL(request.url).origin,
+          url: origin,
+          home: origin,
           gmt_offset: 0,
           timezone_string: 'UTC',
           site_icon: 0,

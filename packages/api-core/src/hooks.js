@@ -73,7 +73,12 @@ export function resolveHooks(platform) {
   return getSharedHooksRegistry();
 }
 
+export function __resetHooksFallbackWarningForTests() {
+  delete globalThis[WARNED_HOOKS_FALLBACK_KEY];
+}
+
 export function applyFilters(hooks, hookName, payload) {
+  // Filters are value transforms; missing hook registries should preserve the input payload.
   if (!hooks || typeof hooks.applyFilters !== 'function') return payload;
   return hooks.applyFilters(hookName, payload);
 }

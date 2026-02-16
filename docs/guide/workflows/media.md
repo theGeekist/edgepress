@@ -26,5 +26,5 @@ Common errors:
 
 ## Tests that prove behavior
 
-- `packages/testing/test/api.behavior.test.js`
-- `packages/testing/test/api.contract.test.js`
+- `apps/api/test/api.behavior.test.js`
+- `apps/api/test/api.contract.test.js`

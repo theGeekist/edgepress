@@ -1,0 +1,83 @@
+import { timingSafeEqual } from 'node:crypto';
+
+export function createRuntimePlatform() {
+  const processEnv = typeof process !== 'undefined' && process?.env ? process.env : {};
+
+  const runtime = {
+    envOverrides: {},
+    env(key) {
+      if (Object.prototype.hasOwnProperty.call(this.envOverrides, key)) {
+        return this.envOverrides[key];
+      }
+      if (Object.prototype.hasOwnProperty.call(processEnv, key)) {
+        return processEnv[key];
+      }
+      if (key === 'TOKEN_KEY') return 'dev-token-key';
+      if (key === 'PREVIEW_TOKEN_KEY') return 'dev-preview-token-key';
+      if (key === 'PRIVATE_CACHE_SCOPE_KEY') return 'dev-private-cache-scope-key';
+      return undefined;
+    },
+    now() {
+      return new Date();
+    },
+    uuid() {
+      return crypto.randomUUID();
+    },
+    log(level, event, meta) {
+      if (processEnv.NODE_ENV !== 'test') {
+        console.log(`[${level}] ${event}`, meta || {});
+      }
+    },
+    requestContext(request) {
+      const url = request ? new URL(request.url) : null;
+      const nowTs = this.now().getTime();
+      return {
+        traceId: request?.headers.get('x-trace-id') || this.uuid(),
+        ipHash: request?.headers.get('x-ip-hash') || 'ip_local',
+        userAgentHash: request?.headers.get('x-ua-hash') || 'ua_local',
+        requestId: url ? `${url.pathname}:${nowTs}` : `req:${nowTs}`
+      };
+    },
+    waitUntil(promise) {
+      promise.catch((err) => this.log('error', 'waitUntil_failure', { message: err.message }));
+    },
+    async hmacSign(input, keyRef = 'TOKEN_KEY') {
+      const key = this.env(keyRef);
+      if (!key) {
+        throw new Error(`Missing environment key: ${keyRef}`);
+      }
+      const encoder = new TextEncoder();
+      const keyData = encoder.encode(key);
+      const data = encoder.encode(input);
+
+      const cryptoKey = await crypto.subtle.importKey(
+        'raw',
+        keyData,
+        { name: 'HMAC', hash: 'SHA-256' },
+        false,
+        ['sign']
+      );
+
+      const signature = await crypto.subtle.sign('HMAC', cryptoKey, data);
+      return Array.from(new Uint8Array(signature))
+        .map((b) => b.toString(16).padStart(2, '0'))
+        .join('');
+    },
+    async hmacVerify(input, signature, keyRef = 'TOKEN_KEY') {
+      const signed = await this.hmacSign(input, keyRef);
+      const expected = Buffer.from(signed, 'utf8');
+      const actual = Buffer.from(String(signature || ''), 'utf8');
+      if (expected.length !== actual.length) return false;
+      return timingSafeEqual(expected, actual);
+    },
+    base64urlEncode(value) {
+      const payload = typeof value === 'string' ? value : JSON.stringify(value);
+      return Buffer.from(payload, 'utf8').toString('base64url');
+    },
+    base64urlDecode(value) {
+      return Buffer.from(value, 'base64url').toString('utf8');
+    }
+  };
+
+  return runtime;
+}

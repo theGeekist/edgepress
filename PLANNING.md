@@ -40,7 +40,7 @@ Exit criteria:
 ## Phase 2 – Admin Client Integration (complete)
 - [x] Canonical SDK hardening (`packages/sdk/src/client.js`).
 - [x] Gutenberg admin shell integration with `@wordpress/api-fetch` middlewares (`apps/admin-web`).
-- [x] Admin auth/refresh and middleware-order tests (`packages/testing/test/admin.*.test.js`).
+- [x] Admin auth/refresh and middleware-order tests (`apps/admin-web/test/admin.*.test.js`).
 
 Exit criteria:
 - Admin shell runs without direct dependency on WordPress server APIs.
@@ -87,8 +87,8 @@ Exit criteria:
 - [x] Deliver one clean end-to-end authoring loop in Admin UI: edit -> autosave revision -> signed preview -> publish -> activate -> private delivery read.
 - [x] Add explicit acceptance tests for this loop in in-memory + wrangler-local + deployed smoke contexts.
 - [x] Remove any remaining manual/implicit steps required to activate and verify a release.
-- `Increment complete`: added canonical in-memory loop coverage (`packages/testing/test/editor.loop.e2e.test.js`) and expanded wrangler smoke flows (`scripts/test-wrangler-local.js`, `scripts/test-wrangler-deployed.js`) with update/revision checks, second publish, explicit activation, and active-release private read assertions.
-- `Increment complete`: admin shell and UI now expose loop operations (revisions, preview, publish, activate release, private-read verification) with a dedicated loop status panel (`apps/admin-web/src/editor-shell.js`, `apps/admin-web/src/gutenberg-integration.js`, `apps/admin-web/src/app/App.jsx`, `apps/admin-web/src/features/releases/useReleaseLoopState.js`) and shell-level loop test coverage (`packages/testing/test/admin.shell.test.js`).
+- `Increment complete`: added canonical in-memory loop coverage (`apps/api/test/api.release-workflow.test.js`) and expanded wrangler smoke flows (`scripts/test-wrangler-local.js`, `scripts/test-wrangler-deployed.js`) with update/revision checks, second publish, explicit activation, and active-release private read assertions.
+- `Increment complete`: admin shell and UI now expose loop operations (revisions, preview, publish, activate release, private-read verification) with a dedicated loop status panel (`apps/admin-web/src/app/App.jsx`) and shell-level loop test coverage (`apps/admin-web/test/admin.shell.test.js`).
 
 Exit criteria:
 - A single operator path exists for authoring-to-delivery with no side scripts.
@@ -153,8 +153,8 @@ Exit criteria:
 - [x] Wire private/live read resolution by canonical route identity, not implicit document-id assumptions.
 - [x] Add migration strategy for existing documents and legacy route assumptions.
 - [x] Add acceptance tests for route edits across draft -> preview -> publish -> live flows.
-- `Increment complete (2026-02-07)`: canonical slug persistence and uniqueness now enforced in document routes, publish artifact routes resolve by slug with doc-id fallback compatibility for private reads, and admin UI preserves in-editor slug edits (`apps/api/src/features/document-routes.js`, `apps/api/src/features/private-routes.js`, `packages/publish/src/publisher.js`, `apps/admin-web/src/features/documents/useDocumentsState.js`).
-- `Increment complete (2026-02-07)`: added acceptance coverage for slug route edits across republish + activation, including stable doc-id private-read compatibility (`packages/testing/test/api.behavior.test.js`).
+- `Increment complete (2026-02-07)`: canonical slug persistence and uniqueness now enforced in document/private controllers, publish artifact routes resolve by slug with doc-id fallback compatibility for private reads, and admin UI preserves in-editor slug edits (`apps/api/src/adapters/http/controllers/content/document.js`, `apps/api/src/adapters/http/controllers/content/private.js`, `apps/api/src/orchestration/publish-workflow.js`, `apps/admin-web/src/features/content/useDocumentsState.js`).
+- `Increment complete (2026-02-07)`: added acceptance coverage for slug route edits across republish + activation, including stable doc-id private-read compatibility (`apps/api/test/api.behavior.test.js`).
 
 Exit criteria:
 - Permalinks are first-class persisted data and deterministically map to delivery routes.
@@ -165,54 +165,65 @@ Exit criteria:
 - [x] Defer Gutenberg navigation block parity and menu rendering semantics to block-parity phase (no standalone menu publish-artifact pipeline).
 - [x] Implement media domain metadata parity (`alt`, `caption`, `description`, featured image linkage).
 - [x] Implement media upload/browse workflow substrate in admin/API (selection UX and full block parity tracked in Phase 12B).
-- `Increment complete (2026-02-07)`: canonical navigation menu substrate is live via API/store/tests (`apps/api/src/features/navigation-routes.js`, `packages/testing/src/inMemoryPlatform.js`, `packages/cloudflare/src/{app-store.js,d1-sql.js}`, `packages/testing/test/{api.behavior.test.js,api.contract.test.js,sdk.client.test.js,admin.shell.test.js}`).
-- `Increment complete (2026-02-07)`: canonical media substrate is live across API/store/admin for upload, list/edit/delete, and featured-image/media-id linkage into document save + publish-time media URL resolution (`apps/api/src/features/media-routes.js`, `apps/admin-web/src/features/media/*`, `apps/admin-web/src/features/content/*`, `packages/publish/src/publisher.js`, `packages/testing/test/{api.behavior.test.js,publisher.test.js}`).
+- `Increment complete (2026-02-07)`: canonical navigation menu substrate is live via API/store/tests (`apps/api/src/adapters/http/controllers/content/navigation.js`, `packages/platform-base/src/store`, `packages/cloudflare/src/{app-store.js,d1-sql.js}`, `apps/api/test/{api.behavior.test.js,api.contract.test.js}`, `apps/admin-web/test/admin.shell.test.js`).
+- `Increment complete (2026-02-07)`: canonical media substrate is live across API/store/admin for upload, list/edit/delete, and featured-image/media-id linkage into document save + publish-time media URL resolution (`apps/api/src/adapters/http/controllers/content/media.js`, `apps/admin-web/src/features/media/*`, `apps/admin-web/src/features/content/*`, `apps/api/src/orchestration/publish-workflow.js`, `apps/api/test/{api.behavior.test.js,api.media.test.js}`).
 
 Exit criteria:
 - Navigation and media are first-class data models with stable API/store contracts and admin substrate flows.
 - Block-level authoring/render parity work is explicitly tracked in Phase 12B.
 
-## Phase 12B – Core Blocks and Gutenberg Parity (in progress)
+## Phase 12B – Core Blocks and Gutenberg Parity Architecture (complete)
 - [x] Port/reuse core WordPress blocks and primitives needed for parity-first authoring.
-- [ ] Implement foundational block set end-to-end: rich text, image+caption, embed (with embed validation policy).
+- [x] Implement foundational block-parity architecture and refactor controllers/adapters into the backend architecture shape.
+- [x] Introduce `theme.json` as first-class design token source for editor/preview/site.
+- [x] Define token resolution model and fallback policy (theme defaults vs content overrides).
+- [x] Define WP compatibility profile scope needed for block/editor parity (`wp.*` guaranteed/partial/out-of-scope).
+- [x] Move outstanding product-parity execution items into Phase 12C for a focused follow-up branch.
+- `Increment complete (2026-02-07)`: landed canonical parity substrate with versioned canonical nodes/codecs, deterministic transform/renderer registries, fallback node (`ep/unknown`) + diagnostics, and golden transform tests (`apps/admin-web/src/features/editor/parity/{canonical.js,registries.js,resolver.js,pipeline.js,fallback.js,diagnostics.js}`, `apps/admin-web/test/editor.parity.transforms.test.js`).
+- `Increment complete (2026-02-07)`: ported initial WP block mappings into EP canonical/render pipelines covering paragraph, image, embed, heading, quote, separator, spacer, and layout primitives (group/columns/column/row), with deterministic publish/preview/editor targets (`apps/admin-web/src/features/editor/parity/mappings/{coreParagraph.js,coreImage.js,coreContent.js,coreLayout.js}`, `apps/admin-web/src/features/editor/parity/packs/core.js`).
+- `Increment complete (2026-02-07)`: added theme/token substrate for EP-first styling with semantic style refs, WP `theme.json` adapter origin preservation (presets vs custom), token runtime resolution/fallback behavior, and contract tests (`apps/admin-web/src/features/theme/*`, `apps/admin-web/test/admin.theme.tokens.test.js`).
+- `Increment complete (2026-02-11)`: shipped WP core compatibility façade for Gutenberg host bootstrap including settings/themes/types and post/page list/read/update/create endpoints with numeric WP-ID mapping fallback (`apps/api/src/adapters/http/controllers/wp-core`, `apps/api/test/api.wp-core.test.js`, `apps/api/test/api.behavior.test.js`).
+- `Increment complete (2026-02-11)`: shipped canonical content model controllers/entities for content types, taxonomies, terms (with parent/taxonomy and slug-collision validation), plus document/revision metadata snapshots (`fields`, `termIds`, `legacyHtml`, `excerpt`, `slug`, `status`, `featuredImageId`) (`apps/api/src/adapters/http/controllers/content/content-model.js`, `apps/api/src/adapters/http/controllers/content/document.js`, `packages/domain/src/entities.js`, `apps/api/test/api.content-model.test.js`).
+- `Increment complete (2026-02-11)`: integrated Gutenberg host bootstrap path in admin editor with core-data entity registration and editor-provider wiring (`apps/admin-web/src/features/editor/gutenberg-host.js`, `apps/admin-web/src/features/editor/components/Canvas.jsx`, `apps/admin-web/test/editor.gutenberg-host.test.js`).
+- `Increment complete (2026-02-11)`: extended theme parity substrate with WP theme adapter + editor settings adapter + token runtime integration tests (`apps/admin-web/src/features/theme/{wpThemeAdapter.js,wpEditorSettingsAdapter.js,tokenRuntime.js}`, `apps/admin-web/test/admin.theme.editor-settings.test.js`, `apps/admin-web/test/admin.theme.schema.test.js`).
+- `Increment complete (2026-02-11)`: preview pipeline now serializes canonical blocks and resolves media references (image blocks + featured image) for preview HTML output, with legacy HTML fallback retained (`apps/api/src/adapters/http/controllers/content/preview.js`).
+- `Increment complete (2026-02-11)`: WP façade update paths preserve canonical metadata fields and map `featured_media` consistently (`apps/api/src/adapters/http/controllers/wp-core/post-page.js`).
+- `Increment complete (2026-02-11)`: published versioned WP REST compatibility profile for `/wp/v2` behavior (`docs/reference/wp-compatibility-profile.md`).
+- `Increment complete (2026-02-11)`: added acceptance flow matrix coverage for revision -> preview -> publish -> private delivery including media and taxonomy persistence (`apps/api/test/api.flow.acceptance.test.js`).
+- `Increment complete (2026-02-11)`: editor chrome/workspace alignment pass landed for Gutenberg shell integration in admin layout (`apps/admin-web/src/features/editor/components/canvas.web.css`).
+- `Phase closeout note (planned)`: architecture/package refactors and controller-thinning are complete in this branch; remaining product-parity work is moved to Phase 12C.
+
+## Phase 12C – Product Parity Completion (next branch)
+- [ ] Implement foundational block set end-to-end hardening: rich text, image+caption, embed validation policy finalization.
 - [ ] Implement Gutenberg navigation block parity and menu rendering semantics (no bespoke parallel pipeline).
 - [ ] Replace transitional featured-image/media-id controls with block-parity media selection primitives.
 - [ ] Ensure media/nav block flows survive revision -> preview -> publish -> live without special cases.
-- [x] Introduce `theme.json` as first-class design token source for editor/preview/site.
-- [x] Define token resolution model and fallback policy (theme defaults vs content overrides).
 - [ ] Add templates/patterns strategy and lifecycle (registration, versioning, migration).
-- [ ] Apply theme parity across admin editing chrome, preview skin, and published output.
-- [x] Define WP compatibility profile scope needed for block/editor parity (`wp.*` guaranteed/partial/out-of-scope).
-- `Increment complete (2026-02-07)`: landed canonical parity substrate with versioned canonical nodes/codecs, deterministic transform/renderer registries, fallback node (`ep/unknown`) + diagnostics, and golden transform tests (`apps/admin-web/src/features/editor/parity/{canonical.js,registries.js,resolver.js,pipeline.js,fallback.js,diagnostics.js}`, `packages/testing/test/editor.parity.transforms.test.js`).
-- `Increment complete (2026-02-07)`: ported initial WP block mappings into EP canonical/render pipelines covering paragraph, image, embed, heading, quote, separator, spacer, and layout primitives (group/columns/column/row), with deterministic publish/preview/editor targets (`apps/admin-web/src/features/editor/parity/mappings/{coreParagraph.js,coreImage.js,coreContent.js,coreLayout.js}`, `apps/admin-web/src/features/editor/parity/packs/core.js`).
-- `Increment complete (2026-02-07)`: added theme/token substrate for EP-first styling with semantic style refs, WP `theme.json` adapter origin preservation (presets vs custom), token runtime resolution/fallback behavior, and contract tests (`apps/admin-web/src/features/theme/*`, `packages/testing/test/admin.theme.tokens.test.js`).
-- `Increment complete (2026-02-11)`: shipped WP core compatibility façade for Gutenberg host bootstrap including settings/themes/types and post/page list/read/update/create endpoints with numeric WP-ID mapping fallback (`apps/api/src/features/wp-core-routes.js`, `packages/testing/test/api.wp-core.test.js`, `packages/testing/test/api.behavior.test.js`).
-- `Increment complete (2026-02-11)`: shipped canonical content model routes/entities for content types, taxonomies, terms (with parent/taxonomy and slug-collision validation), plus document/revision metadata snapshots (`fields`, `termIds`, `legacyHtml`, `excerpt`, `slug`, `status`, `featuredImageId`) (`apps/api/src/features/content-model-routes.js`, `apps/api/src/features/document-routes.js`, `packages/domain/src/entities.js`, `packages/testing/test/api.content-model.test.js`).
-- `Increment complete (2026-02-11)`: integrated Gutenberg host bootstrap path in admin editor with core-data entity registration and editor-provider wiring (`apps/admin-web/src/features/editor/gutenberg-host.js`, `apps/admin-web/src/features/editor/components/Canvas.jsx`, `packages/testing/test/editor.gutenberg-host.test.js`).
-- `Increment complete (2026-02-11)`: extended theme parity substrate with WP theme adapter + editor settings adapter + token runtime integration tests (`apps/admin-web/src/features/theme/{wpThemeAdapter.js,wpEditorSettingsAdapter.js,tokenRuntime.js}`, `packages/testing/test/admin.theme.editor-settings.test.js`, `packages/testing/test/admin.theme.schema.test.js`).
-- `Increment complete (2026-02-11)`: preview pipeline now serializes canonical blocks and resolves media references (image blocks + featured image) for preview HTML output, with legacy HTML fallback retained (`apps/api/src/features/preview-routes.js`).
-- `Increment complete (2026-02-11)`: WP façade update paths preserve canonical metadata fields and map `featured_media` consistently (`apps/api/src/features/wp-core-routes.js`).
-- `Increment complete (2026-02-11)`: published versioned WP REST compatibility profile for `/wp/v2` behavior (`docs/reference/wp-compatibility-profile.md`).
-- `Increment complete (2026-02-11)`: added acceptance flow matrix coverage for revision -> preview -> publish -> private delivery including media and taxonomy persistence (`packages/testing/test/api.flow.acceptance.test.js`).
-- `Increment complete (2026-02-11)`: editor chrome/workspace alignment pass landed for Gutenberg shell integration in admin layout (`apps/admin-web/src/features/editor/components/canvas.web.css`).
-- `Remaining in this phase`: embed validation policy hardening; navigation block parity; replacement of transitional featured-image/media-id controls; templates/patterns lifecycle; and complete editor/preview/live theme parity polish.
+- [ ] Apply full theme parity across admin editing chrome, preview skin, and published output.
+- [ ] Finalize parity gap review and close remaining nits/findings in a focused PR.
 
-### Phase 12B Parallel Execution Plan (primary + agent-2)
+Exit criteria:
+- All remaining product parity items are closed without reopening architecture/package boundary decisions.
+- Media/navigation/theme/templates behavior is parity-complete across editor, preview, and live delivery.
 
-Ownership split (to avoid conflicts):
+### Archived — Phase 12B Parallel Execution Plan (primary + agent-2)
+
+ARCHIVED: Phase 12B completed on 2026-02-11; retained for historical reference only.
+
+Ownership split (to avoid conflicts at the time):
 - `Primary (this branch)`: editor/theme parity completion.
   - File scope: `apps/admin-web/src/features/editor/**`, `apps/admin-web/src/features/theme/**`, `apps/admin-web/src/scenes/web/ContentScene.jsx`, `apps/admin-web/src/components/ui/AdminLayout.jsx`.
   - Deliverables: WP-like editor behavior/layout parity, admin chrome vs site-canvas theming separation, removal of remaining transitional editor controls.
 - `Agent-2 (worktree/branch)`: media/nav + WP compatibility flow hardening.
-  - File scope: `apps/api/src/features/{wp-core-routes.js,preview-routes.js,publish-routes.js,private-routes.js,media-routes.js,navigation-routes.js,document-routes.js}`, `packages/publish/src/publisher.js`, `packages/testing/test/{api.behavior.test.js,api.wp-core.test.js,api.preview.test.js,api.publish.test.js,release.preview.private.test.js}`, `docs/**` compatibility profile docs.
+  - File scope: `apps/api/src/adapters/http/controllers/{wp-core,content}`, `apps/api/src/orchestration/{publish-workflow.js,release-workflow.js}`, `apps/api/test/{api.behavior.test.js,api.wp-core.test.js,api.preview.test.js,api.publish.test.js,release.preview.private.test.js}`, `docs/**` compatibility profile docs.
   - Deliverables: media/nav revision->preview->publish->live acceptance guarantees, WP façade behavior hardening, explicit compatibility profile publication.
 
-Conflict guardrails:
+Conflict guardrails that were used:
 - `Agent-2` must not modify `apps/admin-web/src/features/editor/**` or `apps/admin-web/src/features/theme/**`.
-- `Primary` should avoid editing `apps/api/src/features/*`, `packages/publish/src/publisher.js`, and `packages/testing/test/api.*` during agent-2 execution window.
+- `Primary` should avoid editing `apps/api/src/adapters/http/controllers/**`, `apps/api/src/orchestration/{publish-workflow.js,release-workflow.js}`, and `apps/api/test/api.*` during agent-2 execution window.
 - `PLANNING.md` and `docs/internal/edgepress-content-extensibility-spec.md` are primary-owned and updated only after both tracks merge.
 
-Execution order:
+Execution order that was used:
 1. Agent-2 branches from current phase tip (`phase12b-flow-compat-hardening`) and lands small commits grouped by: flow fixes -> tests -> docs.
 2. Agent-2 runs `bun lint` + targeted tests before PR.
 3. Merge agent-2 PR into this phase branch first.

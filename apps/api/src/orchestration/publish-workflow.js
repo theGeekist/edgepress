@@ -8,10 +8,11 @@ export async function runPublishWorkflow({ runtime, store, releaseStore, hooks, 
     sourceRevisionId: provenance.sourceRevisionId,
     sourceRevisionSet: provenance.sourceRevisionSet
   });
-  doAction(runtime, hooks, HOOK_NAMES.publishStartedAction, { user, job });
 
   let publishError = null;
   try {
+    doAction(runtime, hooks, HOOK_NAMES.publishStartedAction, { user, job });
+
     const manifest = await createRelease({
       runtime,
       store,
@@ -21,10 +22,8 @@ export async function runPublishWorkflow({ runtime, store, releaseStore, hooks, 
       publishedBy: user.id
     });
 
-    let activatedRelease = null;
-    if (!(await releaseStore.getActiveRelease())) {
-      await releaseStore.activateRelease(manifest.releaseId);
-      activatedRelease = manifest.releaseId;
+    const activatedRelease = await releaseStore.activateIfNone(manifest.releaseId);
+    if (activatedRelease) {
       doAction(runtime, hooks, HOOK_NAMES.releaseActivatedAction, {
         releaseId: manifest.releaseId,
         source: 'publish_auto'

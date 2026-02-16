@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 import path from 'node:path';
 
@@ -9,11 +9,19 @@ const blocked = [
   'R2Bucket',
   'DurableObjectNamespace'
 ];
-// Only the runtime composition root may mention provider tokens outside adapter packages.
+
+// Keep this allowlist minimal: only runtime composition roots can mention provider globals.
 const blockedTokenAllowlist = new Set([
   'apps/api/src/worker.js'
 ]);
-const featurePackageNames = new Set(['auth', 'content', 'wp-core']);
+
+const sharedPackageNames = new Set(['api-core', 'cloudflare', 'domain', 'hooks', 'platform-base', 'testing', 'wp-core']);
+const featurePackageNames = new Set(
+  readdirSync('packages', { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .filter((name) => !sharedPackageNames.has(name))
+);
 
 const files = execSync("find apps packages -type f \\( -name '*.js' -o -name '*.mjs' -o -name '*.ts' -o -name '*.jsx' \\)", {
   encoding: 'utf8'
@@ -21,9 +29,10 @@ const files = execSync("find apps packages -type f \\( -name '*.js' -o -name '*.
   .trim()
   .split('\n')
   .filter(Boolean);
-  
+
 const scannedFiles = files.filter((f) => !f.includes('/test/'));
 const importFromRegex = /(?:import|export)\s[^'"]*?from\s*['"]([^'"]+)['"]/g;
+const sideEffectImportRegex = /import\s*['"]([^'"]+)['"]/g;
 const dynamicImportRegex = /import\s*\(\s*['"]([^'"]+)['"]\s*\)/g;
 
 function resolveRelativeImport(file, spec) {
@@ -43,6 +52,7 @@ for (const file of scannedFiles) {
 
   const importSpecs = [
     ...Array.from(text.matchAll(importFromRegex), (match) => match[1]),
+    ...Array.from(text.matchAll(sideEffectImportRegex), (match) => match[1]),
     ...Array.from(text.matchAll(dynamicImportRegex), (match) => match[1])
   ];
 
@@ -53,6 +63,7 @@ for (const file of scannedFiles) {
       console.error(`Boundary violation in ${file}: deep internal import '${spec}' is not allowed.`);
       failed = true;
     }
+
     if (spec.startsWith('@geekist/edgepress/')) {
       const segments = spec.split('/');
       const packageName = segments[2];
