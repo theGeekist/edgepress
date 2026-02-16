@@ -35,6 +35,6 @@ If the Cloudflare reference adapter has `D1` bound, release manifests/history an
 
 ## Tests that prove behavior
 
-- `packages/testing/test/release.preview.private.test.js`
-- `packages/testing/test/publisher.test.js`
-- `packages/testing/test/api.behavior.test.js`
+- `apps/api/test/release.preview.private.test.js`
+- `apps/api/test/api.release-workflow.test.js`
+- `apps/api/test/api.behavior.test.js`

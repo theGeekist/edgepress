@@ -2,334 +2,191 @@
 
 ## What is EdgePress?
 
-EdgePress is a platform-agnostic Content Management System that decouples the Gutenberg block editor from WordPress. It runs on any edge runtime (Cloudflare Workers as the reference implementation) and publishes static releases for public consumption.
+EdgePress is a platform-agnostic Content Management System that decouples the Gutenberg block editor from WordPress. It runs on edge/server runtimes (Cloudflare Workers as the reference implementation) and publishes release artifacts for delivery.
 
-**Key Innovation**: Instead of running a PHP/WordPress server, EdgePress provides the exact REST API contract that Gutenberg expects - but implemented as portable JavaScript that can run anywhere.
+**Key innovation**: instead of running a PHP/WordPress server, EdgePress provides the REST contract Gutenberg expects, implemented as portable JavaScript with explicit adapter boundaries.
 
 ## Vision Statement
 
-Decouple Gutenberg into a standalone, workers-first CMS by replacing the invisible runtime contract that WordPress normally supplies (REST endpoints, authentication, media library, autosaves, revisions, templates) with a clean, platform-agnostic API layer.
+Decouple Gutenberg into a standalone, workers-first CMS by replacing the invisible WordPress runtime contract (REST endpoints, auth, media library, autosaves, revisions, templates) with a clean platform-agnostic API layer.
 
 ## Why EdgePress?
 
-### For Publishers
-- **Static sites**: Published content is served as immutable artifacts - no database dependency, uncrashable under load
-- **WordPress-compatible**: Use Gutenberg editor and existing block plugins with minimal friction
-- **Edge-native**: Deploy to Cloudflare Workers, Vercel Edge Functions, or any edge runtime
+### For publishers
+- **Static-first delivery**: Published content is served from release artifacts.
+- **WordPress-compatible editing**: Gutenberg and WP-shaped surfaces are supported.
+- **Edge-native deployment**: Reference adapter targets Cloudflare; architecture remains portable.
 
-### For Developers
-- **Modern stack**: JavaScript/TypeScript, no PHP
-- **Hexagonal architecture**: Core business logic is pure; swap infrastructure via adapters
-- **Client-agnostic**: Admin works in web, React Native, or desktop
+### For developers
+- **Modern stack**: JavaScript modules, Bun tooling, React admin.
+- **Boundary-first architecture**: Capability code is separate from delivery/infrastructure adapters.
+- **Predictable change vectors**: Feature-local work, thin controllers, explicit orchestration.
 
 ## Core Architecture
 
-### Design Philosophy
+### Design philosophy
 
-1. **Admin is client-agnostic** - Editor and admin work across web, React Native, and desktop
-2. **Edge-functions-first API** - Gutenberg is a client; CMS is a strongly designed API layer
-3. **Public site is static** - Published output is served as release artifacts
-4. **Dynamic runtime is tiny** - Only forms and gated reads require runtime
-5. **WordPress REST shape is a façade** - Compatibility layer without WP internals
-6. **Everything infrastructure-facing is adapter/DI** - Storage mechanisms are not hard-coded
+1. **Feature-first backend**: capability logic lives in packages.
+2. **Single orchestration surface**: cross-capability stories compose in one layer.
+3. **Thin delivery adapters**: HTTP controllers map request/response only.
+4. **Frontend scene orchestration**: route composition in scenes; features own internals.
+5. **Promotion by repetition**: shared/global abstractions are earned, not speculative.
 
-### Hexagonal Architecture (Ports & Adapters)
+### Current backend shape
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    Domain Layer                          │
-│            (Pure business logic)                       │
-│  - Entities: Document, Revision, User, Media, Forms    │
-│  - Invariants: Capability checks, release immutability   │
-│  - Block Model: Canonical JSON with schema versioning      │
-└────────────┬────────────────────────────────────────────┘
-             │
-             ▼
-┌─────────────────────────────────────────────────────────────┐
-│                     Ports                             │
-│              (Interface contracts)                       │
-│  - RuntimePort: env, log, waitUntil, HMAC              │
-│  - StructuredStore: CRUD for documents, revisions, media │
-│  - BlobStore: Binary storage                            │
-│  - CacheStore: KV-style caching                          │
-│  - ReleaseStore: Manifest and artifact storage              │
-│  - PreviewStore: Time-limited preview sessions              │
-└────────────┬────────────────────────────────────────────┘
-             │
-             ▼
-┌─────────────────────────────────────────────────────────────┐
-│                  Adapters                            │
-│           (Infrastructure implementations)                │
-│  - InMemory: Deterministic testing (packages/testing)    │
-│  - Cloudflare: D1, R2, KV, Workers (reference)      │
-│  - [Future]: AWS, other edge runtimes                    │
-└─────────────────────────────────────────────────────────────┘
+```text
+apps/api/src/
+  adapters/http/routes/           # route registration
+  adapters/http/controllers/      # thin request/response adapters
+  orchestration/                  # workflow/use-case coordination
+  app/                            # composition root/bootstrap helpers
+
+packages/
+  auth/                           # auth capability
+  content/                        # content/media/navigation/private/preview/forms capabilities
+  wp-core/                        # WP compatibility mappings/records
+  api-core/                       # API-level contract/helpers (auth/http/validation/hooks)
+  domain/                         # shared domain entities/invariants
+  hooks/                          # shared hooks registry support
+  platform-base/                  # in-memory platform implementation
+  cloudflare/                     # Cloudflare runtime/storage adapters
+  testing/                        # shared test utilities/fakes
 ```
 
-**Why this matters**: The core CMS logic has zero knowledge of *how* data is stored. Swap the adapter to run on AWS Lambda + DynamoDB, or keep it on Cloudflare D1 + R2. Same code.
+### Current frontend shape
 
-## Project Structure
-
-```
-edgepress/
-├── apps/
-│   ├── api/              # Edge Functions API (platform-agnostic)
-│   └── admin-web/             # WordPress-like admin with Gutenberg
-├── packages/
-│   ├── ports/                 # Port interface contracts
-│   ├── domain/                # Pure business logic
-│   ├── publish/               # Release compilation pipeline
-│   ├── sdk/                   # Canonical API client
-│   ├── testing/               # In-memory adapters + tests
-│   └── cloudflare/   # Cloudflare reference implementation
-├── docs/                     # Documentation
-├── idea.md                   # Architectural vision
-└── PLANNING.md               # Phase tracker & roadmap
+```text
+apps/admin-web/src/
+  scenes/                         # route-level composition/orchestration
+  features/                       # feature-local behavior/state/ui
+  adapters/                       # API client adapter
+  components/                     # shared agnostic UI primitives
+  hooks/                          # shared agnostic hooks
 ```
 
-For detailed directory breakdown, see `docs/skills-reference.md`.
+## Current phase
 
-## Current Phase
-
-**Phase 12B - Core Blocks and Gutenberg Parity** (IN PROGRESS)
-
-**What this means**: We're implementing block transforms that allow WordPress blocks to work with EdgePress's canonical block format, building registries for importing and rendering, and adding theme system integration.
-
-See `PLANNING.md` for complete roadmap and phase status.
+Phase 12 architecture refactors are complete in this branch line; remaining parity/product items are tracked in Phase 12C in `PLANNING.md`.
 
 ## Key Architectural Invariants
 
-### Block JSON is Canonical
+### Block JSON is canonical
 
 **Not**: HTML as source of truth
-**Yes**: Block JSON with schema versioning
+**Yes**: block JSON with versioning/normalization semantics
 
-When you publish:
-1. Take block JSON from revision
-2. Canonicalize (sort keys for deterministic output)
-3. Serialize to HTML (using `@wordpress/blocks`)
-4. Write HTML as release artifact
+Publish flow:
+1. Read canonical block JSON from document/revision state.
+2. Normalize/transform deterministically.
+3. Render to output HTML.
+4. Write release artifacts + manifest metadata.
 
-This means blocks can be re-edited, re-formatted, or upgraded without losing data.
+### Releases are immutable
 
-### Releases are Immutable
+- Publishing creates a new `releaseId`.
+- Rewriting same release manifest is rejected.
+- Rollback is active-release pointer switching, not mutation.
+- Release history is append-only.
 
-- Publishing creates a new `releaseId`
-- Writing the same `releaseId` twice throws an error
-- Rollback = switch active pointer, not mutate
-- Release history is append-only
+### Static-first delivery
 
-### Static by Default
+Published output is artifact-based. Runtime stays focused on authenticated/private/preview/forms workflows.
 
-Published sites don't need:
-- Database queries
-- Runtime rendering
-- WordPress server
+### Two-phase media lifecycle
 
-Only need:
-- Static file delivery (HTML/CSS/JS)
-- Auth for private pages (can cache at edge)
-- Form handling (runtime, but minimal)
-
-### Two-Phase Media Upload
-
-1. **Init**: Get upload token and pre-signed URL
-2. **Upload**: Client uploads directly to blob storage (bypasses CMS)
-3. **Finalize**: API stores metadata (alt, caption, description)
-
-This keeps large files off the CMS runtime.
+1. Init/upload session
+2. Upload to blob storage
+3. Finalize metadata in canonical model
 
 ## Technology Stack
 
 | Layer | Technology |
 |-------|------------|
-| Language | JavaScript (ES Modules) |
-| Runtime | Bun (local), Cloudflare Workers (production) |
-| Package Manager | Bun |
-| Admin Framework | React 18.3.1 |
-| Editor | Gutenberg (@wordpress/block-editor, @wordpress/blocks) |
-| Database | D1 (SQLite) or any SQL via adapter |
-| Storage | R2 (S3-compatible) or any object store via adapter |
-| Cache | KV or any KV store via adapter |
-| Test Runner | Bun test |
+| Language | JavaScript (ESM) |
+| Runtime | Bun (local), Cloudflare Workers (reference) |
+| Admin | React + Gutenberg packages |
+| Storage (reference) | D1, R2, KV |
+| Test runner | Bun test |
 
 ## Getting Started
 
-### 5-Minute Overview
+### 5-minute overview
 
-1. **Architecture**: Read this doc (high-level)
-2. **Working Reference**: See `docs/skills-reference.md` for detailed patterns
-3. **Local Development**:
+1. Read this file for system-level context.
+2. Read `docs/skills-reference.md` for FE/BE architecture rules.
+3. Run local services:
    ```bash
-   # In-memory API (quick testing)
    bun run start:api
-
-   # Cloudflare Worker locally
-   wrangler dev
-
-   # Admin UI
    bun run dev:admin
+   # optional reference runtime
+   wrangler dev
    ```
-4. **Run Tests**: `bun test` or `bun run test:coverage`
-5. **Documentation**: `docs/` directory has API, architecture, and development guides
+4. Run quality checks:
+   ```bash
+   bun run lint
+   bun run test:unit
+   bun run test:coverage
+   bun run check:boundaries
+   ```
 
-### Key Commands
-
-```bash
-# Local dev
-bun run start:api              # In-memory platform
-wrangler dev                   # Cloudflare Worker
-bun run dev:admin              # Admin UI
-
-# Development
-bun test                        # Run tests
-bun run test:coverage            # With coverage (enforces thresholds)
-bun run check:boundaries         # Validate port boundaries
-bun run lint                     # Lint code
-
-# Documentation
-bun run docs:dev                # Start docs site
-bun run docs:gen                # Generate API reference
-```
-
-## Important File Locations
+## Important file locations
 
 | Purpose | File |
-|---------|-------|
-| Architecture overview | `docs/architecture/overview.md` |
-| Domain invariants | `docs/architecture/invariants.md` |
-| Block content model | `docs/architecture/block-content-model.md` |
-| Working reference | `docs/skills-reference.md` (⭐ START HERE) |
-| API documentation | `docs/reference/api/` |
-| Port contracts | `docs/reference/ports.md` |
+|---------|------|
+| API composition | `apps/api/src/app/create-api-handler.js` |
+| HTTP controller adapters | `apps/api/src/adapters/http/controllers/` |
+| Backend orchestration | `apps/api/src/orchestration/` |
+| In-memory platform | `packages/platform-base/src/index.js` |
+| Cloudflare adapter | `packages/cloudflare/src/index.js` |
+| Admin API client | `apps/admin-web/src/adapters/api-client.js` |
+| Frontend scenes | `apps/admin-web/src/scenes/` |
+| Frontend features | `apps/admin-web/src/features/` |
 | Phase tracker | `PLANNING.md` |
-| Original vision | `idea.md` |
 
 ## How EdgePress Works
 
-### Editing Content
+### Editing content
 
-1. **User edits** in Gutenberg (admin web)
-2. **Autosave** creates new `Revision` with block JSON snapshot
-3. **Preview** generates signed URL for time-limited access
-4. **Publish** compiles current revision to static release
-5. **Activate** switches active release pointer
-6. **View live** serves static artifact (no database needed)
+1. Editor updates canonical document/revision data.
+2. Preview flow issues signed/expiring preview access.
+3. Publish workflow compiles release artifacts.
+4. Activation switches active release pointer.
+5. Delivery reads active artifacts (plus private/auth policies where required).
 
-### Publishing Release
+### Publishing release
 
-1. Publisher loops through all documents
-2. For each document:
-   - Serializes block JSON to HTML
-   - Resolves media URLs (image blocks with `mediaId`)
-   - Writes artifact to blob storage
-   - Generates hashes for integrity
-3. Creates immutable manifest with:
-   - `releaseId`, `schemaVersion`
-   - `sourceRevisionId`, `sourceRevisionSet`
-   - All artifacts and their hashes
-   - `releaseHash` (event fingerprint), `contentHash` (content identity)
-4. Stores manifest; activation switches pointer
+1. Orchestration runs release workflow.
+2. Content/media references are resolved for output.
+3. Artifacts are persisted via release/blob stores.
+4. Manifest/provenance/hash metadata are persisted.
+5. Active release is switched per workflow policy.
 
-### Authentication & Authorization
+### Authentication and authorization
 
-- **Stateless JWT** with `sub` (user ID) and `role` claims
-- **Capabilities**: Array of granular permissions (`document:read`, `document:write`, `publish:write`, etc.)
-- **No default admin**: Bootstrap credentials required or no access
+- Token/refresh flows are exposed under `/v1/auth/*`.
+- Capability checks gate protected endpoints.
+- Errors follow canonical envelope shape.
 
-### Private Content
+### Private content
 
-- **Gated reads**: Authenticated users see private content
-- **Still static**: Private pages are just auth-gated static files
-- **Scoped caching**: Cache keys include role/context to prevent cache poisoning
+- Private routes are capability-gated.
+- Private output remains artifact-backed.
+- Cache scoping is enforced by auth context.
 
 ## Development Workflow
 
-### Adding a Feature
+### Adding a backend feature
 
-1. **Domain**: Add entity/invariant to `packages/domain/`
-2. **Ports**: Define interface in `packages/ports/`
-3. **Adapters**: Implement in `packages/cloudflare/` AND `packages/testing/` (for tests)
-4. **API**: Add route to `apps/api/src/features/`
-5. **Admin**: Add state/hooks to `apps/admin-web/src/features/`
-6. **SDK**: Add client method to `packages/sdk/src/client.js`
-7. **Tests**: Add to `packages/testing/test/`
-8. **Docs**: Update `docs/` as needed
+1. Add capability behavior in `packages/<capability>/src/`.
+2. Wire orchestration in `apps/api/src/orchestration/` when cross-capability coordination is needed.
+3. Add/adjust thin controllers in `apps/api/src/adapters/http/controllers/`.
+4. Add/adjust tests in `apps/api/test/` and relevant package tests.
+5. Update docs/reference pages.
 
-See `docs/skills-reference.md` for detailed patterns.
+### Adding a frontend feature
 
-### Boundary Enforcement
+1. Add feature-local behavior/state/UI in `apps/admin-web/src/features/<feature>/`.
+2. Compose routes/workflows in `apps/admin-web/src/scenes/`.
+3. Promote to `components/` or `hooks/` only when truly agnostic.
 
-**Critical Rule**: `apps/api` and `packages/*` (except `cloudflare`) cannot import Cloudflare-specific APIs.
-
-**Why**: Ensures core remains platform-agnostic. You can swap Cloudflare → AWS by changing only the adapter.
-
-**How enforced**: `scripts/check-boundaries.js` catches violations.
-
-### Test Coverage
-
-- **Current baseline**: ~97% lines, ~96% functions
-- **Threshold enforced**: `bun run test:coverage` will fail if coverage drops
-- **See latest**: Check `PLANNING.md` for current coverage watch
-
-## Common Questions
-
-### Why not just use WordPress?
-
-WordPress is great, but:
-- Requires PHP server and database
-- Not designed for edge deployment
-- Hard to scale static content delivery
-- Tight coupling between editor and runtime
-
-EdgePress gives you the Gutenberg editor experience with:
-- No PHP
-- Static, edge-hosted public sites
-- Portable to any runtime
-- Modern JavaScript stack
-
-### Can I still use WordPress plugins?
-
-**Phase 12B** is building block parity system. Goal:
-- WordPress core blocks work out of the box
-- Custom plugins can be ported via block transforms
-- Theme.json design tokens supported
-- Not all plugins will work (PHP-based ones)
-
-### Why static publishing?
-
-- **Performance**: Serve files from CDN, no database queries
-- **Reliability**: Can't crash (static files don't execute code)
-- **Cost**: No always-on database servers
-- **Security**: Smaller attack surface (no PHP, no SQL in templates)
-
-### What about dynamic content?
-
-EdgePress is optimized for content sites. Dynamic needs:
-- **Forms**: Supported (POST to API, stored, can trigger webhooks)
-- **Gated content**: Supported (auth check, serve static file from cache)
-- **Real-time features**: Not current focus (collaborative editing, etc.)
-
-## Contributing
-
-1. **Read** `docs/skills-reference.md` for detailed patterns
-2. **Follow architecture**: Use ports, don't break boundaries
-3. **Write tests**: Maintain coverage thresholds
-4. **Update docs**: Regenerate API docs after changes (`bun run docs:gen`)
-5. **Commit**: Small, focused commits
-6. **Review**: Run `bun run lint` and `bun run test:coverage`
-
-## Project Links
-
-- **Repository**: theGeekist/edgepress
-- **Issues**: GitHub issues
-- **Documentation**: `docs/` directory
-- **Phase Status**: `PLANNING.md`
-
-## License
-
-(Add license information here)
-
----
-
-**Next Step**: For working with the codebase, see `docs/skills-reference.md` - the complete reference for architecture, patterns, tasks, and troubleshooting.
+See `docs/skills-reference.md` for detailed FE/BE architecture constraints.

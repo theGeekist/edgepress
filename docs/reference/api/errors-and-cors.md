@@ -10,7 +10,8 @@ Error envelope is consistently shaped as:
 
 Source:
 
-- `apps/api/src/http.js`
+- `packages/api-core/src/http.js`
+- `apps/api/src/app/create-api-handler.js`
 
 ## CORS
 

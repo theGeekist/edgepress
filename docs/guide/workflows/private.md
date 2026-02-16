@@ -23,5 +23,5 @@ Private reads are authenticated reads of release artifacts. The handler:
 
 ## Tests that prove behavior
 
-- `packages/testing/test/release.preview.private.test.js`
-- `packages/testing/test/api.contract.test.js`
+- `apps/api/test/release.preview.private.test.js`
+- `apps/api/test/api.contract.test.js`

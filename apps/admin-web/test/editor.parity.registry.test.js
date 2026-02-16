@@ -15,7 +15,7 @@ import {
   createDiagnosticsReport,
   addDiagnostic,
   sortDiagnostics
-} from '../../../apps/admin-web/src/features/editor/parity/index.js';
+} from '../src/features/editor/parity/index.js';
 
 test('canonical codec normalizes deterministically with stable defaults', () => {
   const node = normalizeCanonicalNode({

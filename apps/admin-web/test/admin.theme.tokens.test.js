@@ -14,7 +14,7 @@ import {
   toWpThemeJson,
   applyCssVarsToDocument,
   defaultLightTheme
-} from '../../../apps/admin-web/src/features/theme/index.js';
+} from '../src/features/theme/index.js';
 
 test('normalizeEpTheme is deterministic and schema-versioned', () => {
   const normalized = normalizeEpTheme({

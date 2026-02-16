@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { parse } from '@wordpress/blocks';
-import { createInMemoryPlatform } from '../../../packages/testing/src/store.js';
-import { authAsAdmin, requestJson } from '../../../packages/testing/src/test-utils.js';
+import { createInMemoryPlatform } from '@geekist/edgepress/testing';
+import { authAsAdmin, requestJson } from '@geekist/edgepress/testing/test-utils.js';
 
 test('editor loop covers update, preview, publish, activate, and private delivery', async () => {
   const platform = createInMemoryPlatform();

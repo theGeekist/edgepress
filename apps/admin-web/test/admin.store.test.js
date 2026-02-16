@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createCanonicalSdkStore } from '../../../apps/admin-web/src/features/editor/gutenberg-integration.js';
-import { createInMemoryPlatform } from '../../../packages/testing/src/store.js';
-import { createApiHandler } from '../../../apps/api/src/app/create-api-handler.js';
-import { authAsAdmin } from '../../../packages/testing/src/test-utils.js';
+import { createCanonicalSdkStore } from '@geekist/edgepress/admin-editor-store';
+import { createInMemoryPlatform } from '@geekist/edgepress/testing';
+import { createHandler } from '@geekist/edgepress/testing/test-utils.js';
+import { authAsAdmin } from '@geekist/edgepress/testing/test-utils.js';
 
 function createLocalFetch(handler) {
   return async (url, init = {}) => {
@@ -19,7 +19,7 @@ function createLocalFetch(handler) {
 test('canonical sdk store media and preview flows are wired', async () => {
   const platform = createInMemoryPlatform();
   const { accessToken } = await authAsAdmin(platform);
-  const handler = createApiHandler(platform);
+  const handler = createHandler(platform);
 
   const store = createCanonicalSdkStore({
     baseUrl: 'http://api.local',

@@ -20,7 +20,7 @@ At the center lies the Business Logic. This layer defines what a "Document" is, 
 
 ### 2. The Ports (Contracts)
 Surrounding the core are the Ports. These are strict interfaces that the Core uses to interact with the outside world. The Core doesn't know *how* to save a file, it just knows it has a `BlobStore` port with a `put()` method.
-- **Location**: `packages/ports`
+- **Location**: `apps/api/src/orchestration/platform-contracts.js` and `packages/api-core`
 
 ### 3. The Adapters (Infrastructure)
 These are the implementations of the Ports. This is where the rubber meets the road.
@@ -63,7 +63,7 @@ Result: **The public site is just static files.** No database lookups are requir
 
 - **Security**: By removing legacy PHP code and SQL query construction from the runtime, we eliminate entire classes of vulnerabilities.
 - **Performance**: Static releases mean your site is essentially un-crashable under load.
-- **Portability**: Don't like Cloudflare? Write a `packages/adapters-aws` adapter and run the exact same core on Lambda and DynamoDB.
+- **Portability**: Don't like Cloudflare? Write another adapter package and run the same core/orchestration flow on a different runtime and storage stack.
 
 ## Frontend Module Boundaries
 

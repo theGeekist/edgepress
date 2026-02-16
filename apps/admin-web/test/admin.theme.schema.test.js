@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
 
-import { defaultLightTheme, toWpThemeJson } from '../../../apps/admin-web/src/features/theme/index.js';
+import { defaultLightTheme, toWpThemeJson } from '../src/features/theme/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

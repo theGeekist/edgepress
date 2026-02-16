@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createCloudflareReferencePlatform } from '../../cloudflare/src/index.js';
-import { createApiHandler } from '../../../apps/api/src/app/create-api-handler.js';
-import { requestJson } from '../../testing/src/test-utils.js';
+import { createHandler, requestJson } from '@geekist/edgepress/testing/test-utils.js';
+
 import { createFakeD1, createFakeKV } from '../../testing/src/cf-fakes.js';
 
 test('cloudflare reference adapter uses D1 for release state when bound', async () => {
@@ -137,7 +137,7 @@ test('cloudflare reference adapter persists core store state via D1 across insta
   };
 
   const first = createCloudflareReferencePlatform(env);
-  const firstHandler = createApiHandler(first);
+  const firstHandler = createHandler(first);
 
   const auth = await requestJson(firstHandler, 'POST', '/v1/auth/token', {
     body: { username: 'admin', password: 'admin-pass' }
@@ -158,7 +158,7 @@ test('cloudflare reference adapter persists core store state via D1 across insta
   assert.equal(publish.json.job.status, 'completed');
 
   const second = createCloudflareReferencePlatform(env);
-  const secondHandler = createApiHandler(second);
+  const secondHandler = createHandler(second);
 
   const listed = await requestJson(secondHandler, 'GET', '/v1/documents', { token });
   assert.equal(listed.res.status, 200);

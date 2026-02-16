@@ -1,12 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createInMemoryPlatform } from '../../../packages/testing/src/store.js';
-import { authAsAdmin, requestJson } from '../../../packages/testing/src/test-utils.js';
+import { createInMemoryPlatform } from '@geekist/edgepress/testing';
+import { authAsAdmin, requestJson } from '@geekist/edgepress/testing/test-utils.js';
 import {
   attachServerHooks,
   registerServerHookRegistrar,
   resetServerHookRegistrarsForTests
-} from '../../../apps/api/src/app/hooks-bootstrap.js';
+} from '../src/app/hooks-bootstrap.js';
 
 test.afterEach(() => {
   resetServerHookRegistrarsForTests();

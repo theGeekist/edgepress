@@ -8,7 +8,7 @@ import {
   corePackRenderers,
   importWpBlocksToCanonical,
   renderCanonicalNodes
-} from '../../../apps/admin-web/src/features/editor/parity/index.js';
+} from '../src/features/editor/parity/index.js';
 
 test('core paragraph transform imports and renders publish output', () => {
   const importRegistry = createImportTransformRegistry(corePackImportTransforms);

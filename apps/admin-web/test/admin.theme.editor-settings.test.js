@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { toWpEditorSettings, defaultDarkTheme } from '../../../apps/admin-web/src/features/theme/index.js';
+import { toWpEditorSettings, defaultDarkTheme } from '../src/features/theme/index.js';
 
 test('toWpEditorSettings maps placeholders and allowed blocks', () => {
   const settings = toWpEditorSettings(defaultDarkTheme, {

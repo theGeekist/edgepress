@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execSync } from 'node:child_process';
 import { createCloudflareReferencePlatform } from '../../cloudflare/src/index.js';
-import { createApiHandler } from '../../../apps/api/src/app/create-api-handler.js';
-import { requestJson } from '../../testing/src/test-utils.js';
+import { createHandler, requestJson } from '@geekist/edgepress/testing/test-utils.js';
+
 import { createFakeD1, createFakeKV, createFakeR2 } from '../../testing/src/cf-fakes.js';
 
 test('boundary check blocks Cloudflare terms outside cloudflare', async () => {
@@ -13,7 +13,7 @@ test('boundary check blocks Cloudflare terms outside cloudflare', async () => {
 
 test('cloudflare reference adapter conforms to core auth + document flow', async () => {
   const platform = createCloudflareReferencePlatform({ TOKEN_KEY: 'cf-key' });
-  const handler = createApiHandler(platform);
+  const handler = createHandler(platform);
 
   const auth = await requestJson(handler, 'POST', '/v1/auth/token', {
     body: { username: 'admin', password: 'admin' }
@@ -330,7 +330,7 @@ test('cloudflare reference adapter does not create default admin without bootstr
     TOKEN_KEY: 'cf-key',
     D1: createFakeD1()
   });
-  const handler = createApiHandler(platform);
+  const handler = createHandler(platform);
   const auth = await requestJson(handler, 'POST', '/v1/auth/token', {
     body: { username: 'admin', password: 'admin' }
   });

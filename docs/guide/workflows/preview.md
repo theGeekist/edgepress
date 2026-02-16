@@ -27,6 +27,6 @@ Preview TTL is derived from runtime env `PREVIEW_TTL_SECONDS`.
 
 ## Tests that prove behavior
 
-- `packages/testing/test/api.behavior.test.js`
-- `packages/testing/test/api.contract.test.js`
-- `packages/testing/test/release.preview.private.test.js`
+- `apps/api/test/api.behavior.test.js`
+- `apps/api/test/api.contract.test.js`
+- `apps/api/test/release.preview.private.test.js`

@@ -334,7 +334,7 @@ This spec is considered active when:
 - Content model draft: `docs/internal/content-model-v2.md`
 - Phase/state tracker: `PLANNING.md`
 - Hook runtime: `apps/api/src/app/hooks.js`, `apps/api/src/app/hooks-bootstrap.js`
-- Content model routes: `apps/api/src/features/content-model-routes.js`
-- Document routes: `apps/api/src/features/document-routes.js`
-- WP compatibility routes: `apps/api/src/features/wp-core-routes.js`
-- Capability enforcement: `apps/api/src/auth.js`
+- Content model routes: `apps/api/src/adapters/http/controllers/content/content-model.js`
+- Document routes: `apps/api/src/adapters/http/controllers/content/document.js`
+- WP compatibility routes: `apps/api/src/adapters/http/controllers/wp-core`
+- Capability enforcement: `packages/api-core/src/auth.js`

@@ -4,11 +4,11 @@ title: SDK
 
 # SDK
 
-The canonical client lives in `packages/sdk`.
+The canonical admin client lives in `apps/admin-web/src/adapters/api-client.js`.
 
 Source:
 
-- `packages/sdk/src/client.js`
+- `apps/admin-web/src/adapters/api-client.js`
 
 ## What it does
 
@@ -30,7 +30,7 @@ On non-2xx responses, the client throws an error with:
 
 ## Proven behavior (tests)
 
-- `packages/testing/test/sdk.client.test.js`
+- `apps/admin-web/test/sdk.client.test.js`
 
 ## Twoslash
 

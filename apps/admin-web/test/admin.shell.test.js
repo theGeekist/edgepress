@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createAdminShell } from '../../../apps/admin-web/src/features/editor/shell.js';
-import { createInMemoryPlatform } from '../../../packages/testing/src/store.js';
-import { createApiHandler } from '../../../apps/api/src/app/create-api-handler.js';
+import { createAdminShell } from '@geekist/edgepress/admin-editor-shell';
+import { createInMemoryPlatform } from '@geekist/edgepress/testing';
+import { createHandler } from '@geekist/edgepress/testing/test-utils.js';
 
 function createLocalFetch(handler) {
   return async (url, init = {}) => {
@@ -17,7 +17,7 @@ function createLocalFetch(handler) {
 
 test('admin shell login + CRUD uses canonical SDK client', async () => {
   const platform = createInMemoryPlatform();
-  const handler = createApiHandler(platform);
+  const handler = createHandler(platform);
   const shell = createAdminShell({
     baseUrl: 'http://api.local',
     fetchImpl: createLocalFetch(handler)
@@ -37,7 +37,7 @@ test('admin shell login + CRUD uses canonical SDK client', async () => {
 
 test('admin shell auto-refreshes on expired access token', async () => {
   const platform = createInMemoryPlatform();
-  const handler = createApiHandler(platform);
+  const handler = createHandler(platform);
   const shell = createAdminShell({
     baseUrl: 'http://api.local',
     fetchImpl: createLocalFetch(handler)
@@ -55,7 +55,7 @@ test('admin shell auto-refreshes on expired access token', async () => {
 
 test('admin shell refresh/logout handle empty session safely', async () => {
   const platform = createInMemoryPlatform();
-  const handler = createApiHandler(platform);
+  const handler = createHandler(platform);
   const shell = createAdminShell({
     baseUrl: 'http://api.local',
     fetchImpl: createLocalFetch(handler)
@@ -72,7 +72,7 @@ test('admin shell refresh/logout handle empty session safely', async () => {
 
 test('admin shell supports full editor-to-publish loop operations', async () => {
   const platform = createInMemoryPlatform();
-  const handler = createApiHandler(platform);
+  const handler = createHandler(platform);
   const shell = createAdminShell({
     baseUrl: 'http://api.local',
     fetchImpl: createLocalFetch(handler)
@@ -113,7 +113,7 @@ test('admin shell supports full editor-to-publish loop operations', async () => 
 
 test('admin shell can load and save navigation menus', async () => {
   const platform = createInMemoryPlatform();
-  const handler = createApiHandler(platform);
+  const handler = createHandler(platform);
   const shell = createAdminShell({
     baseUrl: 'http://api.local',
     fetchImpl: createLocalFetch(handler)

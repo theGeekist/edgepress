@@ -1,12 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createApiHandler } from '../../../apps/api/src/app/create-api-handler.js';
-import { createInMemoryPlatform } from '../../../packages/testing/src/store.js';
-import { authAsAdmin, requestJson } from '../../../packages/testing/src/test-utils.js';
+import { createHandler } from '@geekist/edgepress/testing/test-utils.js';
+import { createInMemoryPlatform } from '@geekist/edgepress/testing';
+import { authAsAdmin, requestJson } from '@geekist/edgepress/testing/test-utils.js';
 
 test('api returns expected envelopes for router-level paths', async () => {
   const platform = createInMemoryPlatform();
-  const handler = createApiHandler(platform);
+  const handler = createHandler(platform);
 
   const options = await handler(
     new Request('http://test.local/v1/documents', {
@@ -24,7 +24,7 @@ test('api returns 500 envelope when outer handler throws unexpectedly', async ()
   const platform = createInMemoryPlatform();
   const events = [];
   platform.runtime.log = (level, event, meta) => events.push({ level, event, meta });
-  const handler = createApiHandler(platform);
+  const handler = createHandler(platform);
 
   const res = await handler({ method: 'GET', url: 'not a valid url' });
   const body = await res.json();
@@ -35,7 +35,7 @@ test('api returns 500 envelope when outer handler throws unexpectedly', async ()
 
 test('api auth endpoints return explicit invalid/user-not-found failures', async () => {
   const platform = createInMemoryPlatform();
-  const handler = createApiHandler(platform);
+  const handler = createHandler(platform);
 
   const invalid = await requestJson(handler, 'POST', '/v1/auth/token', {
     body: { username: 'admin', password: 'wrong' }

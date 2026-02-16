@@ -7,9 +7,9 @@ import {
   doAction,
   __resetHooksFallbackWarningForTests
 } from '../src/app/hooks.js';
-import { createHooksRegistry } from '../../../packages/hooks/src/index.js';
-import { createInMemoryPlatform } from '../../../packages/testing/src/store.js';
-import { authAsAdmin, requestJson } from '../../../packages/testing/src/test-utils.js';
+import { createHooksRegistry } from '@geekist/edgepress/hooks';
+import { createInMemoryPlatform } from '@geekist/edgepress/testing';
+import { authAsAdmin, requestJson } from '@geekist/edgepress/testing/test-utils.js';
 
 // Intentional duplication with packages/api-core hook-branch tests:
 // app hooks and api-core hooks are independently testable modules with mirrored behavior.

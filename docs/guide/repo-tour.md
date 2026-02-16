@@ -17,9 +17,12 @@ We use **Bun workspaces** to manage dependencies. `apps/` are deployable targets
 │   └── admin-web/      # The frontend (Vite + React + Gutenberg)
 ├── packages/           # The shared logic
 │   ├── domain/         # Pure business logic (No ext dependencies)
-│   ├── ports/          # Interfaces for infrastructure
-│   ├── adapters-*/     # Implementations of ports
-│   └── sdk/            # The canonical client used by the Admin
+│   ├── content/        # Content capability package
+│   ├── auth/           # Auth capability package
+│   ├── api-core/       # API boundary/contracts helpers
+│   ├── platform-base/  # In-memory platform implementation
+│   ├── cloudflare/     # Cloudflare adapter implementation
+│   └── testing/        # Shared test utilities/fakes
 ├── docs/               # This site (VitePress)
 └── scripts/            # Build, test, and verification tools
 ```
@@ -28,8 +31,8 @@ We use **Bun workspaces** to manage dependencies. `apps/` are deployable targets
 
 ### ...you want to add a new Feature (e.g., Comments)?
 1.  **Start in `packages/domain`**: Define your entities (`Comment`) and use-cases.
-2.  **Define Ports in `packages/ports`**: How will comments be stored? Add `CommentStore` interface.
-3.  **Update `apps/api`**: Add the route handlers for your new use-cases.
+2.  **Add capability logic in `packages/*`**: Place feature behavior in a capability package.
+3.  **Update `apps/api` adapters/orchestration**: Add thin controllers and orchestration wiring.
 4.  **Implement Adapters**: Add clear implementation in `packages/testing` (in-memory) and `packages/cloudflare` (Production).
 
 ### ...you want to modify the Admin UI?
@@ -47,8 +50,8 @@ We use **Bun workspaces** to manage dependencies. `apps/` are deployable targets
 ### `packages/domain`
 This is the brain. It contains the "Rules of the Game". It has ZERO dependencies on Cloudflare, Request objects, or Databases. It is pure JS function logic.
 
-### `packages/ports`
-These are the Contracts. They define the "shape" of the infrastructure. We use TypeScript JSDoc comments to strictly define input/outputs.
+### Platform contracts
+Contract checks and boundaries are defined in `apps/api/src/orchestration/platform-contracts.js` and shared API helpers under `packages/api-core`.
 
 ### `packages/testing`
-This is our secret weapon. It contains a complete **In-Memory Platform**. This allows us to run the entire API test suite in milliseconds without spinning up any containers or real databases.
+This is our shared testing support package. The in-memory platform implementation lives in `packages/platform-base`, while tests and fakes are consumed from `packages/testing/src`.

@@ -14,8 +14,9 @@ Admin web is a web-first host for Gutenberg that uses the canonical SDK client f
 
 Key files:
 
-- `apps/admin-web/src/editor-shell.js`
-- `apps/admin-web/src/gutenberg-integration.js`
+- `apps/admin-web/src/features/editor/shell.js`
+- `apps/admin-web/src/features/editor/gutenberg-integration.js`
+- `apps/admin-web/src/scenes/`
 
 ## Raw design notes
 

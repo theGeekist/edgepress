@@ -1,4 +1,4 @@
-import { createApiHandler } from '../../../../apps/api/src/app/create-api-handler.js';
+import { createApiHandler } from '@geekist/edgepress/api-handler';
 
 export function createHandler(platform) {
   return createApiHandler(platform);

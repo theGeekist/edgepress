@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createInMemoryPlatform } from '../../../packages/testing/src/store.js';
-import { authAsAdmin, requestJson, createHandler } from '../../../packages/testing/src/test-utils.js';
+import { createInMemoryPlatform } from '@geekist/edgepress/testing';
+import { authAsAdmin, requestJson, createHandler } from '@geekist/edgepress/testing/test-utils.js';
 
 test('preview: preview route handles themeVars parameter validation', async () => {
   const platform = createInMemoryPlatform();

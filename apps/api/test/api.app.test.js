@@ -1,12 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createApiHandler } from '../../../apps/api/src/app/create-api-handler.js';
-import { createInMemoryPlatform } from '../../../packages/testing/src/store.js';
+import { createHandler } from '@geekist/edgepress/testing/test-utils.js';
+import { createInMemoryPlatform } from '@geekist/edgepress/testing';
 
 test('api handler CORS with DEV_CORS_ORIGIN', async () => {
     const platform = createInMemoryPlatform();
     platform.runtime.envOverrides.DEV_CORS_ORIGIN = 'http://dev.local';
-    const handler = createApiHandler(platform);
+    const handler = createHandler(platform);
 
     const options = await handler(new Request('http://test.local/v1/documents', { method: 'OPTIONS' }));
     assert.equal(options.status, 204);
@@ -18,7 +18,7 @@ test('api handler CORS with DEV_CORS_ORIGIN', async () => {
 });
 test('api handler authzErrorResponse specific mapping', async () => {
     const platform = createInMemoryPlatform();
-    const handler = createApiHandler(platform);
+    const handler = createHandler(platform);
 
     // Protected route without auth should yield AUTH_REQUIRED.
     const res = await handler(new Request('http://test.local/v1/documents', { method: 'GET' }));
@@ -29,7 +29,7 @@ test('api handler authzErrorResponse specific mapping', async () => {
 
 test('api handler path matching and 404', async () => {
     const platform = createInMemoryPlatform();
-    const handler = createApiHandler(platform);
+    const handler = createHandler(platform);
 
     // POST-only endpoint accessed via GET should 404.
     const resMethod = await handler(new Request('http://test.local/v1/auth/token', { method: 'GET' }));

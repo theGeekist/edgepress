@@ -6,7 +6,7 @@ import {
   getEmptyEditorContract,
   normalizeHostPostId,
   normalizeHostPostType
-} from '../../../apps/admin-web/src/features/editor/gutenberg-host.js';
+} from '../src/features/editor/gutenberg-host.js';
 
 test('gutenberg host normalizes post type and id', () => {
   assert.equal(normalizeHostPostType('page'), 'page');

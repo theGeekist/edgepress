@@ -6,7 +6,7 @@ import { pathToFileURL } from 'node:url';
 import {
   configureApiFetch,
   createApiFetchMiddlewares
-} from '../../../apps/admin-web/src/features/editor/gutenberg-integration.js';
+} from '../src/features/editor/gutenberg-integration.js';
 
 const require = createRequire(import.meta.url);
 let moduleVersion = 0;

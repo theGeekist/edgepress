@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { routes, assertKeys } from '../../../packages/api-core/src/api-contracts.js';
-import { createInMemoryPlatform } from '../../../packages/testing/src/store.js';
-import { authAsAdmin, requestJson } from '../../../packages/testing/src/test-utils.js';
+import { routes, assertKeys } from '@geekist/edgepress/api-core/api-contracts.js';
+import { createInMemoryPlatform } from '@geekist/edgepress/testing';
+import { authAsAdmin, requestJson } from '@geekist/edgepress/testing/test-utils.js';
 
 async function createSampleDocument(handler, token, { title = 'Sample', content = '<p>body</p>' } = {}) {
   const created = await requestJson(handler, 'POST', '/v1/documents', {
