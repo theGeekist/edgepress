@@ -14,7 +14,12 @@ export function createPublishFeature(state, runtime) {
     async updatePublishJob(id, patch) {
       const existing = state.publishJobs.get(id);
       if (!existing) return null;
-      const updated = { ...existing, ...patch, updatedAt: runtime.now().toISOString() };
+      const updated = {
+        ...existing,
+        ...patch,
+        createdAt: existing.createdAt,
+        updatedAt: runtime.now().toISOString()
+      };
       state.publishJobs.set(id, updated);
       return updated;
     },

@@ -1,12 +1,19 @@
 export function createRuntimePlatform() {
+  const processEnv = typeof process !== 'undefined' && process?.env ? process.env : {};
+
   const runtime = {
     envOverrides: {},
     env(key) {
-      if (key === 'TOKEN_KEY') return 'dev-token-key';
       if (Object.prototype.hasOwnProperty.call(this.envOverrides, key)) {
         return this.envOverrides[key];
       }
-      return process.env[key];
+      if (Object.prototype.hasOwnProperty.call(processEnv, key)) {
+        return processEnv[key];
+      }
+      if (key === 'TOKEN_KEY') return 'dev-token-key';
+      if (key === 'PREVIEW_TOKEN_KEY') return 'dev-preview-token-key';
+      if (key === 'PRIVATE_CACHE_SCOPE_KEY') return 'dev-private-cache-scope-key';
+      return undefined;
     },
     now() {
       return new Date();
@@ -15,7 +22,7 @@ export function createRuntimePlatform() {
       return crypto.randomUUID().replace(/-/g, '').slice(0, 12);
     },
     log(level, event, meta) {
-      if (process.env.NODE_ENV !== 'test') {
+      if (processEnv.NODE_ENV !== 'test') {
         console.log(`[${level}] ${event}`, meta || {});
       }
     },
@@ -32,7 +39,10 @@ export function createRuntimePlatform() {
       promise.catch((err) => this.log('error', 'waitUntil_failure', { message: err.message }));
     },
     async hmacSign(input, keyRef = 'TOKEN_KEY') {
-      const key = this.env(keyRef) || 'fallback';
+      const key = this.env(keyRef);
+      if (!key) {
+        throw new Error(`Missing environment key: ${keyRef}`);
+      }
       const encoder = new TextEncoder();
       const keyData = encoder.encode(key);
       const data = encoder.encode(input);

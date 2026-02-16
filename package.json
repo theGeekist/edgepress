@@ -13,6 +13,7 @@
     "./hooks": "./packages/hooks/src/index.js",
     "./hooks/*": "./packages/hooks/src/*",
     "./platform-base": "./packages/platform-base/src/index.js",
+    "./admin-api-client": "./apps/admin-web/src/adapters/api-client.js",
     "./testing": "./packages/testing/src/store.js",
     "./testing/*": "./packages/testing/src/*",
     "./cloudflare": "./packages/cloudflare/src/index.js",

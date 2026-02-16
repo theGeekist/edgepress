@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createClient } from '../../../apps/admin-web/src/adapters/api-client.js';
+import { createClient } from '@geekist/edgepress/admin-api-client';
 
 function jsonResponse(status, data) {
   return new Response(JSON.stringify(data), {

@@ -3,6 +3,6 @@ export function createCoordinationFeature() {
     async acquireLock(name) {
       return { token: `lock:${name}` };
     },
-    async releaseLock() {}
+    async releaseLock(_token) {}
   };
 }
