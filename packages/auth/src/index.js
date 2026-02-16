@@ -1,1 +1,1 @@
-export { createAuthRoutes } from './routes.js';
+export const AUTH_PACKAGE = 'auth';

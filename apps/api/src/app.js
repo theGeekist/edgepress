@@ -1,11 +1,9 @@
-import { createAuthRoutes } from '@geekist/edgepress/auth';
-import { createContentRoutes } from '@geekist/edgepress/content';
-import { createWpCoreRoutes } from '@geekist/edgepress/wp-core';
 import { requireCapability } from '@geekist/edgepress/api-core/auth.js';
 import { error, getCorsHeaders, json, matchPath, readJson, withCors } from '@geekist/edgepress/api-core/http.js';
 import { resolveHooks } from './hooks.js';
 import { assertPlatformContracts } from './orchestration/platform-contracts.js';
 import { createRelease, resolveImageBlocks } from './orchestration/release-workflow.js';
+import { createApiRoutes } from './routes/index.js';
 
 function route(method, path, handler) {
   return { method, path, handler };
@@ -18,24 +16,12 @@ function authzErrorResponse(e) {
   return error('FORBIDDEN', e?.message || 'Forbidden', 403);
 }
 
-function createFeatureRoutes(context) {
-  return [
-    ...createAuthRoutes(context),
-    ...createContentRoutes(context),
-    ...createWpCoreRoutes({
-      ...context,
-      auth: { requireCapability },
-      http: { json, readJson }
-    })
-  ];
-}
-
 export function createApiHandler(platform) {
   assertPlatformContracts(platform);
   const { runtime, store, blobStore, cacheStore, releaseStore, previewStore } = platform;
   const hooks = resolveHooks(platform);
 
-  const routes = createFeatureRoutes({
+  const routes = createApiRoutes({
     runtime,
     store,
     blobStore,
@@ -47,6 +33,8 @@ export function createApiHandler(platform) {
       createRelease,
       resolveImageBlocks
     },
+    auth: { requireCapability },
+    http: { json, readJson },
     route,
     authzErrorResponse
   });

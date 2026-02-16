@@ -1,5 +1,4 @@
-import { normalizeTypeParam } from './wp-core-shared.js';
-import { toPostTypeRecord, toWpTaxonomyRecord } from './wp-core-records.js';
+import { normalizeTypeParam, toPostTypeRecord, toWpTaxonomyRecord } from '@geekist/edgepress/wp-core';
 
 export function registerWpCoreSchemaRoutes({ add, runtime, store, authzErrorResponse, requireCapability, json, notFoundEntity }) {
   add('GET', '/types', async (request) => {

@@ -1,10 +1,12 @@
 import {
+  fromWpStatus,
   loadDocumentByType,
+  parseFieldString,
   resolveInternalIdForWpId,
   resolveInternalMediaIdForWpId,
-  toWpNumericId
-} from './wp-core-id-map.js';
-import { fromWpStatus, parseFieldString, toWpPost } from './wp-core-shared.js';
+  toWpNumericId,
+  toWpPost
+} from '@geekist/edgepress/wp-core';
 
 export function registerWpCorePostPageRoutes({
   add,

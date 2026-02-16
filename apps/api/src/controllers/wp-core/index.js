@@ -1,7 +1,7 @@
-import { createNotFoundEntity } from './wp-core-shared.js';
-import { registerWpCoreMetaRoutes } from './wp-core-meta-routes.js';
-import { registerWpCoreSchemaRoutes } from './wp-core-schema-routes.js';
-import { registerWpCorePostPageRoutes } from './wp-core-post-page-routes.js';
+import { createNotFoundEntity } from '@geekist/edgepress/wp-core';
+import { registerWpCoreMetaRoutes } from './meta.js';
+import { registerWpCoreSchemaRoutes } from './schema.js';
+import { registerWpCorePostPageRoutes } from './post-page.js';
 
 export function createWpCoreRoutes({ runtime, store, route, authzErrorResponse, auth, http }) {
   const { requireCapability } = auth;
