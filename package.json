@@ -33,7 +33,7 @@
     "docs:build": "bun run --filter docs build",
     "docs:preview": "bun run --filter docs preview",
     "docs:check": "bunx tsc -p docs/snippets/tsconfig.json --noEmit",
-    "test:unit": "bun test packages/testing/test/*.test.js",
+    "test:unit": "bun test",
     "test:coverage": "bun test --coverage && bun scripts/check-coverage-thresholds.js",
     "start:admin-demo": "bun apps/admin-web/src/demo-server.js",
     "lint": "bunx eslint . --max-warnings 0 --cache",

@@ -65,7 +65,12 @@ export default [
     }
   },
   {
-    files: ['packages/testing/**/*.js', 'apps/admin-web/src/demo-server.js'],
+    files: [
+      'packages/testing/**/*.js',
+      '**/test/**/*.js',
+      '**/*.test.js',
+      'apps/admin-web/src/demo-server.js'
+    ],
     rules: {
       'sonarjs/no-hardcoded-passwords': 'off',
       'sonarjs/no-clear-text-protocols': 'off',
