@@ -30,9 +30,6 @@
       "@geekist/edgepress/cap-wp-core": ["./packages/cap-wp-core/src"],
       "@geekist/edgepress/cap-auth": ["./packages/cap-auth/src"],
       "@geekist/edgepress/cap-content": ["./packages/cap-content/src"],
-      "@geekist/edgepress/cap-media": ["./packages/cap-media/src"],
-      "@geekist/edgepress/cap-navigation": ["./packages/cap-navigation/src"],
-      "@geekist/edgepress/cap-private": ["./packages/cap-private/src"],
       "@geekist/edgepress/platform-api-core": ["./packages/platform-api-core/src"],
       "@geekist/edgepress/platform-api-core/*": ["./packages/platform-api-core/src/*"]
     }

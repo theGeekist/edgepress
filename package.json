@@ -27,9 +27,6 @@
     "./cap-wp-core": "./packages/cap-wp-core/src/index.js",
     "./cap-auth": "./packages/cap-auth/src/index.js",
     "./cap-content": "./packages/cap-content/src/index.js",
-    "./cap-media": "./packages/cap-media/src/index.js",
-    "./cap-navigation": "./packages/cap-navigation/src/index.js",
-    "./cap-private": "./packages/cap-private/src/index.js",
     "./platform-api-core": "./packages/platform-api-core/src/index.js",
     "./platform-api-core/*": "./packages/platform-api-core/src/*.js"
   },

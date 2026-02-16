@@ -1,9 +1,6 @@
 import { assertPlatformPorts } from '@geekist/edgepress/ports';
 import { createAuthRoutes } from '@geekist/edgepress/cap-auth';
 import { createContentRoutes } from '@geekist/edgepress/cap-content';
-import { createMediaRoutes } from '@geekist/edgepress/cap-media';
-import { createNavigationRoutes } from '@geekist/edgepress/cap-navigation';
-import { createPrivateRoutes } from '@geekist/edgepress/cap-private';
 import { createWpCoreRoutes } from '@geekist/edgepress/cap-wp-core';
 import { requireCapability } from '@geekist/edgepress/platform-api-core/auth.js';
 import { error, getCorsHeaders, json, matchPath, readJson, withCors } from '@geekist/edgepress/platform-api-core/http.js';
@@ -24,9 +21,6 @@ function createFeatureRoutes(context) {
   return [
     ...createAuthRoutes(context),
     ...createContentRoutes(context),
-    ...createMediaRoutes(context),
-    ...createNavigationRoutes(context),
-    ...createPrivateRoutes(context),
     ...createWpCoreRoutes({
       ...context,
       auth: { requireCapability },
