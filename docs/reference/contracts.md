@@ -4,11 +4,11 @@ title: Contracts
 
 # Contracts
 
-Contracts are currently captured as schemas in `packages/contracts`.
+Contracts are currently captured as schemas in `packages/testing`.
 
 Source:
 
-- `packages/contracts/src/index.js`
+- `packages/testing/src/api-contracts.js`
 
 Roadmap:
 

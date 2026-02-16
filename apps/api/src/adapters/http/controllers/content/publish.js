@@ -5,9 +5,14 @@ import { applyFilters, doAction, HOOK_NAMES } from '@geekist/edgepress/api-core/
 
 export function createPublishRoutes({ runtime, store, releaseStore, hooks, route, authzErrorResponse, workflows }) {
   const createRelease = workflows?.createRelease;
+  const runPublishWorkflow = workflows?.runPublishWorkflow;
   if (typeof createRelease !== 'function') {
     throw new Error('Missing required workflow: createRelease');
   }
+  if (typeof runPublishWorkflow !== 'function') {
+    throw new Error('Missing required workflow: runPublishWorkflow');
+  }
+
   return [
     route('POST', '/v1/publish', async (request) => {
       try {
@@ -15,6 +20,7 @@ export function createPublishRoutes({ runtime, store, releaseStore, hooks, route
         const body = await readJson(request);
         const provenance = normalizePublishProvenance(body);
         if (provenance.error) return provenance.error;
+
         const filteredPublishPayload = applyFilters(hooks, HOOK_NAMES.publishProvenanceFilter, {
           runtime,
           request,
@@ -23,75 +29,18 @@ export function createPublishRoutes({ runtime, store, releaseStore, hooks, route
           provenance
         });
         const effectiveProvenance = filteredPublishPayload?.provenance || provenance;
-        const jobId = `job_${runtime.uuid()}`;
-        let job = await store.createPublishJob({
-          id: jobId,
-          requestedBy: user.id,
-          sourceRevisionId: effectiveProvenance.sourceRevisionId,
-          sourceRevisionSet: effectiveProvenance.sourceRevisionSet
+
+        const result = await runPublishWorkflow({
+          runtime,
+          store,
+          releaseStore,
+          hooks,
+          createRelease,
+          user,
+          provenance: effectiveProvenance
         });
-        doAction(runtime, hooks, HOOK_NAMES.publishStartedAction, { user, job });
 
-        let publishError = null;
-        try {
-          const manifest = await createRelease({
-            runtime,
-            store,
-            releaseStore,
-            sourceRevisionId: effectiveProvenance.sourceRevisionId,
-            sourceRevisionSet: effectiveProvenance.sourceRevisionSet,
-            publishedBy: user.id
-          });
-          let activatedRelease = null;
-          if (!(await releaseStore.getActiveRelease())) {
-            await releaseStore.activateRelease(manifest.releaseId);
-            activatedRelease = manifest.releaseId;
-            doAction(runtime, hooks, HOOK_NAMES.releaseActivatedAction, {
-              releaseId: manifest.releaseId,
-              source: 'publish_auto'
-            });
-          }
-          job = await store.updatePublishJob(jobId, {
-            status: 'completed',
-            releaseId: manifest.releaseId
-          });
-          doAction(runtime, hooks, HOOK_NAMES.publishCompletedAction, {
-            user,
-            job,
-            manifest,
-            activatedRelease
-          });
-        } catch (nextPublishError) {
-          publishError = nextPublishError;
-          try {
-            job = await store.updatePublishJob(jobId, {
-              status: 'failed',
-              error: nextPublishError.message
-            });
-          } catch (updateError) {
-            runtime.log('error', 'publish_job_update_failed', {
-              jobId,
-              error: updateError?.message || String(updateError),
-              publishError: nextPublishError?.message || String(nextPublishError)
-            });
-          }
-          try {
-            doAction(runtime, hooks, HOOK_NAMES.publishCompletedAction, {
-              user,
-              job,
-              error: nextPublishError
-            });
-          } catch (hookError) {
-            runtime.log('error', 'publish_complete_action_failed', {
-              jobId,
-              error: hookError?.message || String(hookError),
-              publishError: nextPublishError?.message || String(nextPublishError)
-            });
-          }
-        }
-
-        const responseStatus = publishError ? 500 : 201;
-        return json({ job }, responseStatus);
+        return json({ job: result.job }, result.responseStatus);
       } catch (e) {
         return authzErrorResponse(e);
       }

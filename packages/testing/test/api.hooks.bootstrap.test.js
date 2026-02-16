@@ -6,7 +6,7 @@ import {
   attachServerHooks,
   registerServerHookRegistrar,
   resetServerHookRegistrarsForTests
-} from '../../../apps/api/src/hooks-bootstrap.js';
+} from '../../../apps/api/src/app/hooks-bootstrap.js';
 
 test.afterEach(() => {
   resetServerHookRegistrarsForTests();

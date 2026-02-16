@@ -1,9 +1,10 @@
 import { requireCapability } from '@geekist/edgepress/api-core/auth.js';
 import { error, getCorsHeaders, json, matchPath, readJson, withCors } from '@geekist/edgepress/api-core/http.js';
 import { resolveHooks } from './hooks.js';
-import { assertPlatformContracts } from './orchestration/platform-contracts.js';
-import { createRelease, resolveImageBlocks } from './orchestration/release-workflow.js';
-import { createApiRoutes } from './routes/index.js';
+import { assertPlatformContracts } from '../orchestration/platform-contracts.js';
+import { createRelease, resolveImageBlocks } from '../orchestration/release-workflow.js';
+import { runPublishWorkflow } from '../orchestration/publish-workflow.js';
+import { createApiRoutes } from '../adapters/http/routes/index.js';
 
 function route(method, path, handler) {
   return { method, path, handler };
@@ -31,7 +32,8 @@ export function createApiHandler(platform) {
     hooks,
     workflows: {
       createRelease,
-      resolveImageBlocks
+      resolveImageBlocks,
+      runPublishWorkflow
     },
     auth: { requireCapability },
     http: { json, readJson },

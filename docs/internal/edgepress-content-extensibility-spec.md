@@ -333,7 +333,7 @@ This spec is considered active when:
 - Prior strategy: `idea.md`
 - Content model draft: `docs/internal/content-model-v2.md`
 - Phase/state tracker: `PLANNING.md`
-- Hook runtime: `apps/api/src/hooks.js`, `apps/api/src/hooks-bootstrap.js`
+- Hook runtime: `apps/api/src/app/hooks.js`, `apps/api/src/app/hooks-bootstrap.js`
 - Content model routes: `apps/api/src/features/content-model-routes.js`
 - Document routes: `apps/api/src/features/document-routes.js`
 - WP compatibility routes: `apps/api/src/features/wp-core-routes.js`
