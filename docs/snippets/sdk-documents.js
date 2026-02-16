@@ -1,4 +1,4 @@
-import { createClient } from "../../packages/sdk/src/client.js";
+import { createClient } from "../../apps/admin-web/src/adapters/api-client.js";
 
 let accessToken = "<accessToken>";
 

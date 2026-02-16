@@ -13,6 +13,7 @@ const blocked = [
 const blockedTokenAllowlist = new Set([
   'apps/api/src/worker.js'
 ]);
+const featurePackageNames = new Set(['auth', 'content', 'wp-core']);
 
 const files = execSync("find apps packages -type f \\( -name '*.js' -o -name '*.mjs' -o -name '*.ts' -o -name '*.jsx' \\)", {
   encoding: 'utf8'
@@ -52,9 +53,13 @@ for (const file of scannedFiles) {
       console.error(`Boundary violation in ${file}: deep internal import '${spec}' is not allowed.`);
       failed = true;
     }
-    if (spec.startsWith('@geekist/edgepress/cap-') && spec.split('/').length > 3) {
-      console.error(`Boundary violation in ${file}: capability import '${spec}' must use package root only.`);
-      failed = true;
+    if (spec.startsWith('@geekist/edgepress/')) {
+      const segments = spec.split('/');
+      const packageName = segments[2];
+      if (featurePackageNames.has(packageName) && segments.length > 3) {
+        console.error(`Boundary violation in ${file}: feature import '${spec}' must use package root only.`);
+        failed = true;
+      }
     }
 
     const resolvedRelative = resolveRelativeImport(file, spec);

@@ -1,10 +1,9 @@
 import { assertPreviewNotExpired } from '@geekist/edgepress/domain';
 import { normalizeBlocksInput } from '@geekist/edgepress/domain/blocks.js';
-import { resolveImageBlocks } from '@geekist/edgepress/publish';
 import { serialize } from '@wordpress/blocks';
-import { requireCapability } from '@geekist/edgepress/platform-api-core/auth.js';
-import { error, json } from '@geekist/edgepress/platform-api-core/http.js';
-import { parseTtlSeconds, signPreviewToken, verifyPreviewTokenSignature } from '@geekist/edgepress/platform-api-core/runtime-utils.js';
+import { requireCapability } from '@geekist/edgepress/api-core/auth.js';
+import { error, json } from '@geekist/edgepress/api-core/http.js';
+import { parseTtlSeconds, signPreviewToken, verifyPreviewTokenSignature } from '@geekist/edgepress/api-core/runtime-utils.js';
 
 function collectMediaIds(blocks, featuredImageId) {
   const ids = new Set();
@@ -105,7 +104,11 @@ function buildPreviewHtml(doc, themeVars, serializedBlocks, featuredImageMarkup)
 </html>`;
 }
 
-export function createPreviewRoutes({ runtime, store, previewStore, route, authzErrorResponse }) {
+export function createPreviewRoutes({ runtime, store, previewStore, route, authzErrorResponse, workflows }) {
+  const resolveImageBlocks = workflows?.resolveImageBlocks;
+  if (typeof resolveImageBlocks !== 'function') {
+    throw new Error('Missing required workflow helper: resolveImageBlocks');
+  }
   return [
     route('GET', '/v1/preview/:documentId', async (request, params) => {
       try {

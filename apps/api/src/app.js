@@ -1,10 +1,11 @@
-import { assertPlatformPorts } from '@geekist/edgepress/ports';
-import { createAuthRoutes } from '@geekist/edgepress/cap-auth';
-import { createContentRoutes } from '@geekist/edgepress/cap-content';
-import { createWpCoreRoutes } from '@geekist/edgepress/cap-wp-core';
-import { requireCapability } from '@geekist/edgepress/platform-api-core/auth.js';
-import { error, getCorsHeaders, json, matchPath, readJson, withCors } from '@geekist/edgepress/platform-api-core/http.js';
+import { createAuthRoutes } from '@geekist/edgepress/auth';
+import { createContentRoutes } from '@geekist/edgepress/content';
+import { createWpCoreRoutes } from '@geekist/edgepress/wp-core';
+import { requireCapability } from '@geekist/edgepress/api-core/auth.js';
+import { error, getCorsHeaders, json, matchPath, readJson, withCors } from '@geekist/edgepress/api-core/http.js';
 import { resolveHooks } from './hooks.js';
+import { assertPlatformContracts } from './orchestration/platform-contracts.js';
+import { createRelease, resolveImageBlocks } from './orchestration/release-workflow.js';
 
 function route(method, path, handler) {
   return { method, path, handler };
@@ -30,7 +31,7 @@ function createFeatureRoutes(context) {
 }
 
 export function createApiHandler(platform) {
-  assertPlatformPorts(platform);
+  assertPlatformContracts(platform);
   const { runtime, store, blobStore, cacheStore, releaseStore, previewStore } = platform;
   const hooks = resolveHooks(platform);
 
@@ -42,6 +43,10 @@ export function createApiHandler(platform) {
     releaseStore,
     previewStore,
     hooks,
+    workflows: {
+      createRelease,
+      resolveImageBlocks
+    },
     route,
     authzErrorResponse
   });

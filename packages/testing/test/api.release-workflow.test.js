@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createRelease } from '../../publish/src/publisher.js';
+import { createRelease } from '@geekist/edgepress/api-orchestration/release-workflow.js';
 
 function createRuntime() {
   return {
@@ -106,7 +106,7 @@ test('createRelease throws when releaseStore.writeArtifact is missing', async ()
         sourceRevisionId: null,
         publishedBy: 'u_admin'
       }),
-    /Missing required port method: writeArtifact/
+    /Missing required contract method: writeArtifact/
   );
 });
 

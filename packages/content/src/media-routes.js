@@ -1,5 +1,5 @@
-import { requireCapability } from '@geekist/edgepress/platform-api-core/auth.js';
-import { error, json, readJson } from '@geekist/edgepress/platform-api-core/http.js';
+import { requireCapability } from '@geekist/edgepress/api-core/auth.js';
+import { error, json, readJson } from '@geekist/edgepress/api-core/http.js';
 
 function sanitizeFilename(input) {
   const candidate = String(input || '')

@@ -1,6 +1,6 @@
-import { requireCapability } from '@geekist/edgepress/platform-api-core/auth.js';
-import { error, json } from '@geekist/edgepress/platform-api-core/http.js';
-import { buildPrivateCacheScope, parseTtlSeconds } from '@geekist/edgepress/platform-api-core/runtime-utils.js';
+import { requireCapability } from '@geekist/edgepress/api-core/auth.js';
+import { error, json } from '@geekist/edgepress/api-core/http.js';
+import { buildPrivateCacheScope, parseTtlSeconds } from '@geekist/edgepress/api-core/runtime-utils.js';
 
 export function createPrivateRoutes({ runtime, store, cacheStore, blobStore, releaseStore, route, authzErrorResponse }) {
   return [

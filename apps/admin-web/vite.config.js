@@ -50,16 +50,9 @@ export default defineConfig({
       { find: /^@components\/(.*)$/, replacement: path.resolve(__dirname, 'src/components/$1') },
       { find: /^@geekist\/edgepress\/domain$/, replacement: path.resolve(process.cwd(), 'packages/domain/src') },
       { find: /^@geekist\/edgepress\/domain\/(.*)$/, replacement: path.resolve(process.cwd(), 'packages/domain/src/$1') },
-      { find: /^@geekist\/edgepress\/contracts$/, replacement: path.resolve(process.cwd(), 'packages/contracts/src') },
-      { find: /^@geekist\/edgepress\/contracts\/(.*)$/, replacement: path.resolve(process.cwd(), 'packages/contracts/src/$1') },
-      { find: /^@geekist\/edgepress\/ports$/, replacement: path.resolve(process.cwd(), 'packages/ports/src') },
-      { find: /^@geekist\/edgepress\/ports\/(.*)$/, replacement: path.resolve(process.cwd(), 'packages/ports/src/$1') },
       { find: /^@geekist\/edgepress\/hooks$/, replacement: path.resolve(process.cwd(), 'packages/hooks/src') },
       { find: /^@geekist\/edgepress\/hooks\/(.*)$/, replacement: path.resolve(process.cwd(), 'packages/hooks/src/$1') },
-      { find: /^@geekist\/edgepress\/publish$/, replacement: path.resolve(process.cwd(), 'packages/publish/src') },
-      { find: /^@geekist\/edgepress\/publish\/(.*)$/, replacement: path.resolve(process.cwd(), 'packages/publish/src/$1') },
-      { find: /^@geekist\/edgepress\/sdk$/, replacement: path.resolve(process.cwd(), 'packages/sdk/src/client.js') },
-      { find: /^@geekist\/edgepress\/sdk\/(.*)$/, replacement: path.resolve(process.cwd(), 'packages/sdk/src/$1') }
+      { find: /^@geekist\/edgepress\/admin-api-client$/, replacement: path.resolve(__dirname, 'src/adapters/api-client.js') }
     ]
   },
   server: {

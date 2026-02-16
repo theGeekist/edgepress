@@ -100,7 +100,7 @@ export async function createRelease({ runtime, store, releaseStore, sourceRevisi
 
   const artifacts = [];
   if (typeof releaseStore.writeArtifact !== 'function') {
-    throw new Error('Missing required port method: writeArtifact');
+    throw new Error('Missing required contract method: writeArtifact');
   }
   for (const doc of docs) {
     const route = doc.slug || doc.id;

@@ -1,10 +1,13 @@
-import { createRelease } from '@geekist/edgepress/publish';
-import { requireCapability } from '@geekist/edgepress/platform-api-core/auth.js';
-import { error, json, readJson } from '@geekist/edgepress/platform-api-core/http.js';
-import { normalizePublishProvenance } from '@geekist/edgepress/platform-api-core/request-validation.js';
-import { applyFilters, doAction, HOOK_NAMES } from '@geekist/edgepress/platform-api-core/hooks.js';
+import { requireCapability } from '@geekist/edgepress/api-core/auth.js';
+import { error, json, readJson } from '@geekist/edgepress/api-core/http.js';
+import { normalizePublishProvenance } from '@geekist/edgepress/api-core/request-validation.js';
+import { applyFilters, doAction, HOOK_NAMES } from '@geekist/edgepress/api-core/hooks.js';
 
-export function createPublishRoutes({ runtime, store, releaseStore, hooks, route, authzErrorResponse }) {
+export function createPublishRoutes({ runtime, store, releaseStore, hooks, route, authzErrorResponse, workflows }) {
+  const createRelease = workflows?.createRelease;
+  if (typeof createRelease !== 'function') {
+    throw new Error('Missing required workflow: createRelease');
+  }
   return [
     route('POST', '/v1/publish', async (request) => {
       try {

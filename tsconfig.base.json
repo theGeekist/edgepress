@@ -13,25 +13,20 @@
     "paths": {
       "@geekist/edgepress/domain": ["./packages/domain/src"],
       "@geekist/edgepress/domain/*": ["./packages/domain/src/*"],
-      "@geekist/edgepress/contracts": ["./packages/contracts/src"],
-      "@geekist/edgepress/contracts/*": ["./packages/contracts/src/*"],
-      "@geekist/edgepress/ports": ["./packages/ports/src"],
-      "@geekist/edgepress/ports/*": ["./packages/ports/src/*"],
       "@geekist/edgepress/hooks": ["./packages/hooks/src"],
       "@geekist/edgepress/hooks/*": ["./packages/hooks/src/*"],
-      "@geekist/edgepress/publish": ["./packages/publish/src"],
-      "@geekist/edgepress/publish/*": ["./packages/publish/src/*"],
-      "@geekist/edgepress/sdk": ["./packages/sdk/src"],
-      "@geekist/edgepress/sdk/*": ["./packages/sdk/src/*"],
+      "@geekist/edgepress/api-orchestration": ["./apps/api/src/orchestration"],
+      "@geekist/edgepress/api-orchestration/*": ["./apps/api/src/orchestration/*"],
+      "@geekist/edgepress/admin-api-client": ["./apps/admin-web/src/adapters/api-client.js"],
       "@geekist/edgepress/testing": ["./packages/testing/src"],
       "@geekist/edgepress/testing/*": ["./packages/testing/src/*"],
       "@geekist/edgepress/cloudflare": ["./packages/cloudflare/src"],
       "@geekist/edgepress/cloudflare/*": ["./packages/cloudflare/src/*"],
-      "@geekist/edgepress/cap-wp-core": ["./packages/cap-wp-core/src"],
-      "@geekist/edgepress/cap-auth": ["./packages/cap-auth/src"],
-      "@geekist/edgepress/cap-content": ["./packages/cap-content/src"],
-      "@geekist/edgepress/platform-api-core": ["./packages/platform-api-core/src"],
-      "@geekist/edgepress/platform-api-core/*": ["./packages/platform-api-core/src/*"]
+      "@geekist/edgepress/wp-core": ["./packages/wp-core/src"],
+      "@geekist/edgepress/auth": ["./packages/auth/src"],
+      "@geekist/edgepress/content": ["./packages/content/src"],
+      "@geekist/edgepress/api-core": ["./packages/api-core/src"],
+      "@geekist/edgepress/api-core/*": ["./packages/api-core/src/*"]
     }
   }
 }

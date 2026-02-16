@@ -1,5 +1,5 @@
-import { createAccessToken } from '@geekist/edgepress/platform-api-core/auth.js';
-import { error, json, readJson } from '@geekist/edgepress/platform-api-core/http.js';
+import { createAccessToken } from '@geekist/edgepress/api-core/auth.js';
+import { error, json, readJson } from '@geekist/edgepress/api-core/http.js';
 
 function credentialsMatch(expected, supplied) {
   const a = String(expected ?? '');

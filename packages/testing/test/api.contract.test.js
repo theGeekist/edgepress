@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { routes, assertKeys } from '@geekist/edgepress/contracts';
+import { routes, assertKeys } from '../src/api-contracts.js';
 import { createInMemoryPlatform } from '../src/store.js';
 import { authAsAdmin, requestJson } from './helpers/testUtils.js';
 
