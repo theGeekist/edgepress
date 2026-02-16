@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
+import PropTypes from 'prop-types';
+import { palettePropTypes } from '@components/prop-types';
 import { ThemedTextInput } from '@components/ui/ThemedTextInput.jsx';
 
 export function MenuItemCard({ item, depth, onUpdate, onRemove, drag, dragHandleProps, dragHandleRef, isActive, palette }) {
@@ -163,3 +165,22 @@ const styles = StyleSheet.create({
         paddingTop: 12,
     },
 });
+
+MenuItemCard.propTypes = {
+  item: PropTypes.shape({
+    id: PropTypes.string.isRequired,
+    label: PropTypes.string.isRequired,
+    kind: PropTypes.oneOf(['internal', 'external']).isRequired,
+    documentId: PropTypes.string,
+    externalUrl: PropTypes.string,
+    route: PropTypes.string
+  }).isRequired,
+  depth: PropTypes.number.isRequired,
+  onUpdate: PropTypes.func.isRequired,
+  onRemove: PropTypes.func.isRequired,
+  drag: PropTypes.func,
+  dragHandleProps: PropTypes.object,
+  dragHandleRef: PropTypes.object,
+  isActive: PropTypes.bool,
+  palette: PropTypes.shape(palettePropTypes).isRequired
+};

@@ -1,11 +1,12 @@
-import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import PropTypes from 'prop-types';
+import { palettePropTypes } from '@components/prop-types';
 import { layoutStyles } from '@components/styles.js';
 import { PageLayout } from '@components/ui/PageLayout.jsx';
 import { ActionButton } from '@components/ui/ActionButton.jsx';
-import { MenuItemList } from '@features/navigation/components/MenuItemList';
-import { AddMenuItemPanel } from '@features/navigation/components/AddMenuItemPanel.jsx';
-import { useNavigationMenuEditor } from '@features/navigation/hooks/useNavigationMenuEditor.js';
+import { MenuItemList } from './components/MenuItemList';
+import { AddMenuItemPanel } from './components/AddMenuItemPanel.jsx';
+import { useNavigationMenuEditor } from './hooks/useNavigationMenuEditor.js';
 
 export function NavigationEditor({ palette, docs, navigation, actions }) {
     const {
@@ -119,3 +120,24 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     }
 });
+
+export const navigationEditorPropTypes = NavigationEditor.propTypes;
+
+NavigationEditor.propTypes = {
+  palette: PropTypes.shape(palettePropTypes).isRequired,
+  docs: PropTypes.array.isRequired,
+  navigation: PropTypes.shape({
+    items: PropTypes.array.isRequired,
+    menuTitle: PropTypes.string.isRequired,
+    setItems: PropTypes.func.isRequired,
+    saveMenu: PropTypes.func.isRequired,
+    uiState: PropTypes.shape({
+      isLoading: PropTypes.bool.isRequired,
+      isSaving: PropTypes.bool.isRequired,
+      isDirty: PropTypes.bool.isRequired
+    }).isRequired
+  }).isRequired,
+  actions: PropTypes.shape({
+    onAddMenuItem: PropTypes.func.isRequired
+  }).isRequired
+};

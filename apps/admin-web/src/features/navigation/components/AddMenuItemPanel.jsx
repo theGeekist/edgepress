@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { View, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
+import PropTypes from 'prop-types';
+import { palettePropTypes } from '@components/prop-types';
 import { ThemedTextInput } from '@components/ui/ThemedTextInput.jsx';
 import { MetaBox } from '@components/ui/MetaBox.jsx';
 
@@ -95,3 +97,9 @@ const styles = StyleSheet.create({
         marginTop: 8,
     }
 });
+
+AddMenuItemPanel.propTypes = {
+  palette: PropTypes.shape(palettePropTypes).isRequired,
+  docs: PropTypes.array.isRequired,
+  onAdd: PropTypes.func.isRequired
+};

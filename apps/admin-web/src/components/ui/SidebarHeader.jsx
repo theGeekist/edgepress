@@ -1,5 +1,6 @@
-import { View, Text } from 'react-native';
-import { StyleSheet } from 'react-native';
+import { View, Text } from "react-native";
+import { StyleSheet } from "react-native";
+import PropTypes from 'prop-types';
 
 export function SidebarHeader({ title, palette }) {
   return (
@@ -10,6 +11,14 @@ export function SidebarHeader({ title, palette }) {
     </View>
   );
 }
+
+SidebarHeader.propTypes = {
+  title: PropTypes.string.isRequired,
+  palette: PropTypes.shape({
+    sidebarBorder: PropTypes.string.isRequired,
+    topbarText: PropTypes.string.isRequired
+  }).isRequired
+};
 
 const styles = StyleSheet.create({
   header: {

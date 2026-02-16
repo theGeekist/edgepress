@@ -10,4 +10,4 @@ import './admin-transitions.css';
 
 import { App } from './App.jsx';
 
-createRoot(document.getElementById('root')).render(<App />);
+createRoot(globalThis.document.getElementById('root')).render(<App />);

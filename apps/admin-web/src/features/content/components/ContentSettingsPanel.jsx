@@ -1,5 +1,6 @@
 import { Text, View } from 'react-native';
-
+import PropTypes from 'prop-types';
+import { palettePropTypes } from '@components/prop-types';
 import { ActionButton } from '@components/ui/ActionButton.jsx';
 import { ThemedTextInput } from '@components/ui/ThemedTextInput.jsx';
 import { MetaBox } from '@components/ui/MetaBox.jsx';
@@ -124,4 +125,21 @@ const style = {
     fontSize: 13,
     fontWeight: '500'
   }
+};
+
+export const contentSettingsPanelPropTypes = ContentSettingsPanel.propTypes;
+
+ContentSettingsPanel.propTypes = {
+  palette: PropTypes.shape(palettePropTypes).isRequired,
+  hasSelection: PropTypes.bool.isRequired,
+  meta: PropTypes.shape({
+    slug: PropTypes.string,
+    excerpt: PropTypes.string,
+    type: PropTypes.string,
+    categories: PropTypes.array,
+    tags: PropTypes.array,
+    taxonomyMode: PropTypes.string,
+    featuredImageId: PropTypes.string
+  }).isRequired,
+  onUpdateMeta: PropTypes.func.isRequired
 };

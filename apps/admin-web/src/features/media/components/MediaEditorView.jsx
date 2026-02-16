@@ -1,5 +1,6 @@
 import { Image, Pressable, Text, View } from 'react-native';
-
+import PropTypes from 'prop-types';
+import { palettePropTypes } from '@components/prop-types';
 import { ActionButton } from '@components/ui/ActionButton.jsx';
 import { MetaBox } from '@components/ui/MetaBox.jsx';
 import { ThemedTextInput } from '@components/ui/ThemedTextInput.jsx';
@@ -85,8 +86,8 @@ export function MediaEditorView({
               palette={palette}
               label="Open original file"
               onPress={() => {
-                if (typeof window !== 'undefined') {
-                  window.open(item.url, '_blank', 'noopener,noreferrer');
+                if (typeof globalThis.window !== 'undefined') {
+                  globalThis.window.open(item.url, '_blank', 'noopener,noreferrer');
                 }
               }}
             />
@@ -160,3 +161,42 @@ function ActionHint({ palette, label, onPress, iconOnly = false, iconLabel = '' 
     </Pressable>
   );
 }
+
+ActionHint.propTypes = {
+  palette: PropTypes.shape(palettePropTypes).isRequired,
+  label: PropTypes.string.isRequired,
+  onPress: PropTypes.func.isRequired,
+  iconOnly: PropTypes.bool,
+  iconLabel: PropTypes.string
+};
+
+MediaEditorView.propTypes = {
+  palette: PropTypes.shape(palettePropTypes).isRequired,
+  media: PropTypes.shape({
+    isSaving: PropTypes.bool,
+    alt: PropTypes.string,
+    caption: PropTypes.string,
+    description: PropTypes.string,
+    setAlt: PropTypes.func.isRequired,
+    setCaption: PropTypes.func.isRequired,
+    setDescription: PropTypes.func.isRequired
+  }).isRequired,
+  item: PropTypes.shape({
+    id: PropTypes.string.isRequired,
+    filename: PropTypes.string,
+    mimeType: PropTypes.string,
+    size: PropTypes.number,
+    url: PropTypes.string,
+    width: PropTypes.number,
+    height: PropTypes.number,
+    updatedAt: PropTypes.string
+  }).isRequired,
+  currentIndex: PropTypes.number.isRequired,
+  totalItems: PropTypes.number.isRequired,
+  onBackToList: PropTypes.func.isRequired,
+  onSelectPrev: PropTypes.func.isRequired,
+  onSelectNext: PropTypes.func.isRequired,
+  onSaveSelected: PropTypes.func.isRequired
+};
+
+export const mediaEditorViewPropTypes = MediaEditorView.propTypes;

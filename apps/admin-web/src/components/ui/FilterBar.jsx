@@ -1,4 +1,5 @@
 import { View } from 'react-native';
+import PropTypes from 'prop-types';
 
 export function FilterBar({ left, right, children, compact = false }) {
   return (
@@ -23,3 +24,10 @@ export function FilterBar({ left, right, children, compact = false }) {
     </View>
   );
 }
+
+FilterBar.propTypes = {
+  left: PropTypes.node,
+  right: PropTypes.node,
+  children: PropTypes.node,
+  compact: PropTypes.bool
+};

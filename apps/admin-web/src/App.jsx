@@ -46,8 +46,8 @@ export function App() {
         text: 'Open preview in new tab',
         tone: 'link',
         onPress: () => {
-          if (typeof window !== 'undefined') {
-            window.open(previewLink.url, '_blank', 'noopener,noreferrer');
+          if (typeof globalThis !== 'undefined' && globalThis.window) {
+            globalThis.window.open(previewLink.url, '_blank', 'noopener,noreferrer');
           }
         }
       }

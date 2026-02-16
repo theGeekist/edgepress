@@ -7,13 +7,20 @@ import { layoutStyles } from '@components/styles.js';
 export function ContentScene({
   palette,
   theme,
+  siteTheme,
   contentView,
   docs,
   editor,
   actions
 }) {
   const isEditorView = contentView === 'editor';
-  const selectedType = editor?.postType === 'page' ? 'page' : 'post';
+  const selectedDocType = docs?.getSelectedDocType?.();
+  let selectedType = 'post';
+  if (selectedDocType === 'post' || selectedDocType === 'page') {
+    selectedType = selectedDocType;
+  } else if (editor?.postType === 'page') {
+    selectedType = 'page';
+  }
 
   if (!isEditorView) {
     return (
@@ -54,6 +61,7 @@ export function ContentScene({
         setBlocks={editor.setBlocks}
         palette={palette}
         theme={theme}
+        siteTheme={siteTheme}
         title={docs.title}
         onTitleChange={docs.setTitle}
         postId={docs.selectedId}

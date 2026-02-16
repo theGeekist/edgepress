@@ -40,6 +40,11 @@
   box-sizing: border-box !important;
 }
 
+/* Host app owns primary branding chrome; hide Gutenberg WP logo button. */
+.ep-editor-canvas-root .edit-post-fullscreen-mode-close {
+  display: none !important;
+}
+
 .ep-editor-canvas-root .interface-interface-skeleton__content {
   padding-top: calc(var(--ep-admin-topbar-height) + var(--ep-editor-toolbar-height));
 }

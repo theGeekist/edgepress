@@ -1,6 +1,7 @@
-import { Pressable, Text, View } from 'react-native';
-
-import { layoutStyles } from '../styles.js';
+import { Pressable, Text, View } from "react-native";
+import PropTypes from "prop-types";
+import { palettePropTypes } from "../prop-types";
+import { layoutStyles } from "../styles.js";
 
 function resolveToneColor(palette, tone) {
   if (tone === 'error') return palette.error;
@@ -35,3 +36,15 @@ export function Feedback({ palette, items = [] }) {
     </View>
   );
 }
+
+Feedback.propTypes = {
+  palette: PropTypes.shape(palettePropTypes).isRequired,
+  items: PropTypes.arrayOf(
+    PropTypes.shape({
+      key: PropTypes.string,
+      text: PropTypes.string.isRequired,
+      tone: PropTypes.oneOf(['error', 'link', 'default']),
+      onPress: PropTypes.func
+    })
+  )
+};

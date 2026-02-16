@@ -1,6 +1,8 @@
 import js from '@eslint/js';
 import globals from 'globals';
 import sonarjs from 'eslint-plugin-sonarjs';
+import react from 'eslint-plugin-react';
+import reactHooks from 'eslint-plugin-react-hooks';
 
 export default [
   {
@@ -16,10 +18,15 @@ export default [
   js.configs.recommended,
   sonarjs.configs.recommended,
   {
-    files: ['**/*.js', '**/*.mjs'],
+    files: ['**/*.js', '**/*.mjs', '**/*.jsx'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
+      parserOptions: {
+        ecmaFeatures: {
+          jsx: true
+        }
+      },
       globals: {
         ...globals.node,
         ...globals.web
@@ -66,6 +73,25 @@ export default [
     files: ['eslint.config.mjs'],
     rules: {
       'sonarjs/no-hardcoded-passwords': 'off'
+    }
+  },
+  {
+    files: ['apps/admin-web/src/**/*.jsx', 'apps/admin-web/src/**/*.js'],
+    settings: {
+      react: {
+        version: '18.3',
+        pragma: 'React'
+      }
+    },
+    plugins: {
+      react,
+      'react-hooks': reactHooks
+    },
+    rules: {
+      'react/prop-types': 'off',
+      'react/jsx-uses-vars': 'error',
+      'react-hooks/rules-of-hooks': 'error',
+      'react-hooks/exhaustive-deps': 'error'
     }
   }
 ];

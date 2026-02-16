@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
-
+import PropTypes from 'prop-types';
+import { palettePropTypes } from '@components/prop-types';
 import { ActionButton } from '@components/ui/ActionButton.jsx';
 import { DataTable } from '@components/ui/DataTable.jsx';
 import { DropdownButton } from '@components/ui/DropdownButton.jsx';
@@ -102,6 +103,14 @@ export function MediaListTable({ palette, media, onEditMedia, onUploadFiles, onD
     onNext: () => media.setPage((media.pagination.page || 1) + 1)
   };
 
+  async function handleApplyBulkAction() {
+    if (media.selectedRowIds.length === 0) return;
+    if (selectedBulkAction === 'delete') {
+      await onBulkDeleteMedia();
+      setSelectedBulkAction('none');
+    }
+  }
+
   return (
     <View style={layoutStyles.contentListWrap}>
       <SectionTopBar
@@ -202,10 +211,32 @@ function CheckboxCell({ palette, checked, onPress }) {
     </Pressable>
   );
 }
-  async function handleApplyBulkAction() {
-    if (media.selectedRowIds.length === 0) return;
-    if (selectedBulkAction === 'delete') {
-      await onBulkDeleteMedia();
-      setSelectedBulkAction('none');
-    }
-  }
+
+CheckboxCell.propTypes = {
+  palette: PropTypes.shape(palettePropTypes).isRequired,
+  checked: PropTypes.bool.isRequired,
+  onPress: PropTypes.func.isRequired
+};
+
+MediaListTable.propTypes = {
+  palette: PropTypes.shape(palettePropTypes).isRequired,
+  media: PropTypes.shape({
+    items: PropTypes.array.isRequired,
+    selectedRowIds: PropTypes.array.isRequired,
+    toggleRowSelection: PropTypes.func.isRequired,
+    mimeTypeFilter: PropTypes.string.isRequired,
+    setMimeTypeFilter: PropTypes.func.isRequired,
+    search: PropTypes.string.isRequired,
+    setSearch: PropTypes.func.isRequired,
+    isUploading: PropTypes.bool.isRequired,
+    pagination: PropTypes.object.isRequired,
+    setPagination: PropTypes.func.isRequired,
+    isLoading: PropTypes.bool.isRequired
+  }).isRequired,
+  onEditMedia: PropTypes.func.isRequired,
+  onUploadFiles: PropTypes.func.isRequired,
+  onDeleteMedia: PropTypes.func.isRequired,
+  onBulkDeleteMedia: PropTypes.func.isRequired
+};
+
+export const mediaListTablePropTypes = MediaListTable.propTypes;

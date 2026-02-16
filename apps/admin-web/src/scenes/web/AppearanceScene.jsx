@@ -39,7 +39,11 @@ export function AppearanceScene({ palette, actions, appearanceSubsection = 'appe
     );
   }
 
-  const title = subsection === 'themes' ? 'Themes' : subsection === 'widgets' ? 'Widgets' : 'Appearance';
+  const subsectionTitles = {
+    themes: 'Themes',
+    widgets: 'Widgets'
+  };
+  const title = subsectionTitles[subsection] || 'Appearance';
   return (
     <View style={layoutStyles.contentListWrap}>
       <SectionTopBar palette={palette} title={title} />

@@ -1,5 +1,6 @@
 import { Text, View } from 'react-native';
-
+import PropTypes from 'prop-types';
+import { palettePropTypes } from '@components/prop-types';
 import { ActionButton } from '@components/ui/ActionButton.jsx';
 import { MetaBox } from '@components/ui/MetaBox.jsx';
 import { layoutStyles } from '@components/styles.js';
@@ -8,10 +9,10 @@ export function PublishPanel({ palette, hasSelection, loop, previewLink, actions
   const isLive = Boolean(loop?.activeRelease);
 
   function openPreview() {
-    if (!previewLink?.url || typeof window === 'undefined') {
+    if (!previewLink?.url || typeof globalThis === 'undefined' || !globalThis.window) {
       return;
     }
-    window.open(previewLink.url, '_blank', 'noopener,noreferrer');
+    globalThis.window.open(previewLink.url, '_blank', 'noopener,noreferrer');
   }
 
   const footer = (
@@ -45,3 +46,21 @@ const style = {
     marginTop: 8
   }
 };
+
+PublishPanel.propTypes = {
+  palette: PropTypes.shape(palettePropTypes).isRequired,
+  hasSelection: PropTypes.bool.isRequired,
+  loop: PropTypes.shape({
+    activeRelease: PropTypes.object
+  }),
+  previewLink: PropTypes.shape({
+    url: PropTypes.string
+  }),
+  actions: PropTypes.shape({
+    onPublish: PropTypes.func.isRequired,
+    onSave: PropTypes.func.isRequired,
+    onPreview: PropTypes.func.isRequired
+  }).isRequired
+};
+
+export const publishPanelPropTypes = PublishPanel.propTypes;

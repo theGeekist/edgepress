@@ -1,4 +1,6 @@
-import { StyleSheet, TextInput } from 'react-native';
+import { StyleSheet, TextInput } from "react-native";
+import PropTypes from 'prop-types';
+import { palettePropTypes } from '../prop-types';
 
 export function ThemedTextInput({ palette, style, ...props }) {
   return (
@@ -17,6 +19,11 @@ export function ThemedTextInput({ palette, style, ...props }) {
     />
   );
 }
+
+ThemedTextInput.propTypes = {
+  palette: PropTypes.shape(palettePropTypes).isRequired,
+  style: PropTypes.object
+};
 
 const styles = StyleSheet.create({
   input: {

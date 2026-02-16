@@ -144,10 +144,18 @@ test('wp-core: GET /types/:type returns single type record', async () => {
   assert.equal(pageType.res.status, 200);
   assert.equal(pageType.json.slug, 'page');
 
-  // Intentional WP-compat fallback: unknown types normalize to page instead of 404.
+  // Unknown types should fail fast instead of silently normalizing.
   const invalidType = await requestJson(handler, 'GET', '/wp/v2/types/invalid', { token: accessToken });
-  assert.equal(invalidType.res.status, 200);
-  assert.equal(invalidType.json.slug, 'page');
+  assert.equal(invalidType.res.status, 404);
+});
+
+test('wp-core: GET /templates/lookup returns null payload', async () => {
+  const platform = createInMemoryPlatform();
+  const { handler, accessToken } = await authAsAdmin(platform);
+
+  const res = await requestJson(handler, 'GET', '/wp/v2/templates/lookup?slug=front-page', { token: accessToken });
+  assert.equal(res.res.status, 200);
+  assert.equal(res.json, null);
 });
 
 test('wp-core: POST /posts/:id updates existing post', async () => {

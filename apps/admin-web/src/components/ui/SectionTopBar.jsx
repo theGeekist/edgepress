@@ -1,4 +1,6 @@
-import { Text, View } from 'react-native';
+import { Text, View } from "react-native";
+import PropTypes from "prop-types";
+import { palettePropTypes } from "../prop-types";
 
 export function SectionTopBar({ palette, title, left, right, compact = false }) {
   return (
@@ -29,3 +31,11 @@ export function SectionTopBar({ palette, title, left, right, compact = false }) 
     </View>
   );
 }
+
+SectionTopBar.propTypes = {
+  palette: PropTypes.shape(palettePropTypes).isRequired,
+  title: PropTypes.string.isRequired,
+  left: PropTypes.node,
+  right: PropTypes.node,
+  compact: PropTypes.bool
+};

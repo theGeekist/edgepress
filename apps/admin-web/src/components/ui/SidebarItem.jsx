@@ -1,5 +1,6 @@
 import { forwardRef } from 'react';
 import { Text, Pressable, StyleSheet } from 'react-native';
+import PropTypes from 'prop-types';
 import { createTransition } from '../tokens.js';
 
 export const SidebarItem = forwardRef(function SidebarItem(
@@ -8,7 +9,7 @@ export const SidebarItem = forwardRef(function SidebarItem(
     item,
     isActive,
     isExpanded,
-    hasActiveChild,
+    hasActiveChild: _hasActiveChild,
     depth = 0,
     onPress,
     onKeyDown,
@@ -20,7 +21,6 @@ export const SidebarItem = forwardRef(function SidebarItem(
 
   // WordPress-style theming with subtle, embedded borders
   const isActiveDirect = isActive;
-  const isParentOfActive = hasActiveChild && !isActive;
 
   // Text color: white for active items, sidebar text otherwise
   const textColor = isActiveDirect
@@ -103,3 +103,19 @@ const styles = StyleSheet.create({
     transition: createTransition('transform', 'fast'),
   },
 });
+
+SidebarItem.propTypes = {
+  palette: PropTypes.object.isRequired,
+  item: PropTypes.shape({
+    id: PropTypes.string.isRequired,
+    label: PropTypes.string.isRequired,
+    children: PropTypes.array
+  }).isRequired,
+  isActive: PropTypes.bool,
+  isExpanded: PropTypes.bool,
+  hasActiveChild: PropTypes.bool,
+  depth: PropTypes.number,
+  onPress: PropTypes.func.isRequired,
+  onKeyDown: PropTypes.func,
+  children: PropTypes.node
+};

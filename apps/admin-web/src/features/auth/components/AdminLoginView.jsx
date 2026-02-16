@@ -1,5 +1,6 @@
 import { Text, View } from 'react-native';
-
+import PropTypes from 'prop-types';
+import { palettePropTypes } from '@components/prop-types';
 import { ActionButton } from '@components/ui/ActionButton.jsx';
 import { ThemedTextInput } from '@components/ui/ThemedTextInput.jsx';
 import { layoutStyles } from '@components/styles.js';
@@ -39,3 +40,16 @@ export function AdminLoginView({ palette, auth, status, error, onLogin }) {
     </View>
   );
 }
+
+AdminLoginView.propTypes = {
+  palette: PropTypes.shape(palettePropTypes).isRequired,
+  auth: PropTypes.shape({
+    username: PropTypes.string.isRequired,
+    password: PropTypes.string.isRequired,
+    setUsername: PropTypes.func.isRequired,
+    setPassword: PropTypes.func.isRequired
+  }).isRequired,
+  status: PropTypes.string,
+  error: PropTypes.string,
+  onLogin: PropTypes.func.isRequired
+};

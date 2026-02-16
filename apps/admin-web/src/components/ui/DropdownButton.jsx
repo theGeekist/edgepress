@@ -1,5 +1,7 @@
-import { useState } from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { useState } from "react";
+import { View, Text, Pressable, StyleSheet } from "react-native";
+import PropTypes from "prop-types";
+import { palettePropTypes } from "../prop-types";
 import { ActionButton } from './ActionButton.jsx';
 
 export function DropdownButton({ label, items, palette }) {
@@ -77,3 +79,14 @@ const styles = StyleSheet.create({
         fontSize: 13
     }
 });
+
+DropdownButton.propTypes = {
+  label: PropTypes.string.isRequired,
+  items: PropTypes.arrayOf(
+    PropTypes.shape({
+      label: PropTypes.string.isRequired,
+      onPress: PropTypes.func.isRequired
+    })
+  ).isRequired,
+  palette: PropTypes.shape(palettePropTypes).isRequired
+};

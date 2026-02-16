@@ -16,38 +16,22 @@ function normalizeAppSection(value) {
   return allowed.has(value) ? value : 'content';
 }
 
-function normalizeContentView(value) {
-  return value === 'editor' ? 'editor' : 'list';
-}
-
-function normalizeMediaView(value) {
-  return value === 'editor' ? 'editor' : 'list';
-}
-
 function parseNavFromHash() {
   if (typeof globalThis === 'undefined' || !globalThis.window) {
     return null;
   }
   const raw = String(globalThis.window.location.hash || '').replace(/^#/, '');
   if (!raw) return null;
-  const [sectionRaw, viewRaw] = raw.split('/').filter(Boolean);
+  const [sectionRaw] = raw.split('/').filter(Boolean);
   const section = normalizeAppSection(sectionRaw);
 
   return {
-    appSection: section,
-    contentView: section === 'content' ? normalizeContentView(viewRaw) : 'list',
-    mediaView: section === 'media' ? normalizeMediaView(viewRaw) : 'list'
+    appSection: section
   };
 }
 
-function buildNavHash({ appSection, contentView, mediaView }) {
+function buildNavHash({ appSection }) {
   const section = normalizeAppSection(appSection);
-  if (section === 'content') {
-    return contentView === 'editor' ? '#/content/editor' : '#/content/list';
-  }
-  if (section === 'media') {
-    return mediaView === 'editor' ? '#/media/editor' : '#/media/list';
-  }
   return `#/${section}`;
 }
 
@@ -60,9 +44,7 @@ function readStoredNavState() {
     if (!raw) return null;
     const parsed = JSON.parse(raw);
     return {
-      appSection: normalizeAppSection(parsed?.appSection),
-      contentView: normalizeContentView(parsed?.contentView),
-      mediaView: normalizeMediaView(parsed?.mediaView)
+      appSection: normalizeAppSection(parsed?.appSection)
     };
   } catch {
     return null;
@@ -75,9 +57,7 @@ function writeStoredNavState(nextState) {
   }
   try {
     globalThis.window.localStorage.setItem(NAV_STORAGE_KEY, JSON.stringify({
-      appSection: normalizeAppSection(nextState?.appSection),
-      contentView: normalizeContentView(nextState?.contentView),
-      mediaView: normalizeMediaView(nextState?.mediaView)
+      appSection: normalizeAppSection(nextState?.appSection)
     }));
   } catch {
     // Ignore localStorage write errors.
@@ -86,9 +66,7 @@ function writeStoredNavState(nextState) {
 
 function readInitialNavState() {
   return parseNavFromHash() || readStoredNavState() || {
-    appSection: 'content',
-    contentView: 'list',
-    mediaView: 'list'
+    appSection: 'content'
   };
 }
 
@@ -98,14 +76,15 @@ export function useAdminRouteState() {
   const hasSyncedNavRef = useRef(false);
 
   const [appSection, setAppSection] = useState(initialNavState.appSection);
-  const [contentView, setContentView] = useState(initialNavState.contentView);
-  const [mediaView, setMediaView] = useState(initialNavState.mediaView);
 
   // Persist nav state and sync to URL hash
   useEffect(() => {
-    const nextState = { appSection, contentView, mediaView };
+    const nextState = { appSection };
     writeStoredNavState(nextState);
     if (typeof globalThis === 'undefined' || !globalThis.window) {
+      return;
+    }
+    if (appSection === 'content' || appSection === 'media') {
       return;
     }
     const nextHash = buildNavHash(nextState);
@@ -119,7 +98,7 @@ export function useAdminRouteState() {
     } else {
       globalThis.window.history.pushState({}, '', nextHash);
     }
-  }, [appSection, contentView, mediaView]);
+  }, [appSection]);
 
   // Listen for hash changes (back/forward button)
   useEffect(() => {
@@ -131,8 +110,6 @@ export function useAdminRouteState() {
       if (!parsed) return;
       applyHashWithReplaceRef.current = true;
       setAppSection(parsed.appSection);
-      setContentView(parsed.contentView);
-      setMediaView(parsed.mediaView);
     };
     globalThis.window.addEventListener('popstate', applyFromHash);
     globalThis.window.addEventListener('hashchange', applyFromHash);
@@ -145,31 +122,11 @@ export function useAdminRouteState() {
   const onChangeSection = useCallback((nextSection) => {
     const section = normalizeAppSection(nextSection);
     setAppSection(section);
-    if (section === 'content') {
-      setContentView('list');
-    }
-    if (section === 'media') {
-      setMediaView('list');
-    }
-  }, []);
-
-  const onOpenContentList = useCallback(() => {
-    setContentView('list');
-  }, []);
-
-  const onOpenMediaList = useCallback(() => {
-    setMediaView('list');
   }, []);
 
   return {
     appSection,
-    contentView,
-    mediaView,
     setAppSection,
-    setContentView,
-    setMediaView,
     onChangeSection,
-    onOpenContentList,
-    onOpenMediaList
   };
 }

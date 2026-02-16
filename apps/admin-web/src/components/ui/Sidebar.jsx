@@ -1,10 +1,11 @@
-import { View } from 'react-native';
-import { useRef, useEffect } from 'react';
-import { layoutStyles } from '../styles.js';
-import { useSidebarNavigation, DEFAULT_MENU_ITEMS } from '@hooks/useSidebarNavigation.js';
-import { SidebarHeader } from './SidebarHeader.jsx';
-import { SidebarItem } from './SidebarItem.jsx';
-import { SidebarSubmenu } from './SidebarSubmenu.jsx';
+import { View } from "react-native";
+import { useRef, useEffect } from "react";
+import PropTypes from "prop-types";
+import { layoutStyles } from "../styles.js";
+import { useSidebarNavigation, DEFAULT_MENU_ITEMS } from "@hooks/useSidebarNavigation.js";
+import { SidebarHeader } from "./SidebarHeader.jsx";
+import { SidebarItem } from "./SidebarItem.jsx";
+import { SidebarSubmenu } from "./SidebarSubmenu.jsx";
 
 function renderSidebarItems({
   items,
@@ -84,7 +85,6 @@ export function Sidebar({
   const {
     expandedItems,
     focusedItemId,
-    setFocusedItemId,
     handleToggleExpand,
     handleKeyDown,
     getFocusableItemIds,
@@ -138,3 +138,16 @@ export function Sidebar({
     </View>
   );
 }
+
+Sidebar.propTypes = {
+  palette: PropTypes.shape({
+    sidebar: PropTypes.string.isRequired,
+    sidebarBorder: PropTypes.string.isRequired
+  }).isRequired,
+  items: PropTypes.array,
+  activeItemId: PropTypes.string,
+  onSelectItem: PropTypes.func.isRequired,
+  isMobile: PropTypes.bool,
+  isOpen: PropTypes.bool,
+  menuItems: PropTypes.array
+};

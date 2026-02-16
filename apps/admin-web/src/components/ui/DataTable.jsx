@@ -1,4 +1,6 @@
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet } from "react-native";
+import PropTypes from "prop-types";
+import { palettePropTypes, paginationPropTypes, sortPropTypes } from "../prop-types";
 
 export function DataTable({
     columns,
@@ -26,7 +28,10 @@ export function DataTable({
                             <Pressable onPress={() => sort.onSort(col.key)} style={styles.headerSortWrap}>
                                 <Text style={[styles.headerText, { color: palette.text }]}>{col.label}</Text>
                                 <Text style={[styles.headerSortArrow, { color: sort.sortBy === col.key ? palette.accent : palette.textMuted }]}>
-                                    {sort.sortBy === col.key ? (sort.sortDir === 'asc' ? '↑' : '↓') : '↕'}
+                                    {(() => {
+                                        if (sort.sortBy !== col.key) return '↕';
+                                        return sort.sortDir === 'asc' ? '↑' : '↓';
+                                    })()}
                                 </Text>
                             </Pressable>
                         ) : (
@@ -139,3 +144,21 @@ const styles = StyleSheet.create({
         borderTopWidth: 1
     }
 });
+
+DataTable.propTypes = {
+  columns: PropTypes.arrayOf(
+    PropTypes.shape({
+      key: PropTypes.string,
+      label: PropTypes.string.isRequired,
+      width: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+      sortable: PropTypes.bool,
+      render: PropTypes.func
+    })
+  ).isRequired,
+  data: PropTypes.array,
+  keyExtractor: PropTypes.func,
+  palette: PropTypes.shape(palettePropTypes).isRequired,
+  renderEmpty: PropTypes.func,
+  pagination: PropTypes.shape(paginationPropTypes),
+  sort: PropTypes.shape(sortPropTypes)
+};

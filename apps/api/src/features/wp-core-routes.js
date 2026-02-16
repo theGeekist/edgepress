@@ -1,5 +1,6 @@
 import { requireCapability } from '../auth.js';
 import { json, readJson } from '../http.js';
+import { toPostTypeRecord, toWpTaxonomyRecord } from './wp-core-records.js';
 
 function notFoundEntity(entityType = 'post') {
   return json(
@@ -43,6 +44,8 @@ function toWpPost(doc, requestUrl) {
   const slug = String(doc?.slug || '');
   const siteOrigin = new URL(requestUrl).origin;
   const permalinkPath = slug ? `/${slug}` : '/';
+  const featuredMediaRaw = String(doc?.featuredImageId || '').trim();
+  const featuredMedia = featuredMediaRaw ? toWpNumericId(featuredMediaRaw) : 0;
   return {
     id: toWpNumericId(doc.id),
     date,
@@ -56,7 +59,11 @@ function toWpPost(doc, requestUrl) {
     title: { raw: title, rendered: title },
     content: { raw: content, rendered: content, protected: false },
     excerpt: { raw: excerpt, rendered: excerpt, protected: false },
-    featured_media: doc?.featuredImageId ? toWpNumericId(doc.featuredImageId) : 0,
+<<<<<<< HEAD
+    featured_media: featuredMedia,
+=======
+    featured_media: featuredMedia,
+>>>>>>> 81f0265 (refactored and closing out phase 12)
     meta: {}
   };
 }
@@ -86,40 +93,8 @@ async function resolveInternalIdForWpId(store, type, idParam) {
   return match?.id || null;
 }
 
-function toPostTypeRecord(type) {
-  const isPage = type === 'page';
-  const singular = isPage ? 'Page' : 'Post';
-  const plural = isPage ? 'Pages' : 'Posts';
-  return {
-    slug: type,
-    name: plural,
-    rest_base: `${type}s`,
-    viewable: true,
-    labels: {
-      name: plural,
-      singular_name: singular,
-      add_new_item: `Add New ${singular}`,
-      edit_item: `Edit ${singular}`,
-      view_item: `View ${singular}`,
-      item_published: `${singular} published.`,
-      item_published_privately: `${singular} published privately.`,
-      item_reverted_to_draft: `${singular} reverted to draft.`,
-      item_scheduled: `${singular} scheduled.`,
-      item_updated: `${singular} updated.`,
-      item_trashed: `${singular} moved to trash.`
-    },
-    supports: {
-      title: true,
-      editor: true,
-      excerpt: true,
-      thumbnail: true,
-      author: true
-    }
-  };
-}
-
 function normalizeTypeParam(typeParam) {
-  return typeParam === 'post' ? 'post' : 'page';
+  return String(typeParam || '').trim().toLowerCase();
 }
 
 async function loadDocumentByType(store, type, id) {
@@ -225,6 +200,74 @@ export function createWpCoreRoutes({ runtime, store, route, authzErrorResponse }
     }
   });
 
+  add('GET', '/users/me', async (request) => {
+    try {
+      const user = await requireCapability({ runtime, store, request, capability: 'document:read' });
+      const now = new Date().toISOString();
+      return json({
+        id: Number.parseInt(String(user?.id || '').replace(/\D/g, ''), 10) || 1,
+        username: user?.username || 'admin',
+        name: user?.displayName || user?.username || 'admin',
+        first_name: '',
+        last_name: '',
+        nickname: user?.username || 'admin',
+        slug: user?.username || 'admin',
+        email: user?.email || 'admin@example.com',
+        url: '',
+        description: '',
+        locale: 'en_US',
+        nickname_locked: false,
+        registered_date: now,
+        roles: ['administrator'],
+        capabilities: {
+          edit_posts: true,
+          publish_posts: true,
+          upload_files: true
+        },
+        avatar_urls: {
+          24: '',
+          48: '',
+          96: ''
+        }
+      });
+    } catch (e) {
+      return authzErrorResponse(e);
+    }
+  });
+
+  add('GET', '/block-patterns/categories', async (request) => {
+    try {
+      await requireCapability({ runtime, store, request, capability: 'document:read' });
+      return json([]);
+    } catch (e) {
+      return authzErrorResponse(e);
+    }
+  });
+
+  add('GET', '/block-patterns/patterns', async (request) => {
+    try {
+      await requireCapability({ runtime, store, request, capability: 'document:read' });
+      return json([]);
+    } catch (e) {
+      return authzErrorResponse(e);
+    }
+  });
+
+  add('GET', '/global-styles/themes/:stylesheet', async (request, params) => {
+    try {
+      await requireCapability({ runtime, store, request, capability: 'document:read' });
+      const stylesheet = String(params?.stylesheet || 'edgepress');
+      return json({
+        id: `global-styles-${stylesheet}`,
+        stylesheet,
+        settings: {},
+        styles: {}
+      });
+    } catch (e) {
+      return authzErrorResponse(e);
+    }
+  });
+
   add('GET', '/types', async (request) => {
       try {
         await requireCapability({ runtime, store, request, capability: 'document:read' });
@@ -246,11 +289,69 @@ export function createWpCoreRoutes({ runtime, store, route, authzErrorResponse }
       try {
         await requireCapability({ runtime, store, request, capability: 'document:read' });
         const type = normalizeTypeParam(params.type);
+        if (!type) {
+          return notFoundEntity('type');
+        }
+        if (type === 'post' || type === 'page') {
+          return json(toPostTypeRecord(type));
+        }
+        const contentTypes = await store.listContentTypes();
+        const match = (Array.isArray(contentTypes) ? contentTypes : []).find(
+          (entry) => entry?.kind === 'content' && String(entry?.slug || '') === type
+        );
+        if (!match) {
+          return notFoundEntity('type');
+        }
         return json(toPostTypeRecord(type));
       } catch (e) {
         return authzErrorResponse(e);
       }
     });
+
+  add('GET', '/templates/lookup', async (request) => {
+      try {
+        await requireCapability({ runtime, store, request, capability: 'document:read' });
+        // EdgePress does not currently implement WP block templates.
+        // Return a successful null payload so Gutenberg continues without hard-failing.
+        return json(null);
+      } catch (e) {
+        return authzErrorResponse(e);
+      }
+  });
+
+  add('GET', '/taxonomies', async (request) => {
+    try {
+      await requireCapability({ runtime, store, request, capability: 'document:read' });
+      const listed = await store.listTaxonomies();
+      const items = Array.isArray(listed) ? listed : [];
+      const payload = {};
+      for (const taxonomy of items) {
+        if (!taxonomy?.slug) continue;
+        payload[taxonomy.slug] = toWpTaxonomyRecord(taxonomy);
+      }
+      if (!payload.category) {
+        payload.category = toWpTaxonomyRecord({
+          slug: 'category',
+          name: 'Category',
+          label: 'Categories',
+          hierarchical: true,
+          objectTypes: ['post', 'page']
+        });
+      }
+      if (!payload.post_tag) {
+        payload.post_tag = toWpTaxonomyRecord({
+          slug: 'post_tag',
+          name: 'Tag',
+          label: 'Tags',
+          hierarchical: false,
+          objectTypes: ['post', 'page']
+        });
+      }
+      return json(payload);
+    } catch (e) {
+      return authzErrorResponse(e);
+    }
+  });
 
   add('GET', '/posts', async (request) => {
       try {

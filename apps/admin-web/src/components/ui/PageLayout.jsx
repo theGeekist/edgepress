@@ -1,4 +1,5 @@
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from "react-native";
+import PropTypes from "prop-types";
 
 export function PageLayout({ title, children, actions, palette }) {
   return (
@@ -16,6 +17,16 @@ export function PageLayout({ title, children, actions, palette }) {
     </View>
   );
 }
+
+PageLayout.propTypes = {
+  title: PropTypes.string.isRequired,
+  children: PropTypes.node,
+  actions: PropTypes.node,
+  palette: PropTypes.shape({
+    page: PropTypes.string.isRequired,
+    text: PropTypes.string.isRequired
+  }).isRequired
+};
 
 const styles = StyleSheet.create({
   container: {
