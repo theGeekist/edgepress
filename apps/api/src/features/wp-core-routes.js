@@ -161,7 +161,12 @@ export function createWpCoreRoutes({ runtime, store, route, authzErrorResponse }
   add('GET', '/users/me', async (request) => {
     try {
       const user = await requireCapability({ runtime, store, request, capability: 'document:read' });
-      const now = new Date().toISOString();
+      const registeredSource = user?.createdAt ?? user?.registeredAt;
+      const registeredDate = (() => {
+        if (!registeredSource) return new Date().toISOString();
+        const parsed = new Date(registeredSource);
+        return Number.isNaN(parsed.getTime()) ? new Date().toISOString() : parsed.toISOString();
+      })();
       return json({
         id: Number.parseInt(String(user?.id || '').replace(/\D/g, ''), 10) || 1,
         username: user?.username || 'admin',
@@ -175,7 +180,7 @@ export function createWpCoreRoutes({ runtime, store, route, authzErrorResponse }
         description: '',
         locale: 'en_US',
         nickname_locked: false,
-        registered_date: now,
+        registered_date: registeredDate,
         roles: ['administrator'],
         capabilities: {
           edit_posts: true,

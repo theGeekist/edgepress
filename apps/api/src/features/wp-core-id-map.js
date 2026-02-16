@@ -16,18 +16,6 @@ export async function loadDocumentByType(store, type, id) {
   return doc;
 }
 
-export async function listByType(store, type) {
-  const listed = await store.listDocuments({
-    type,
-    status: 'all',
-    sortBy: 'updatedAt',
-    sortDir: 'desc',
-    page: 1,
-    pageSize: 100
-  });
-  return Array.isArray(listed?.items) ? listed.items : [];
-}
-
 export async function resolveInternalIdForWpId(store, type, idParam) {
   const raw = String(idParam || '').trim();
   if (!raw) return null;
@@ -37,9 +25,26 @@ export async function resolveInternalIdForWpId(store, type, idParam) {
   }
   const numeric = Number.parseInt(raw, 10);
   if (!Number.isFinite(numeric)) return null;
-  const rows = await listByType(store, type);
-  const match = rows.find((doc) => toWpNumericId(doc.id) === numeric);
-  return match?.id || null;
+
+  let page = 1;
+  const pageSize = 100;
+  while (true) {
+    const listed = await store.listDocuments({
+      type,
+      status: 'all',
+      sortBy: 'updatedAt',
+      sortDir: 'desc',
+      page,
+      pageSize
+    });
+    const items = Array.isArray(listed?.items) ? listed.items : [];
+    const match = items.find((doc) => toWpNumericId(doc.id) === numeric);
+    if (match?.id) return match.id;
+    const totalPages = Number(listed?.pagination?.totalPages || 1);
+    if (page >= totalPages || items.length === 0) break;
+    page += 1;
+  }
+  return null;
 }
 
 export async function resolveInternalMediaIdForWpId(store, idParam) {

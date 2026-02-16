@@ -106,8 +106,11 @@ export function MediaListTable({ palette, media, onEditMedia, onUploadFiles, onD
   async function handleApplyBulkAction() {
     if (media.selectedRowIds.length === 0) return;
     if (selectedBulkAction === 'delete') {
-      await onBulkDeleteMedia();
-      setSelectedBulkAction('none');
+      try {
+        await onBulkDeleteMedia();
+      } finally {
+        setSelectedBulkAction('none');
+      }
     }
   }
 

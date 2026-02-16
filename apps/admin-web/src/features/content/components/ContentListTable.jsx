@@ -299,3 +299,5 @@ export const contentListTablePropTypes = {
   onPageChange: PropTypes.func.isRequired,
   hideHeader: PropTypes.bool
 };
+
+ContentListTable.propTypes = contentListTablePropTypes;
