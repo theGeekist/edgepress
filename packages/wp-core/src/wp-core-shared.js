@@ -27,7 +27,7 @@ export function toWpPost(doc, requestUrl, toWpNumericId) {
   const title = String(doc?.title || '');
   const content = String(doc?.legacyHtml ?? doc?.content ?? '');
   const excerpt = String(doc?.excerpt || '');
-  const date = doc?.createdAt || new Date().toISOString();
+  const date = String(doc?.createdAt || '1970-01-01T00:00:00.000Z');
   const modified = doc?.updatedAt || date;
   const slug = String(doc?.slug || '');
   const siteOrigin = new URL(requestUrl).origin;

@@ -44,6 +44,7 @@ export function createContentModelFeature({ runtime, store }) {
   async function upsertContentType({ paramsSlug, body }) {
     const slug = normalizeSlug(paramsSlug || body.slug);
     if (!slug) return { error: { code: 'CONTENT_TYPE_INVALID_SLUG', message: 'Content type slug is required', status: 400 } };
+    const statusOptions = normalizeStringArray(body.statusOptions);
     const item = await store.upsertContentType({
       id: body.id || `ct_${runtime.uuid()}`,
       slug,
@@ -52,9 +53,7 @@ export function createContentModelFeature({ runtime, store }) {
       supports: normalizeObject(body.supports),
       fields: Array.isArray(body.fields) ? body.fields : [],
       taxonomies: normalizeStringArray(body.taxonomies),
-      statusOptions: normalizeStringArray(body.statusOptions).length
-        ? normalizeStringArray(body.statusOptions)
-        : ['draft', 'published', 'trash']
+      statusOptions: statusOptions.length ? statusOptions : ['draft', 'published', 'trash']
     });
     return { contentType: item };
   }

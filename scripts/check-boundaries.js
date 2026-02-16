@@ -32,6 +32,7 @@ const files = execSync("find apps packages -type f \\( -name '*.js' -o -name '*.
 
 const scannedFiles = files.filter((f) => !f.includes('/test/'));
 const importFromRegex = /(?:import|export)\s[^'"]*?from\s*['"]([^'"]+)['"]/g;
+const sideEffectImportRegex = /import\s*['"]([^'"]+)['"]/g;
 const dynamicImportRegex = /import\s*\(\s*['"]([^'"]+)['"]\s*\)/g;
 
 function resolveRelativeImport(file, spec) {
@@ -51,6 +52,7 @@ for (const file of scannedFiles) {
 
   const importSpecs = [
     ...Array.from(text.matchAll(importFromRegex), (match) => match[1]),
+    ...Array.from(text.matchAll(sideEffectImportRegex), (match) => match[1]),
     ...Array.from(text.matchAll(dynamicImportRegex), (match) => match[1])
   ];
 

@@ -14,6 +14,7 @@
     "./hooks/*": "./packages/hooks/src/*",
     "./api-orchestration": "./apps/api/src/orchestration/index.js",
     "./api-orchestration/*": "./apps/api/src/orchestration/*",
+    "./api-handler": "./apps/api/src/app/create-api-handler.js",
     "./admin-api-client": "./apps/admin-web/src/adapters/api-client.js",
     "./testing": "./packages/testing/src/store.js",
     "./testing/*": "./packages/testing/src/*",

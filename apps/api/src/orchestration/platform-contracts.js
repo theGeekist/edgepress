@@ -9,9 +9,9 @@
  * - optional rateLimit(key,policy)
  */
 
-export function assertContractMethod(target, method) {
+export function assertContractMethod(target, method, targetName = 'unknown') {
   if (!target || typeof target[method] !== 'function') {
-    throw new Error(`Missing required contract method: ${method}`);
+    throw new Error(`Missing required contract method: ${targetName}.${method}`);
   }
 }
 
@@ -28,21 +28,21 @@ export function assertRuntimeContract(runtime) {
     'base64urlEncode',
     'base64urlDecode'
   ];
-  for (const method of required) assertContractMethod(runtime, method);
+  for (const method of required) assertContractMethod(runtime, method, 'runtime');
 }
 
 export function assertPlatformContracts(platform) {
   if (!platform) throw new Error('Missing platform dependencies');
 
   assertRuntimeContract(platform.runtime);
-  assertContractMethod(platform.store, 'tx');
-  assertContractMethod(platform.store, 'listDocuments');
-  assertContractMethod(platform.store, 'createDocument');
-  assertContractMethod(platform.store, 'listRevisions');
-  assertContractMethod(platform.blobStore, 'putBlob');
-  assertContractMethod(platform.cacheStore, 'get');
-  assertContractMethod(platform.releaseStore, 'writeArtifact');
-  assertContractMethod(platform.releaseStore, 'writeManifest');
-  assertContractMethod(platform.releaseStore, 'activateIfNone');
-  assertContractMethod(platform.previewStore, 'createPreview');
+  assertContractMethod(platform.store, 'tx', 'store');
+  assertContractMethod(platform.store, 'listDocuments', 'store');
+  assertContractMethod(platform.store, 'createDocument', 'store');
+  assertContractMethod(platform.store, 'listRevisions', 'store');
+  assertContractMethod(platform.blobStore, 'putBlob', 'blobStore');
+  assertContractMethod(platform.cacheStore, 'get', 'cacheStore');
+  assertContractMethod(platform.releaseStore, 'writeArtifact', 'releaseStore');
+  assertContractMethod(platform.releaseStore, 'writeManifest', 'releaseStore');
+  assertContractMethod(platform.releaseStore, 'activateIfNone', 'releaseStore');
+  assertContractMethod(platform.previewStore, 'createPreview', 'previewStore');
 }

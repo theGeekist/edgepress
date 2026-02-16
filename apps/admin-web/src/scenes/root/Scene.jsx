@@ -18,6 +18,7 @@ export function RootScene({
   docs,
   media,
   editor,
+  isAuthenticated,
   navigation,
   settings,
   actions,
@@ -37,7 +38,7 @@ export function RootScene({
           contentView={contentView}
           docs={docs}
           editor={editor}
-          isAuthenticated
+          isAuthenticated={Boolean(isAuthenticated)}
           actions={actions}
         />
       );
@@ -54,7 +55,7 @@ export function RootScene({
           palette={palette}
           docs={docs}
           navigation={navigation}
-          isAuthenticated
+          isAuthenticated={Boolean(isAuthenticated)}
           actions={actions}
         />
       );

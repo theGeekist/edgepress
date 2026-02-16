@@ -1,8 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createApiHandler } from '../../../apps/api/src/app/create-api-handler.js';
 import { createInMemoryPlatform } from '../src/store.js';
-import { authAsAdmin, requestJson } from './helpers/testUtils.js';
+import { authAsAdmin, requestJson, createHandler } from './helpers/testUtils.js';
 
 test('preview: preview route handles themeVars parameter validation', async () => {
   const platform = createInMemoryPlatform();
@@ -57,7 +56,7 @@ test('preview: preview route requires valid signature', async () => {
 
 test('preview: preview route handles non-existent preview token', async () => {
   const platform = createInMemoryPlatform();
-  const handler = createApiHandler(platform);
+  const handler = createHandler(platform);
 
   const res = await handler(new Request('http://test.local/preview/prv_missing?sig=abc'));
   assert.equal(res.status, 404);

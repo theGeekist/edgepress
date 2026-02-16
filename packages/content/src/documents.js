@@ -57,19 +57,23 @@ function normalizeObjectInput(value, fallback = {}) {
 
 async function resolveUniqueSlug(store, { requestedSlug, title, currentId = null }) {
   const baseSlug = toSlug(requestedSlug || '') || toSlug(title || '') || 'untitled';
-  const listed = await store.listDocuments();
-  const docs = toDocumentItems(listed);
-  const taken = new Set(
-    docs
-      .filter((entry) => entry?.id !== currentId)
-      .map((entry) => toSlug(entry?.slug || ''))
-      .filter(Boolean)
-  );
-  if (!taken.has(baseSlug)) {
+  const isTaken = async (candidate) => {
+    const listed = await store.listDocuments({
+      slug: candidate,
+      type: 'all',
+      status: 'all',
+      page: 1,
+      pageSize: 5
+    });
+    const docs = toDocumentItems(listed);
+    return docs.some((entry) => entry?.id !== currentId && toSlug(entry?.slug || '') === candidate);
+  };
+
+  if (!(await isTaken(baseSlug))) {
     return baseSlug;
   }
   let index = 2;
-  while (taken.has(`${baseSlug}-${index}`)) {
+  while (await isTaken(`${baseSlug}-${index}`)) {
     index += 1;
   }
   return `${baseSlug}-${index}`;

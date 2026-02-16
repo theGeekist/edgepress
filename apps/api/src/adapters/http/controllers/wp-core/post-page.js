@@ -7,10 +7,18 @@ import {
   toWpNumericId,
   toWpPost
 } from '@geekist/edgepress/wp-core';
+import { error } from '@geekist/edgepress/api-core/http.js';
 
 function parseNullableWpField(body, key) {
   if (body?.[key] === undefined || body?.[key] === null) return undefined;
   return parseFieldString(body[key]);
+}
+
+function ensureObjectBody(body) {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
+    return error('WP_INVALID_BODY', 'Invalid JSON body', 400);
+  }
+  return null;
 }
 
 export function registerWpCorePostPageRoutes({
@@ -81,6 +89,8 @@ export function registerWpCorePostPageRoutes({
     try {
       const user = await requireCapability({ runtime, store, request, capability: 'document:write' });
       const body = await readJson(request);
+      const bodyError = ensureObjectBody(body);
+      if (bodyError) return bodyError;
       const id = `doc_${runtime.uuid()}`;
       const content = parseFieldString(body.content);
       const featuredImageId = await resolveInternalMediaIdForWpId(store, body.featured_media);
@@ -105,6 +115,8 @@ export function registerWpCorePostPageRoutes({
     try {
       const user = await requireCapability({ runtime, store, request, capability: 'document:write' });
       const body = await readJson(request);
+      const bodyError = ensureObjectBody(body);
+      if (bodyError) return bodyError;
       const id = `doc_${runtime.uuid()}`;
       const content = parseFieldString(body.content);
       const featuredImageId = await resolveInternalMediaIdForWpId(store, body.featured_media);
@@ -133,6 +145,8 @@ export function registerWpCorePostPageRoutes({
       const existing = await loadDocumentByType(store, 'post', internalId);
       if (!existing) return notFoundEntity('post');
       const body = await readJson(request);
+      const bodyError = ensureObjectBody(body);
+      if (bodyError) return bodyError;
       const parsedContent = parseNullableWpField(body, 'content');
       const nextContent = parsedContent ?? existing.legacyHtml ?? existing.content;
       const parsedTitle = parseNullableWpField(body, 'title');
@@ -168,6 +182,8 @@ export function registerWpCorePostPageRoutes({
       const existing = await loadDocumentByType(store, 'page', internalId);
       if (!existing) return notFoundEntity('page');
       const body = await readJson(request);
+      const bodyError = ensureObjectBody(body);
+      if (bodyError) return bodyError;
       const parsedContent = parseNullableWpField(body, 'content');
       const nextContent = parsedContent ?? existing.legacyHtml ?? existing.content;
       const parsedTitle = parseNullableWpField(body, 'title');

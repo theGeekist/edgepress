@@ -9,7 +9,7 @@ import { View, useWindowDimensions } from 'react-native';
 
 export function App() {
   const controller = useRootSceneController();
-  const { palette, theme, mode, appSection, contentView, mediaView, saveState, settings, auth, docs, media, editor, loop, navigation, status, error, previewLink, actions } = controller;
+  const { palette, theme, mode, appSection, contentView, mediaView, settings, auth, docs, media, editor, navigation, status, error, previewLink, actions } = controller;
 
   const { width } = useWindowDimensions();
   const isMobile = width < 768;
@@ -80,14 +80,11 @@ export function App() {
         contentView={contentView}
         mediaView={mediaView}
         onSectionChange={actions.onChangeSection}
-        onOpenContentList={actions.onOpenContentList}
         docs={docs}
         media={media}
         editor={editor}
-        loop={loop}
         navigation={navigation}
-        previewLink={previewLink}
-        saveState={saveState}
+        isAuthenticated={Boolean(auth.user)}
         settings={settings}
         actions={actions}
         isMobile={isMobile}

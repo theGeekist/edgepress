@@ -16,11 +16,14 @@ export function registerWpCoreMetaRoutes({ add, runtime, store, authzErrorRespon
   add('GET', '/settings', async (request) => {
     try {
       await requireCapability({ runtime, store, request, capability: 'document:read' });
+      const origin = new URL(request.url).origin;
+      const siteTitle = runtime.env('SITE_TITLE') || 'GCMS Site';
+      const adminEmail = runtime.env('ADMIN_EMAIL') || 'admin@example.com';
       return json({
-        title: 'GCMS Site',
+        title: siteTitle,
         description: '',
-        url: new URL(request.url).origin,
-        email: 'admin@example.com',
+        url: origin,
+        email: adminEmail,
         timezone: 'UTC',
         date_format: 'F j, Y',
         time_format: 'g:i a',

@@ -1,5 +1,4 @@
-import { requireCapability } from '@geekist/edgepress/api-core/auth.js';
-import { error, getCorsHeaders, json, matchPath, readJson, withCors } from '@geekist/edgepress/api-core/http.js';
+import { requireCapability, error, getCorsHeaders, json, matchPath, readJson, withCors } from '@geekist/edgepress/api-core';
 import { resolveHooks } from './hooks.js';
 import { assertPlatformContracts } from '../orchestration/platform-contracts.js';
 import { createRelease, resolveImageBlocks } from '../orchestration/release-workflow.js';
