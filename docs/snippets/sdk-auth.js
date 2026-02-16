@@ -1,4 +1,4 @@
-import { createClient } from "@geekist/edgepress/admin-api-client";
+import { createClient } from "../../apps/admin-web/src/adapters/api-client.js";
 
 const client = createClient({
   baseUrl: "http://localhost:8787"

@@ -1,7 +1,7 @@
 import { error, json, readJson } from '@geekist/edgepress/api-core/http.js';
 import { createFormsFeature } from '@geekist/edgepress/content';
 
-export function createFormRoutes({ runtime, store, route, authzErrorResponse }) {
+export function createFormRoutes({ runtime, store, route }) {
   const forms = createFormsFeature({ runtime, store });
 
   return [
@@ -16,7 +16,10 @@ export function createFormRoutes({ runtime, store, route, authzErrorResponse }) 
         if (result.error) return error(result.error.code, result.error.message, result.error.status);
         return json(result, 202);
       } catch (e) {
-        return authzErrorResponse(e);
+        if (typeof e?.status === 'number' && typeof e?.code === 'string') {
+          return error(e.code, e.message, e.status);
+        }
+        return error('INTERNAL_ERROR', 'Internal server error', 500);
       }
     })
   ];

@@ -5,7 +5,7 @@
  * - Use api-fetch middleware for auth refresh + trace propagation.
  */
 
-import { createClient } from '@geekist/edgepress/admin-api-client';
+import { createClient } from '../../adapters/api-client.js';
 
 export function createCanonicalSdkStore(config) {
   const client = createClient(config);

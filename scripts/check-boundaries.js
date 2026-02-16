@@ -15,7 +15,7 @@ const blockedTokenAllowlist = new Set([
   'apps/api/src/worker.js'
 ]);
 
-const sharedPackageNames = new Set(['api-core', 'cloudflare', 'domain', 'hooks', 'testing', 'wp-core']);
+const sharedPackageNames = new Set(['api-core', 'cloudflare', 'domain', 'hooks', 'platform-base', 'testing', 'wp-core']);
 const featurePackageNames = new Set(
   readdirSync('packages', { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
