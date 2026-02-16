@@ -2,8 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createCanonicalSdkStore } from '@geekist/edgepress/admin-editor-store';
 import { createInMemoryPlatform } from '@geekist/edgepress/testing';
-import { createHandler } from '@geekist/edgepress/testing/test-utils.js';
-import { authAsAdmin } from '@geekist/edgepress/testing/test-utils.js';
+import { createHandler, authAsAdmin } from '@geekist/edgepress/testing/test-utils.js';
 
 function createLocalFetch(handler) {
   return async (url, init = {}) => {

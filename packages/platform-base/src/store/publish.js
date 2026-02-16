@@ -17,6 +17,7 @@ export function createPublishFeature(state, runtime) {
       const updated = {
         ...existing,
         ...patch,
+        id: existing.id,
         createdAt: existing.createdAt,
         updatedAt: runtime.now().toISOString()
       };

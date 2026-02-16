@@ -131,6 +131,32 @@ export function createReleaseStore({
     return releaseState.activeRelease;
   }
 
+  async function activateIfNoneOnD1(releaseId) {
+    await ensureD1ReleaseSchema();
+    const activatedAt = runtime.now().toISOString();
+    const event = JSON.stringify({
+      type: 'activated',
+      releaseId,
+      previousReleaseId: null,
+      at: activatedAt
+    });
+    if (typeof d1.batch === 'function') {
+      await d1.batch([
+        d1.prepare(D1_SQL.upsertActiveReleaseIfNone).bind(releaseId),
+        d1.prepare(D1_SQL.insertHistoryIfLastWriteChanged).bind(event, activatedAt)
+      ]);
+    } else {
+      runtime.log('warn', 'd1_non_atomic_fallback', { event: 'activate_if_none' });
+      const result = await d1.prepare(D1_SQL.upsertActiveReleaseIfNone).bind(releaseId).run();
+      const changed = Number(result?.meta?.changes || 0) > 0;
+      if (changed) {
+        await d1.prepare(D1_SQL.insertHistory).bind(event, activatedAt).run();
+      }
+    }
+    const activeReleaseId = await getActiveReleaseInternal();
+    return activeReleaseId === releaseId ? releaseId : null;
+  }
+
   if (!d1 && !kv?.get && !kv?.put) {
     return baseReleaseStore;
   }
@@ -253,24 +279,7 @@ export function createReleaseStore({
       if (previousReleaseId) return null;
 
       if (d1) {
-        await ensureD1ReleaseSchema();
-        const activatedAt = runtime.now().toISOString();
-        const result = await d1.prepare(D1_SQL.upsertActiveReleaseIfNone).bind(releaseId).run();
-        const changed = Number(result?.meta?.changes || 0) > 0;
-        if (!changed) return null;
-        await d1
-          .prepare(D1_SQL.insertHistory)
-          .bind(
-            JSON.stringify({
-              type: 'activated',
-              releaseId,
-              previousReleaseId: null,
-              at: activatedAt
-            }),
-            activatedAt
-          )
-          .run();
-        return releaseId;
+        return activateIfNoneOnD1(releaseId);
       }
 
       if (kv?.put) {

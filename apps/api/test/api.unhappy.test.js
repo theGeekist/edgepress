@@ -1,8 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createHandler } from '@geekist/edgepress/testing/test-utils.js';
 import { createInMemoryPlatform } from '@geekist/edgepress/testing';
-import { authAsAdmin, requestJson } from '@geekist/edgepress/testing/test-utils.js';
+import { createHandler, authAsAdmin, requestJson } from '@geekist/edgepress/testing/test-utils.js';
 
 test('api returns expected envelopes for router-level paths', async () => {
   const platform = createInMemoryPlatform();

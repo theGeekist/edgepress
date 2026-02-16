@@ -20,12 +20,12 @@ At the center lies the Business Logic. This layer defines what a "Document" is, 
 
 ### 2. The Ports (Contracts)
 Surrounding the core are the Ports. These are strict interfaces that the Core uses to interact with the outside world. The Core doesn't know *how* to save a file, it just knows it has a `BlobStore` port with a `put()` method.
-- **Location**: `apps/api/src/orchestration/platform-contracts.js` and `packages/api-core`
+- **Location**: `apps/api/src/orchestration/platform-contracts.js` and `packages/api-core/src/api-contracts.js`
 
 ### 3. The Adapters (Infrastructure)
 These are the implementations of the Ports. This is where the rubber meets the road.
 - **Reference Adapter**: `packages/cloudflare`. We implement the ports using Cloudflare D1 (Database), R2 (Blob Storage), and KV (Cache).
-- **In-Memory Adapter**: `packages/testing`. We also have a full in-memory implementation for lightning-fast tests.
+- **In-Memory Adapter**: `packages/platform-base`. We also have a full in-memory implementation for lightning-fast tests.
 
 ### 4. The Application (Wiring)
 Finally, we wire it all together. The `api` application takes the Core, injects the Adapters, and exposes it via a clean REST API.

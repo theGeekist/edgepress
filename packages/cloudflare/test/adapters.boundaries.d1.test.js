@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createCloudflareReferencePlatform } from '../../cloudflare/src/index.js';
 import { createHandler, requestJson } from '@geekist/edgepress/testing/test-utils.js';
 
-import { createFakeD1, createFakeKV } from '../../testing/src/cf-fakes.js';
+import { createFakeD1, createFakeKV } from '@geekist/edgepress/testing/cf-fakes.js';
 
 test('cloudflare reference adapter uses D1 for release state when bound', async () => {
   const d1 = createFakeD1();

@@ -164,13 +164,13 @@ Published output is artifact-based. Runtime stays focused on authenticated/priva
 ### Authentication and authorization
 
 - Token/refresh flows are exposed under `/v1/auth/*`.
-- Capability checks gate protected endpoints.
+- Capability-gated checks gate protected endpoints.
 - Errors follow canonical envelope shape.
 
 ### Private content
 
-- Private routes are capability-gated.
-- Private output remains artifact-backed.
+- Routes are capability-gated.
+- Output remains artifact-backed.
 - Cache scoping is enforced by auth context.
 
 ## Development Workflow

@@ -9,8 +9,8 @@ It is intentionally detailed so it can function as:
 
 ## Source Skills
 
-- Frontend skill: `/Users/jasonnathan/.codex/skills/frontend-slice-architecture/SKILL.md`
-- Backend skill: `/Users/jasonnathan/.codex/skills/backend-slice-architecture/SKILL.md`
+- Frontend skill: `<path-to-skill>/frontend-slice-architecture/SKILL.md`
+- Backend skill: `<path-to-skill>/backend-slice-architecture/SKILL.md`
 
 ## Why These Skills Exist
 

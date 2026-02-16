@@ -4,7 +4,7 @@ import { execSync } from 'node:child_process';
 import { createCloudflareReferencePlatform } from '../../cloudflare/src/index.js';
 import { createHandler, requestJson } from '@geekist/edgepress/testing/test-utils.js';
 
-import { createFakeD1, createFakeKV, createFakeR2 } from '../../testing/src/cf-fakes.js';
+import { createFakeD1, createFakeKV, createFakeR2 } from '@geekist/edgepress/testing/cf-fakes.js';
 
 test('boundary check blocks Cloudflare terms outside cloudflare', async () => {
   const out = execSync('node scripts/check-boundaries.js', { encoding: 'utf8', cwd: process.cwd() });

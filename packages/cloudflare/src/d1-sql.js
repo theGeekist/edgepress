@@ -6,6 +6,8 @@ export const D1_SQL = {
   createReleaseHistory:
     'CREATE TABLE IF NOT EXISTS release_history (id INTEGER PRIMARY KEY AUTOINCREMENT, event_json TEXT NOT NULL, created_at TEXT NOT NULL)',
   insertHistory: 'INSERT INTO release_history (event_json, created_at) VALUES (?, ?)',
+  insertHistoryIfLastWriteChanged:
+    'INSERT INTO release_history (event_json, created_at) SELECT ?, ? WHERE changes() > 0',
   selectManifestId: 'SELECT release_id FROM release_manifests WHERE release_id = ?',
   selectManifestById: 'SELECT manifest_json FROM release_manifests WHERE release_id = ?',
   selectAllManifests:

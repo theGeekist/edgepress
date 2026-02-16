@@ -201,7 +201,7 @@ test('resolveHooks requires the broader WordPress-compatible method surface', ()
   assert.equal(fullResolved, full);
 });
 
-test('resolveHooks warns once for partial registry and doAction logs sync hook errors', () => {
+test('resolveHooks warns once for partial registry', () => {
   __resetHooksFallbackWarningForTests();
   const logs = [];
   const partial = { addAction() {} };

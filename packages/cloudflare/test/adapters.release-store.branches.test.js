@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createReleaseStore } from '../../cloudflare/src/release-store.js';
 import { D1_SQL } from '../../cloudflare/src/d1-sql.js';
-import { createFakeD1 } from '../../testing/src/cf-fakes.js';
-import { parseJsonSafe } from '../../testing/src/coverage-fakes.js';
+import { createFakeD1 } from '@geekist/edgepress/testing/cf-fakes.js';
+import { parseJsonSafe } from '@geekist/edgepress/testing/coverage-fakes.js';
 
 test('release-store uses non-atomic D1 fallback when batch is unavailable', async () => {
   const d1 = createFakeD1();

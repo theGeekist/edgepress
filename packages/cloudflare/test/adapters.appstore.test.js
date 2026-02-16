@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createAppStores } from '../../cloudflare/src/store.js';
 import { D1_SQL } from '../../cloudflare/src/d1-sql.js';
 import { createInMemoryPlatform } from '../../testing/src/store.js';
-import { createFakeD1, createFakeKV } from '../../testing/src/cf-fakes.js';
+import { createFakeD1, createFakeKV } from '@geekist/edgepress/testing/cf-fakes.js';
 
 function parseJsonSafe(value) {
   if (!value || typeof value !== 'string') return null;

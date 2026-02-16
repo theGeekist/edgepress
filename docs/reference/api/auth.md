@@ -8,7 +8,7 @@ Endpoints live under `/v1/auth/*`.
 
 Source:
 
-- `apps/api/src/app/create-api-handler.js`
+- `packages/auth/src/index.js`
 - `packages/api-core/src/auth.js`
 - `apps/api/src/adapters/http/controllers/auth.js`
 

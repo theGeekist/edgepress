@@ -20,7 +20,7 @@
       "@geekist/edgepress/api-handler": ["./apps/api/src/app/create-api-handler.js"],
       "@geekist/edgepress/admin-api-client": ["./apps/admin-web/src/adapters/api-client.js"],
       "@geekist/edgepress/admin-editor-shell": ["./apps/admin-web/src/features/editor/shell.js"],
-      "@geekist/edgepress/admin-editor-store": ["./apps/admin-web/src/features/editor/gutenberg-integration.js"],
+      "@geekist/edgepress/admin-editor-store": ["./apps/admin-web/src/features/editor/admin-editor-store.js"],
       "@geekist/edgepress/testing": ["./packages/testing/src"],
       "@geekist/edgepress/testing/*": ["./packages/testing/src/*"],
       "@geekist/edgepress/cloudflare": ["./packages/cloudflare/src"],

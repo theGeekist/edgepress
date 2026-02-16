@@ -1,3 +1,5 @@
+import { timingSafeEqual } from 'node:crypto';
+
 export function createRuntimePlatform() {
   const processEnv = typeof process !== 'undefined' && process?.env ? process.env : {};
 
@@ -66,7 +68,7 @@ export function createRuntimePlatform() {
       const expected = Buffer.from(signed, 'utf8');
       const actual = Buffer.from(String(signature || ''), 'utf8');
       if (expected.length !== actual.length) return false;
-      return crypto.timingSafeEqual(expected, actual);
+      return timingSafeEqual(expected, actual);
     },
     base64urlEncode(value) {
       const payload = typeof value === 'string' ? value : JSON.stringify(value);

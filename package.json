@@ -15,7 +15,7 @@
     "./platform-base": "./packages/platform-base/src/index.js",
     "./admin-api-client": "./apps/admin-web/src/adapters/api-client.js",
     "./admin-editor-shell": "./apps/admin-web/src/features/editor/shell.js",
-    "./admin-editor-store": "./apps/admin-web/src/features/editor/gutenberg-integration.js",
+    "./admin-editor-store": "./apps/admin-web/src/features/editor/admin-editor-store.js",
     "./api-handler": "./apps/api/src/app/create-api-handler.js",
     "./testing": "./packages/testing/src/store.js",
     "./testing/*": "./packages/testing/src/*",

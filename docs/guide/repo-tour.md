@@ -33,7 +33,7 @@ We use **Bun workspaces** to manage dependencies. `apps/` are deployable targets
 1.  **Start in `packages/domain`**: Define your entities (`Comment`) and use-cases.
 2.  **Add capability logic in `packages/*`**: Place feature behavior in a capability package.
 3.  **Update `apps/api` adapters/orchestration**: Add thin controllers and orchestration wiring.
-4.  **Implement Adapters**: Add clear implementation in `packages/testing` (in-memory) and `packages/cloudflare` (Production).
+4.  **Implement Adapters**: Add clear implementation in `packages/platform-base` (in-memory) and `packages/cloudflare` (Production). Use `packages/testing` for test helpers/fakes.
 
 ### ...you want to modify the Admin UI?
 - Go to `apps/admin-web`.
