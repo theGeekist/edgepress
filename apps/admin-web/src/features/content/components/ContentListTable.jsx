@@ -108,7 +108,7 @@ export function ContentListTable({
             <Text style={{ fontSize: 12, color: palette.border }}>|</Text>
             <Pressable onPress={() => onRowTrash(doc)}><Text style={{ fontSize: 12, color: palette.error }}>Trash</Text></Pressable>
             <Text style={{ fontSize: 12, color: palette.border }}>|</Text>
-            <Pressable onPress={() => onRowDelete?.(doc)}><Text style={{ fontSize: 12, color: palette.error }}>Delete</Text></Pressable>
+            <Pressable onPress={() => onRowDelete(doc)}><Text style={{ fontSize: 12, color: palette.error }}>Delete</Text></Pressable>
           </View>
         </View>
       )

@@ -127,8 +127,6 @@ const style = {
   }
 };
 
-export const contentSettingsPanelPropTypes = ContentSettingsPanel.propTypes;
-
 ContentSettingsPanel.propTypes = {
   palette: PropTypes.shape(palettePropTypes).isRequired,
   hasSelection: PropTypes.bool.isRequired,
@@ -143,3 +141,5 @@ ContentSettingsPanel.propTypes = {
   }).isRequired,
   onUpdateMeta: PropTypes.func.isRequired
 };
+
+export const contentSettingsPanelPropTypes = ContentSettingsPanel.propTypes;
