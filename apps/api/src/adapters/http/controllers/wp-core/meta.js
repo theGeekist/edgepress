@@ -1,3 +1,17 @@
+import { toWpNumericId } from '@geekist/edgepress/wp-core';
+
+function toWpRoles(user) {
+  const explicitRoles = Array.isArray(user?.roles) ? user.roles.map((entry) => String(entry || '').trim()).filter(Boolean) : [];
+  if (explicitRoles.length > 0) return explicitRoles;
+
+  const role = String(user?.role || '').trim().toLowerCase();
+  if (!role) return [];
+  if (role === 'admin') return ['administrator'];
+  if (role === 'editor') return ['editor'];
+  if (role === 'viewer') return ['subscriber'];
+  return [role];
+}
+
 export function registerWpCoreMetaRoutes({ add, runtime, store, authzErrorResponse, requireCapability, json }) {
   add('GET', '/settings', async (request) => {
     try {
@@ -58,7 +72,7 @@ export function registerWpCoreMetaRoutes({ add, runtime, store, authzErrorRespon
         return Number.isNaN(parsed.getTime()) ? new Date().toISOString() : parsed.toISOString();
       })();
       return json({
-        id: Number.parseInt(String(user?.id || '').replace(/\D/g, ''), 10) || 1,
+        id: toWpNumericId(user?.id),
         username: user?.username || 'admin',
         name: user?.displayName || user?.username || 'admin',
         first_name: '',
@@ -71,7 +85,7 @@ export function registerWpCoreMetaRoutes({ add, runtime, store, authzErrorRespon
         locale: 'en_US',
         nickname_locked: false,
         registered_date: registeredDate,
-        roles: ['administrator'],
+        roles: toWpRoles(user),
         capabilities: {
           edit_posts: true,
           publish_posts: true,

@@ -25,6 +25,10 @@ export function applyDocumentQuery(allDocuments, query) {
     const docType = doc.type || 'page';
     if (type !== 'all' && docType !== type) return false;
     if (q && !String(doc.title || '').toLowerCase().includes(q)) return false;
+    if (query?.slug) {
+      const slug = String(query.slug || '').trim().toLowerCase();
+      if (slug && String(doc.slug || '').toLowerCase() !== slug) return false;
+    }
     return true;
   });
 

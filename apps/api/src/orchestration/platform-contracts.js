@@ -5,6 +5,7 @@
  * - requestContext(request)
  * - waitUntil(promise)
  * - hmacSign(input,keyRef), hmacVerify(input,signature,keyRef)
+ * - base64urlEncode(input), base64urlDecode(input)
  * - optional rateLimit(key,policy)
  */
 

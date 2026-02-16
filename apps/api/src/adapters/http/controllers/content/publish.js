@@ -62,7 +62,7 @@ export function createPublishRoutes({ runtime, store, releaseStore, hooks, route
         await requireCapability({ runtime, store, request, capability: 'publish:write' });
         const activeRelease = await releaseStore.activateRelease(params.id);
         doAction(runtime, hooks, HOOK_NAMES.releaseActivatedAction, {
-          releaseId: activeRelease,
+          releaseId: activeRelease?.id || params.id,
           source: 'manual'
         });
         return json({ activeRelease });
@@ -72,7 +72,7 @@ export function createPublishRoutes({ runtime, store, releaseStore, hooks, route
         if (e?.message === 'Unknown releaseId') {
           return error('RELEASE_NOT_FOUND', e.message, 404);
         }
-        return error('RELEASE_ACTIVATE_FAILED', e.message || 'Unable to activate release', 500);
+        return error('RELEASE_ACTIVATE_FAILED', 'Unable to activate release', 500);
       }
     }),
 

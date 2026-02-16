@@ -20,6 +20,9 @@ export function fromWpStatus(status) {
 }
 
 export function toWpPost(doc, requestUrl, toWpNumericId) {
+  if (!doc) {
+    throw new Error('Missing document for toWpPost');
+  }
   const type = doc?.type === 'post' ? 'post' : 'page';
   const title = String(doc?.title || '');
   const content = String(doc?.legacyHtml ?? doc?.content ?? '');

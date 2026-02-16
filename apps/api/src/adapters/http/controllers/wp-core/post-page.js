@@ -8,6 +8,11 @@ import {
   toWpPost
 } from '@geekist/edgepress/wp-core';
 
+function parseNullableWpField(body, key) {
+  if (body?.[key] === undefined || body?.[key] === null) return undefined;
+  return parseFieldString(body[key]);
+}
+
 export function registerWpCorePostPageRoutes({
   add,
   runtime,
@@ -18,43 +23,33 @@ export function registerWpCorePostPageRoutes({
   readJson,
   notFoundEntity
 }) {
-  add('GET', '/posts', async (request) => {
-    try {
-      await requireCapability({ runtime, store, request, capability: 'document:read' });
-      const url = new URL(request.url);
-      const page = Math.max(1, Number.parseInt(url.searchParams.get('page') || '1', 10) || 1);
-      const pageSize = Math.min(100, Math.max(1, Number.parseInt(url.searchParams.get('per_page') || '100', 10) || 100));
-      const status = url.searchParams.get('status') || 'all';
-      const slug = String(url.searchParams.get('slug') || '').trim().toLowerCase();
-      const listed = await store.listDocuments({ type: 'post', status, sortBy: 'updatedAt', sortDir: 'desc', page, pageSize });
-      const items = (Array.isArray(listed?.items) ? listed.items : []).filter((entry) => {
-        if (!slug) return true;
-        return String(entry?.slug || '').toLowerCase() === slug;
-      });
-      return json(items.map((doc) => toWpPost(doc, request.url, toWpNumericId)));
-    } catch (e) {
-      return authzErrorResponse(e);
-    }
-  });
+  function registerListRoute(path, type) {
+    add('GET', path, async (request) => {
+      try {
+        await requireCapability({ runtime, store, request, capability: 'document:read' });
+        const url = new URL(request.url);
+        const page = Math.max(1, Number.parseInt(url.searchParams.get('page') || '1', 10) || 1);
+        const pageSize = Math.min(100, Math.max(1, Number.parseInt(url.searchParams.get('per_page') || '100', 10) || 100));
+        const status = url.searchParams.get('status') || 'all';
+        const slug = String(url.searchParams.get('slug') || '').trim().toLowerCase();
+        const query = {
+          type,
+          status,
+          sortBy: 'updatedAt',
+          sortDir: 'desc',
+          ...(slug ? { slug } : { page, pageSize })
+        };
+        const listed = await store.listDocuments(query);
+        const items = Array.isArray(listed?.items) ? listed.items : [];
+        return json(items.map((doc) => toWpPost(doc, request.url, toWpNumericId)));
+      } catch (e) {
+        return authzErrorResponse(e);
+      }
+    });
+  }
 
-  add('GET', '/pages', async (request) => {
-    try {
-      await requireCapability({ runtime, store, request, capability: 'document:read' });
-      const url = new URL(request.url);
-      const page = Math.max(1, Number.parseInt(url.searchParams.get('page') || '1', 10) || 1);
-      const pageSize = Math.min(100, Math.max(1, Number.parseInt(url.searchParams.get('per_page') || '100', 10) || 100));
-      const status = url.searchParams.get('status') || 'all';
-      const slug = String(url.searchParams.get('slug') || '').trim().toLowerCase();
-      const listed = await store.listDocuments({ type: 'page', status, sortBy: 'updatedAt', sortDir: 'desc', page, pageSize });
-      const items = (Array.isArray(listed?.items) ? listed.items : []).filter((entry) => {
-        if (!slug) return true;
-        return String(entry?.slug || '').toLowerCase() === slug;
-      });
-      return json(items.map((doc) => toWpPost(doc, request.url, toWpNumericId)));
-    } catch (e) {
-      return authzErrorResponse(e);
-    }
-  });
+  registerListRoute('/posts', 'post');
+  registerListRoute('/pages', 'page');
 
   add('GET', '/posts/:id', async (request, params) => {
     try {
@@ -138,12 +133,15 @@ export function registerWpCorePostPageRoutes({
       const existing = await loadDocumentByType(store, 'post', internalId);
       if (!existing) return notFoundEntity('post');
       const body = await readJson(request);
-      const nextContent = parseFieldString(body.content) || existing.legacyHtml || existing.content;
+      const parsedContent = parseNullableWpField(body, 'content');
+      const nextContent = parsedContent ?? existing.legacyHtml ?? existing.content;
+      const parsedTitle = parseNullableWpField(body, 'title');
+      const nextTitle = parsedTitle ?? existing.title;
       const featuredImageId = body.featured_media == null
         ? existing.featuredImageId
         : await resolveInternalMediaIdForWpId(store, body.featured_media);
       const updated = await store.updateDocument(internalId, {
-        title: parseFieldString(body.title) || existing.title,
+        title: nextTitle,
         content: nextContent,
         legacyHtml: nextContent,
         slug: body.slug ?? existing.slug,
@@ -170,12 +168,15 @@ export function registerWpCorePostPageRoutes({
       const existing = await loadDocumentByType(store, 'page', internalId);
       if (!existing) return notFoundEntity('page');
       const body = await readJson(request);
-      const nextContent = parseFieldString(body.content) || existing.legacyHtml || existing.content;
+      const parsedContent = parseNullableWpField(body, 'content');
+      const nextContent = parsedContent ?? existing.legacyHtml ?? existing.content;
+      const parsedTitle = parseNullableWpField(body, 'title');
+      const nextTitle = parsedTitle ?? existing.title;
       const featuredImageId = body.featured_media == null
         ? existing.featuredImageId
         : await resolveInternalMediaIdForWpId(store, body.featured_media);
       const updated = await store.updateDocument(internalId, {
-        title: parseFieldString(body.title) || existing.title,
+        title: nextTitle,
         content: nextContent,
         legacyHtml: nextContent,
         slug: body.slug ?? existing.slug,
