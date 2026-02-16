@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createInMemoryPlatform } from '../src/store.js';
-import { authAsAdmin, requestJson } from '../src/testUtils.js';
+import { authAsAdmin, requestJson } from './helpers/testUtils.js';
 
 async function uploadAndFinalizeMedia(handler, accessToken, options = {}) {
   const init = await requestJson(handler, 'POST', '/v1/media/init', { token: accessToken, body: {} });

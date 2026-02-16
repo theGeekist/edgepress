@@ -1,12 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createInMemoryPlatform } from '../src/store.js';
-import { authAsAdmin, requestJson } from '../src/testUtils.js';
+import { authAsAdmin, requestJson } from './helpers/testUtils.js';
 import {
   attachServerHooks,
   registerServerHookRegistrar,
   resetServerHookRegistrarsForTests
-} from '../../../apps/api/src/hooks-bootstrap.js';
+} from '../../../apps/api/src/app/hooks-bootstrap.js';
 
 test.afterEach(() => {
   resetServerHookRegistrarsForTests();

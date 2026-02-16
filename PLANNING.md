@@ -11,7 +11,7 @@ This file turns the architectural story from `docs/internal/edgepress-content-ex
 - Explicitly deferred: collaborative editing/presence, server-side runtime block rendering, broad plugin compatibility, multi-tenant isolation.
 
 ## DI / Adapter Milestone Status
-- [x] Composition root exists: `packages/cloudflare/src/worker.js` builds platform and injects it into `createApiHandler`.
+- [x] Composition root exists: `apps/api/src/worker.js` builds platform and injects it into `createApiHandler`.
 - [x] Stable port seams are in use (`runtime`, `store`, `releaseStore`, `blobStore`, `cacheStore`, `previewStore`).
 - [x] Boundary enforcement exists (`scripts/check-boundaries.js`) to prevent infra leakage outside adapters.
 - [x] Durable Cloudflare store adapter landed for core mutable state (D1-backed users/tokens/documents/revisions/media/publish jobs/forms/previews).
@@ -57,7 +57,7 @@ Exit criteria:
 - Preview/private semantics are enforced by tests (signature, expiry, scoped cache keys).
 
 ## Phase 4 – Cloudflare Adapter Baseline (complete)
-- [x] Worker composition root in adapter package (`packages/cloudflare/src/worker.js`).
+- [x] Worker composition root in adapter package (`apps/api/src/worker.js`).
 - [x] Binding-aware KV/R2 adapter behavior with local fallbacks.
 - [x] Wrangler local/deployed smoke scripts for the core API path.
 
@@ -101,7 +101,7 @@ Exit criteria:
 - [x] Add server-side JS hook bootstrap registration at composition roots (local server + Cloudflare worker) so `addAction`/`addFilter` are available on both client and server runtimes.
 - [ ] Normalize API versioning/envelope/pagination rules and document them as stable contract behavior. (tracked for close in Phase 14)
 - [ ] Add webhook delivery surface for publish completed + release activated events. (tracked for close in Phase 14)
-- `Increment complete`: replaced bespoke lifecycle hooks with canonical `@wordpress/hooks` semantics (`addAction`, `doAction`, `addFilter`, `applyFilters`) and added server-side JS bootstrap registration in composition roots (`apps/api/src/hooks-bootstrap.js`, `apps/api/src/server.js`, `packages/cloudflare/src/worker.js`).
+- `Increment complete`: replaced bespoke lifecycle hooks with canonical `@wordpress/hooks` semantics (`addAction`, `doAction`, `addFilter`, `applyFilters`) and added server-side JS bootstrap registration in composition roots (`apps/api/src/app/hooks-bootstrap.js`, `apps/api/src/server.js`, `apps/api/src/worker.js`).
 - Note: API runtime now requires a full WP-compatible hook registry surface when `platform.hooks` is supplied; partial custom registries intentionally fall back to shared `@wordpress/hooks`.
 - Trust boundary note: published HTML intentionally renders author-provided block/content HTML; sanitization is not performed in the publisher and must be enforced at authoring/import boundaries when untrusted inputs are introduced.
 - Hook bootstrap note: failing registrars are retried on subsequent attach attempts, with failure logging rate-limited to first failure per registry/registrar pair.
@@ -369,6 +369,6 @@ Exit criteria:
 - Delta (2026-02-06 after D1 app-store migration + no-default-admin bootstrap): `93.55%` lines, `90.20%` funcs.
 - Delta (2026-02-06 after unhappy-path coverage expansion and threshold wiring): `97.15%` lines, `95.96%` funcs.
 - Priority hotspot 1: `apps/admin-web/src/editor-shell.js` (`89.66%` lines) where document update/preview branches remain.
-- Priority hotspot 2: `apps/api/src/app.js` (`95.61%` lines) for endpoint-level negative branches and rare error guards.
+- Priority hotspot 2: `apps/api/src/app/create-api-handler.js` (`95.61%` lines) for endpoint-level negative branches and rare error guards.
 - Priority hotspot 3: `packages/testing/src/inMemoryPlatform.js` (`97.38%` lines, `96.23%` funcs) with remaining branches tied to deeper revision/list edge paths.
 - Process: run `bun run test:coverage` at the end of each phase slice and append a one-line delta note here.

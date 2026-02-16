@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { createInMemoryPlatform } from '../src/store.js';
-import { authAsAdmin, requestJson } from '../src/testUtils.js';
+import { authAsAdmin, requestJson } from './helpers/testUtils.js';
 
 test('document type filtering is backed by canonical stored type', async () => {
   const platform = createInMemoryPlatform();

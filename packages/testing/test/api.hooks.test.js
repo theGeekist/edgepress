@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { HOOK_NAMES, resolveHooks } from '../../../apps/api/src/hooks.js';
+import { HOOK_NAMES, resolveHooks } from '../../../apps/api/src/app/hooks.js';
 import { createHooksRegistry } from '../../hooks/src/index.js';
 import { createInMemoryPlatform } from '../src/store.js';
-import { authAsAdmin, requestJson } from '../src/testUtils.js';
+import { authAsAdmin, requestJson } from './helpers/testUtils.js';
 
 async function createDoc(handler, token, suffix = 'hook') {
   const created = await requestJson(handler, 'POST', '/v1/documents', {

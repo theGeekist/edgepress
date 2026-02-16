@@ -28,7 +28,7 @@ This page is being expanded. For now, the most complete description is in the wo
 Source:
 
 - `packages/publish/src/publisher.js`
-- `apps/api/src/app.js`
+- `apps/api/src/app/create-api-handler.js`
 
 Tests:
 

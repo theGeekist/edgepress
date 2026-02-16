@@ -1,4 +1,4 @@
-import { routes } from "../../packages/contracts/src/index.js";
+import { routes } from "../../packages/testing/src/api-contracts.js";
 
 function asList(keys) {
   if (!Array.isArray(keys) || keys.length === 0) return "-";
@@ -46,7 +46,7 @@ const out = [
   "",
   "# Routes (generated)",
   "",
-  "This page is generated from `packages/contracts/src/index.js`.",
+  "This page is generated from `packages/testing/src/api-contracts.js`.",
   "",
   "It documents required request/response keys (not full schemas).",
   "",

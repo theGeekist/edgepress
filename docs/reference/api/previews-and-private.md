@@ -8,4 +8,4 @@ Previews are expiring; private reads are capability-gated.
 
 Source:
 
-- `apps/api/src/app.js`
+- `apps/api/src/app/create-api-handler.js`

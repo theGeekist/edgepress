@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { parse } from '@wordpress/blocks';
 import { createInMemoryPlatform } from '../src/store.js';
-import { authAsAdmin, requestJson } from '../src/testUtils.js';
+import { authAsAdmin, requestJson } from './helpers/testUtils.js';
 
 test('editor loop covers update, preview, publish, activate, and private delivery', async () => {
   const platform = createInMemoryPlatform();

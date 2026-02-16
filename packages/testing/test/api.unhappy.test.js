@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createApiHandler } from '../../../apps/api/src/app.js';
+import { createApiHandler } from '../../../apps/api/src/app/create-api-handler.js';
 import { createInMemoryPlatform } from '../src/store.js';
-import { authAsAdmin, requestJson } from '../src/testUtils.js';
+import { authAsAdmin, requestJson } from './helpers/testUtils.js';
 
 test('api returns expected envelopes for router-level paths', async () => {
   const platform = createInMemoryPlatform();

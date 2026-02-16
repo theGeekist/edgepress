@@ -45,6 +45,18 @@ export default [
       'no-console': 'off',
       'sonarjs/no-duplicate-string': 'off',
       'max-lines': ['error', { max: 500, skipBlankLines: true, skipComments: true }],
+      'no-restricted-imports': ['error', {
+        patterns: [
+          {
+            group: ['@geekist/edgepress/*/src/*'],
+            message: 'Import from package public exports only; do not import /src internals.'
+          },
+          {
+            group: ['@geekist/edgepress/cap-*/*'],
+            message: 'Import capability packages via their root public surface only.'
+          }
+        ]
+      }],
       'no-unused-vars': ['error', {
         argsIgnorePattern: '^_',
         varsIgnorePattern: '^_',

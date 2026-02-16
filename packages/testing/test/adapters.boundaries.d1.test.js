@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createCloudflareReferencePlatform } from '../../cloudflare/src/index.js';
-import { createApiHandler } from '../../../apps/api/src/app.js';
-import { requestJson } from '../src/testUtils.js';
+import { createApiHandler } from '../../../apps/api/src/app/create-api-handler.js';
+import { requestJson } from './helpers/testUtils.js';
 import { createFakeD1, createFakeKV } from './helpers/cloudflareFakes.js';
 
 test('cloudflare reference adapter uses D1 for release state when bound', async () => {

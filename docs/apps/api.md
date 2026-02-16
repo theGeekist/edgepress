@@ -10,4 +10,4 @@ Entry point:
 
 Router:
 
-- `apps/api/src/app.js`
+- `apps/api/src/app/create-api-handler.js`

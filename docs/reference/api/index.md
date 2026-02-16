@@ -8,8 +8,8 @@ This section documents the API surface that is implemented in `apps/api` and val
 
 Current source of truth:
 
-- `packages/contracts/src/index.js` (contract schemas)
-- `apps/api/src/app.js` (implementation)
+- `packages/testing/src/api-contracts.js` (contract schemas)
+- `apps/api/src/app/create-api-handler.js` (implementation)
 
 ## Conventions
 
