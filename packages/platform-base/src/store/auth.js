@@ -1,6 +1,6 @@
 export function createAuthFeature(state, _runtime) {
   return {
-    async seedUser(user) {
+    seedUser(user) {
       state.users.set(user.id, user);
     },
     async getUserByUsername(username) {

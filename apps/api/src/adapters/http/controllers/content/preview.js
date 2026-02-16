@@ -18,7 +18,10 @@ export function createPreviewRoutes({ runtime, store, previewStore, route, authz
         if (result.error) return error(result.error.code, result.error.message, result.error.status);
         return json(result);
       } catch (e) {
-        return authzErrorResponse(e);
+        if (typeof e?.status === 'number' && typeof e?.code === 'string') {
+          return authzErrorResponse(e);
+        }
+        return error('PREVIEW_ERROR', e?.message || 'Preview creation failed', 500);
       }
     }),
 

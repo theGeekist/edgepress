@@ -27,7 +27,7 @@ function normalizeStringArray(value) {
 
 function normalizeObject(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
-  return value;
+  return { ...value };
 }
 
 async function validateObjectTypes(store, objectTypes) {

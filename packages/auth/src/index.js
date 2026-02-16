@@ -39,8 +39,8 @@ export function createAuthFeature({ runtime, store }) {
 
     const accessToken = await createAccessToken(runtime, user);
     const nextRefreshToken = `r_${runtime.uuid()}`;
-    await store.revokeRefreshToken(refreshToken);
     await store.saveRefreshToken(nextRefreshToken, user.id);
+    await store.revokeRefreshToken(refreshToken);
 
     return { accessToken, refreshToken: nextRefreshToken };
   }

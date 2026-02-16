@@ -12,7 +12,7 @@ export function createContentModelFeature(state, runtime) {
     async getContentType(slug) {
       return state.contentTypes.get(slug) || null;
     },
-    async upsertContentType(input) {
+    upsertContentType(input) {
       const now = runtime.now().toISOString();
       const existing = state.contentTypes.get(input.slug);
       const created = createContentType({ ...input, now });
@@ -28,7 +28,7 @@ export function createContentModelFeature(state, runtime) {
     async getTaxonomy(slug) {
       return state.taxonomies.get(slug) || null;
     },
-    async upsertTaxonomy(input) {
+    upsertTaxonomy(input) {
       const now = runtime.now().toISOString();
       const existing = state.taxonomies.get(input.slug);
       const created = createTaxonomy({ ...input, now });
