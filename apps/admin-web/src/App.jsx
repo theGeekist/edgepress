@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
 import { AdminLoginView } from '@features/auth';
-import { useAdminAppController } from '@hooks/useAdminAppController.js';
+import { useRootSceneController } from './scenes/root/useRootSceneController.js';
 import { TopBar } from '@components/ui/TopBar.jsx';
 import { Feedback } from '@components/ui/Feedback.jsx';
-import { AdminScene } from './scenes/web';
+import { RootScene } from './scenes/root/Scene.jsx';
 import { layoutStyles } from '@components/styles.js';
 import { View, useWindowDimensions } from 'react-native';
 
 export function App() {
-  const controller = useAdminAppController();
+  const controller = useRootSceneController();
   const { palette, theme, mode, appSection, contentView, mediaView, saveState, settings, auth, docs, media, editor, loop, navigation, status, error, previewLink, actions } = controller;
 
   const { width } = useWindowDimensions();
@@ -73,7 +73,7 @@ export function App() {
 
       {!isMobileEditor ? <Feedback palette={palette} items={feedbackItems} /> : null}
 
-      <AdminScene
+      <RootScene
         palette={palette}
         theme={theme}
         appSection={appSection}

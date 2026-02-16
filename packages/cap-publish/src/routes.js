@@ -1,8 +1,8 @@
 import { createRelease } from '@geekist/edgepress/publish';
-import { requireCapability } from '../auth.js';
-import { error, json, readJson } from '../http.js';
-import { normalizePublishProvenance } from '../request-validation.js';
-import { applyFilters, doAction, HOOK_NAMES } from '../hooks.js';
+import { requireCapability } from '@geekist/edgepress/platform-api-core/auth.js';
+import { error, json, readJson } from '@geekist/edgepress/platform-api-core/http.js';
+import { normalizePublishProvenance } from '@geekist/edgepress/platform-api-core/request-validation.js';
+import { applyFilters, doAction, HOOK_NAMES } from '@geekist/edgepress/platform-api-core/hooks.js';
 
 export function createPublishRoutes({ runtime, store, releaseStore, hooks, route, authzErrorResponse }) {
   return [

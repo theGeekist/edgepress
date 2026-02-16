@@ -9,6 +9,7 @@ const blocked = [
   'R2Bucket',
   'DurableObjectNamespace'
 ];
+// Only the runtime composition root may mention provider tokens outside adapter packages.
 const blockedTokenAllowlist = new Set([
   'apps/api/src/worker.js'
 ]);

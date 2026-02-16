@@ -10,15 +10,10 @@ import { useAdminRouteState } from '@features/layout';
 import { useAdminSettingsState } from '@features/settings';
 import { useNavigationActions } from '@features/navigation';
 
-function asErrorMessage(error) {
-  return error instanceof Error ? error.message : String(error);
-}
-
-export function useAdminAppController() {
+export function useRootSceneController() {
   const apiBase = import.meta.env.VITE_API_BASE_URL || '';
   const shell = useMemo(() => createAdminShell({ baseUrl: apiBase || '' }), [apiBase]);
   const configuredApiFetchRef = useRef(null);
-  const hydratedRef = useRef(false);
 
   const { palette, theme, mode, setMode } = useThemeMode();
 
@@ -82,32 +77,12 @@ export function useAdminAppController() {
     });
   }, [apiBase, shell]);
 
-  useEffect(() => {
-    if (!auth.user || hydratedRef.current) {
-      return;
-    }
-    hydratedRef.current = true;
-    content.hydrate().catch((nextError) => {
-      setError(asErrorMessage(nextError));
-    });
-  }, [auth.user, content]);
-
-  useEffect(() => {
-    if (!auth.user || (appSection !== 'appearance' && appSection !== 'themes' && appSection !== 'menus' && appSection !== 'widgets')) {
-      return;
-    }
-    if (navigation.loadedNavigationMenuKeyRef.current === 'primary') {
-      return;
-    }
-    navigation.onLoadNavigationMenu('primary').catch((nextError) => {
-      setError(asErrorMessage(nextError));
-    });
-  }, [auth.user, appSection, navigation]);
-
   const actions = {
     ...sessionActions,
     ...content.actions,
     ...mediaFeature.actions,
+    onHydrateContent: content.hydrate,
+    onSceneError: setError,
     onLoadNavigationMenu: navigation.onLoadNavigationMenu,
     onSaveNavigationMenu: navigation.onSaveNavigationMenu,
     onUpdateSettings,

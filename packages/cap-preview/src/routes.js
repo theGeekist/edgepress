@@ -2,9 +2,9 @@ import { assertPreviewNotExpired } from '@geekist/edgepress/domain';
 import { normalizeBlocksInput } from '@geekist/edgepress/domain/blocks.js';
 import { resolveImageBlocks } from '@geekist/edgepress/publish';
 import { serialize } from '@wordpress/blocks';
-import { requireCapability } from '../auth.js';
-import { error, json } from '../http.js';
-import { parseTtlSeconds, signPreviewToken, verifyPreviewTokenSignature } from '../runtime-utils.js';
+import { requireCapability } from '@geekist/edgepress/platform-api-core/auth.js';
+import { error, json } from '@geekist/edgepress/platform-api-core/http.js';
+import { parseTtlSeconds, signPreviewToken, verifyPreviewTokenSignature } from '@geekist/edgepress/platform-api-core/runtime-utils.js';
 
 function collectMediaIds(blocks, featuredImageId) {
   const ids = new Set();

@@ -1,14 +1,14 @@
 import { View } from 'react-native';
 import { Sidebar } from '@components/ui/Sidebar.jsx';
 import { layoutStyles } from '@components/styles.js';
-import { ContentScene } from './ContentScene.jsx';
-import { MediaScene } from './MediaScene.jsx';
-import { SettingsScene } from './SettingsScene.jsx';
-import { AppearanceScene } from './AppearanceScene.jsx';
-import { MenusScene } from './MenusScene.jsx';
-import { PlaceholderScene } from './PlaceholderScene.jsx';
+import { ContentScene } from '../content/Scene.jsx';
+import { MediaScene } from '../media/Scene.jsx';
+import { SettingsScene } from '../settings/Scene.jsx';
+import { AppearanceScene } from '../appearance/Scene.jsx';
+import { MenusScene } from '../menus/Scene.jsx';
+import { DashboardScene } from '../dashboard/Scene.jsx';
 
-export function AdminScene({
+export function RootScene({
   palette,
   theme,
   appSection,
@@ -26,7 +26,7 @@ export function AdminScene({
 }) {
   const renderScene = () => {
     if (appSection === 'dashboard') {
-      return <PlaceholderScene palette={palette} appSection={appSection} />;
+      return <DashboardScene palette={palette} appSection={appSection} />;
     }
     if (appSection === 'content') {
       return (
@@ -37,6 +37,7 @@ export function AdminScene({
           contentView={contentView}
           docs={docs}
           editor={editor}
+          isAuthenticated
           actions={actions}
         />
       );
@@ -53,6 +54,7 @@ export function AdminScene({
           palette={palette}
           docs={docs}
           navigation={navigation}
+          isAuthenticated
           actions={actions}
         />
       );
@@ -66,7 +68,7 @@ export function AdminScene({
         />
       );
     }
-    return <PlaceholderScene palette={palette} appSection={appSection} />;
+    return <DashboardScene palette={palette} appSection={appSection} />;
   };
 
   return (

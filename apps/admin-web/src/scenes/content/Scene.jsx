@@ -3,6 +3,7 @@ import { View } from 'react-native';
 import { ContentListTable } from '@features/content';
 import { EditorCanvas } from '@features/editor';
 import { layoutStyles } from '@components/styles.js';
+import { useContentSceneController } from './useSceneController.js';
 
 export function ContentScene({
   palette,
@@ -11,8 +12,15 @@ export function ContentScene({
   contentView,
   docs,
   editor,
+  isAuthenticated,
   actions
 }) {
+  useContentSceneController({
+    isAuthenticated,
+    onHydrateContent: actions.onHydrateContent,
+    onSetError: actions.onSceneError
+  });
+
   const isEditorView = contentView === 'editor';
   const selectedDocType = docs?.getSelectedDocType?.();
   let selectedType = 'post';

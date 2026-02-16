@@ -1,16 +1,17 @@
 import { assertPlatformPorts } from '@geekist/edgepress/ports';
+import { createAuthRoutes } from '@geekist/edgepress/cap-auth';
+import { createContentModelRoutes } from '@geekist/edgepress/cap-content-model';
+import { createDocumentRoutes } from '@geekist/edgepress/cap-document';
+import { createFormRoutes } from '@geekist/edgepress/cap-form';
+import { createMediaRoutes } from '@geekist/edgepress/cap-media';
+import { createNavigationRoutes } from '@geekist/edgepress/cap-navigation';
+import { createPreviewRoutes } from '@geekist/edgepress/cap-preview';
+import { createPrivateRoutes } from '@geekist/edgepress/cap-private';
+import { createPublishRoutes } from '@geekist/edgepress/cap-publish';
+import { createWpCoreRoutes } from '@geekist/edgepress/cap-wp-core';
+import { requireCapability } from '@geekist/edgepress/platform-api-core/auth.js';
+import { error, getCorsHeaders, json, matchPath, readJson, withCors } from '@geekist/edgepress/platform-api-core/http.js';
 import { resolveHooks } from './hooks.js';
-import { error, getCorsHeaders, matchPath, withCors } from './http.js';
-import { createAuthRoutes } from './features/auth-routes.js';
-import { createDocumentRoutes } from './features/document-routes.js';
-import { createMediaRoutes } from './features/media-routes.js';
-import { createPublishRoutes } from './features/publish-routes.js';
-import { createPreviewRoutes } from './features/preview-routes.js';
-import { createFormRoutes } from './features/form-routes.js';
-import { createPrivateRoutes } from './features/private-routes.js';
-import { createNavigationRoutes } from './features/navigation-routes.js';
-import { createWpCoreRoutes } from './features/wp-core-routes.js';
-import { createContentModelRoutes } from './features/content-model-routes.js';
 
 function route(method, path, handler) {
   return { method, path, handler };
@@ -34,7 +35,11 @@ function createFeatureRoutes(context) {
     ...createNavigationRoutes(context),
     ...createContentModelRoutes(context),
     ...createPrivateRoutes(context),
-    ...createWpCoreRoutes(context)
+    ...createWpCoreRoutes({
+      ...context,
+      auth: { requireCapability },
+      http: { json, readJson }
+    })
   ];
 }
 

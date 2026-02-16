@@ -8,7 +8,7 @@ const placeholderBySection = {
   appearance: 'Appearance controls will follow after preview skin and theming contracts.'
 };
 
-export function PlaceholderScene({ palette, appSection }) {
+export function DashboardScene({ palette, appSection }) {
   return (
     <View style={[layoutStyles.card, layoutStyles.sectionPlaceholder, { borderColor: palette.border, backgroundColor: palette.surfaceMuted }]}>
       <Text style={[layoutStyles.loopTitle, { color: palette.text }]}>Section not enabled yet</Text>

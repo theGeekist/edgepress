@@ -1,8 +1,8 @@
 import { BLOCKS_SCHEMA_VERSION } from '@geekist/edgepress/domain';
-import { requireCapability } from '../auth.js';
-import { error, json, readJson } from '../http.js';
-import { normalizeBlocksForWrite } from '../request-validation.js';
-import { doAction, HOOK_NAMES } from '../hooks.js';
+import { requireCapability } from '@geekist/edgepress/platform-api-core/auth.js';
+import { error, json, readJson } from '@geekist/edgepress/platform-api-core/http.js';
+import { normalizeBlocksForWrite } from '@geekist/edgepress/platform-api-core/request-validation.js';
+import { doAction, HOOK_NAMES } from '@geekist/edgepress/platform-api-core/hooks.js';
 
 const ALLOWED_DOCUMENT_SORT_BY = new Set(['updatedAt', 'createdAt', 'title', 'type', 'status']);
 

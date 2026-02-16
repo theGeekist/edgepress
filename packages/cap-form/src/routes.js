@@ -1,4 +1,4 @@
-import { error, json, readJson } from '../http.js';
+import { error, json, readJson } from '@geekist/edgepress/platform-api-core/http.js';
 
 export function createFormRoutes({ runtime, store, route, authzErrorResponse }) {
   return [
