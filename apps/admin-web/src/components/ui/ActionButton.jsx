@@ -1,4 +1,6 @@
 import { Pressable, StyleSheet, Text } from 'react-native';
+import PropTypes from 'prop-types';
+import { palettePropTypes } from '../prop-types';
 
 export function ActionButton({ label, onPress, disabled = false, active = false, tone = 'default', palette }) {
   const style = [styles.button, { borderColor: palette.border, backgroundColor: palette.surfaceMuted }];
@@ -20,6 +22,15 @@ export function ActionButton({ label, onPress, disabled = false, active = false,
     </Pressable>
   );
 }
+
+ActionButton.propTypes = {
+  label: PropTypes.string.isRequired,
+  onPress: PropTypes.func.isRequired,
+  disabled: PropTypes.bool,
+  active: PropTypes.bool,
+  tone: PropTypes.oneOf(['default', 'primary']),
+  palette: PropTypes.shape(palettePropTypes).isRequired
+};
 
 const styles = StyleSheet.create({
   button: {

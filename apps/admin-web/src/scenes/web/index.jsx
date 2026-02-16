@@ -15,19 +15,60 @@ export function AdminScene({
   contentView,
   mediaView,
   onSectionChange,
-  onOpenContentList,
   docs,
   media,
   editor,
-  loop,
   navigation,
-  previewLink,
-  saveState,
   settings,
   actions,
   isMobile,
   isSidebarOpen
 }) {
+  const renderScene = () => {
+    if (appSection === 'dashboard') {
+      return <PlaceholderScene palette={palette} appSection={appSection} />;
+    }
+    if (appSection === 'content') {
+      return (
+        <ContentScene
+          palette={palette}
+          theme={theme}
+          siteTheme={settings?.siteTheme || theme}
+          contentView={contentView}
+          docs={docs}
+          editor={editor}
+          actions={actions}
+        />
+      );
+    }
+    if (appSection === 'settings') {
+      return <SettingsScene palette={palette} settings={settings} actions={actions} />;
+    }
+    if (appSection === 'media') {
+      return <MediaScene palette={palette} media={media} mediaView={mediaView} actions={actions} />;
+    }
+    if (appSection === 'menus') {
+      return (
+        <MenusScene
+          palette={palette}
+          docs={docs}
+          navigation={navigation}
+          actions={actions}
+        />
+      );
+    }
+    if (appSection === 'appearance' || appSection === 'themes' || appSection === 'widgets') {
+      return (
+        <AppearanceScene
+          palette={palette}
+          actions={actions}
+          appearanceSubsection={appSection}
+        />
+      );
+    }
+    return <PlaceholderScene palette={palette} appSection={appSection} />;
+  };
+
   return (
     <View style={[layoutStyles.workspace, { backgroundColor: 'transparent' }]}>
       <Sidebar
@@ -39,42 +80,7 @@ export function AdminScene({
       />
 
       <View style={isMobile ? layoutStyles.contentWorkspaceMobile : [layoutStyles.contentWorkspace, { backgroundColor: palette.page }]}>
-        {appSection === 'dashboard' ? (
-          <PlaceholderScene palette={palette} appSection={appSection} />
-        ) : appSection === 'content' ? (
-          <ContentScene
-            palette={palette}
-            theme={theme}
-            contentView={contentView}
-            onOpenContentList={onOpenContentList}
-            docs={docs}
-            editor={editor}
-            loop={loop}
-            previewLink={previewLink}
-            saveState={saveState}
-            actions={actions}
-            isMobile={isMobile}
-          />
-        ) : appSection === 'settings' ? (
-          <SettingsScene palette={palette} settings={settings} actions={actions} />
-        ) : appSection === 'media' ? (
-          <MediaScene palette={palette} media={media} mediaView={mediaView} actions={actions} />
-        ) : appSection === 'menus' ? (
-          <MenusScene
-            palette={palette}
-            docs={docs}
-            navigation={navigation}
-            actions={actions}
-          />
-        ) : appSection === 'appearance' || appSection === 'themes' || appSection === 'widgets' ? (
-          <AppearanceScene
-            palette={palette}
-            actions={actions}
-            appearanceSubsection={appSection}
-          />
-        ) : (
-          <PlaceholderScene palette={palette} appSection={appSection} />
-        )}
+        {renderScene()}
       </View>
 
     </View>

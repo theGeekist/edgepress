@@ -1,5 +1,7 @@
-import React, { useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
+import PropTypes from 'prop-types';
+import { palettePropTypes } from '@components/prop-types';
 import { DndContext, PointerSensor, useSensor, useSensors, closestCenter } from '@dnd-kit/core';
 import {
     SortableContext,
@@ -18,11 +20,12 @@ function SortableRow({ item, depth, palette, onUpdate, onRemove, isOver, dragInt
         opacity: isDragging ? 0.8 : 1,
     };
     const showIndicator = isOver && !isDragging;
-    const indicatorText = dragIntent === 'nest'
-        ? 'Drop as child'
-        : dragIntent === 'outdent'
-            ? 'Drop to outdent'
-            : 'Drop to reorder';
+    let indicatorText = 'Drop to reorder';
+    if (dragIntent === 'nest') {
+        indicatorText = 'Drop as child';
+    } else if (dragIntent === 'outdent') {
+        indicatorText = 'Drop to outdent';
+    }
     const indicatorOffset = dragIntent === 'nest' ? (depth + 1) * 24 : Math.max(depth, 0) * 24;
 
     return (
@@ -233,3 +236,15 @@ const styles = StyleSheet.create({
         minHeight: 400,
     },
 });
+
+MenuItemList.propTypes = {
+  items: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.string.isRequired,
+      parentId: PropTypes.string,
+      label: PropTypes.string.isRequired
+    })
+  ).isRequired,
+  onItemsChange: PropTypes.func.isRequired,
+  palette: PropTypes.shape(palettePropTypes).isRequired
+};

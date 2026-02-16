@@ -1,5 +1,7 @@
-import { View, Text, Pressable, StyleSheet, useWindowDimensions } from 'react-native';
-import { DropdownButton } from './DropdownButton.jsx';
+import { View, Text, Pressable, StyleSheet, useWindowDimensions } from "react-native";
+import PropTypes from "prop-types";
+import { palettePropTypes } from "../prop-types";
+import { DropdownButton } from "./DropdownButton.jsx";
 
 export function FilterTabs({
     filters,
@@ -52,6 +54,20 @@ export function FilterTabs({
         </View>
     );
 }
+
+FilterTabs.propTypes = {
+  filters: PropTypes.arrayOf(
+    PropTypes.shape({
+      label: PropTypes.string.isRequired,
+      value: PropTypes.string.isRequired
+    })
+  ).isRequired,
+  currentFilter: PropTypes.string.isRequired,
+  onFilterChange: PropTypes.func.isRequired,
+  palette: PropTypes.shape(palettePropTypes).isRequired,
+  collapseOnMobile: PropTypes.bool,
+  mobileLabel: PropTypes.string
+};
 
 const styles = StyleSheet.create({
     container: {

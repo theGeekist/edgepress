@@ -44,3 +44,6 @@ export {
 
 // Re-export styles
 export { layoutStyles } from './styles.js';
+
+// Re-export prop-types for type reuse
+export * from './prop-types';

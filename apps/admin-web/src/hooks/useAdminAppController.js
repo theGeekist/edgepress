@@ -2,9 +2,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import apiFetch from '@wordpress/api-fetch';
 
 import { useAuthState, useSessionActions } from '@features/auth';
-import { useDocumentsState, useReleaseLoopState, useContentActions } from '@features/content';
+import { useContentFeature } from '@features/content';
 import { createAdminShell, configureApiFetch, useEditorState } from '@features/editor';
-import { useMediaState, useMediaActions } from '@features/media';
+import { useMediaFeature } from '@features/media';
 import { useThemeMode } from '@components/theme.js';
 import { useAdminRouteState } from '@features/layout';
 import { useAdminSettingsState } from '@features/settings';
@@ -22,30 +22,52 @@ export function useAdminAppController() {
 
   const { palette, theme, mode, setMode } = useThemeMode();
 
-  // Feature state hooks
   const auth = useAuthState(shell);
-  const docs = useDocumentsState(shell);
   const editor = useEditorState(shell);
-  const loop = useReleaseLoopState(shell);
-  const media = useMediaState(shell);
-  const { appSection, contentView, mediaView, setAppSection, setContentView, setMediaView, onChangeSection, onOpenContentList, onOpenMediaList } = useAdminRouteState();
+  const { appSection, setAppSection, onChangeSection } = useAdminRouteState();
   const { settings, onUpdateSettings } = useAdminSettingsState();
 
-  // UI state
   const [status, setStatus] = useState('');
   const [error, setError] = useState('');
   const [previewLink, setPreviewLink] = useState(null);
   const [saveState, setSaveState] = useState('idle');
 
-  // Navigation actions with state
   const navigation = useNavigationActions({ auth, shell, setStatus, setError });
 
-  // Feature action hooks
-  const sessionActions = useSessionActions({ auth, docs, editor, loop, setStatus, setError, setPreviewLink, setSaveState, setNavigationMenu: navigation.setNavigationMenu, loadedNavigationMenuKeyRef: navigation.loadedNavigationMenuKeyRef });
-  const contentActions = useContentActions({ docs, editor, loop, auth, setStatus, setError, setPreviewLink, setSaveState, setAppSection, setContentView });
-  const mediaActions = useMediaActions({ media, setStatus, setError, setAppSection, setMediaView });
+  const content = useContentFeature({
+    shell,
+    editor,
+    authUser: auth.user,
+    appSection,
+    setAppSection,
+    setStatus,
+    setError,
+    setPreviewLink,
+    setSaveState
+  });
 
-  // Configure api-fetch middleware
+  const mediaFeature = useMediaFeature({
+    shell,
+    authUser: auth.user,
+    appSection,
+    setAppSection,
+    setStatus,
+    setError
+  });
+
+  const sessionActions = useSessionActions({
+    auth,
+    docs: content.docs,
+    editor,
+    loop: content.loop,
+    setStatus,
+    setError,
+    setPreviewLink,
+    setSaveState,
+    setNavigationMenu: navigation.setNavigationMenu,
+    loadedNavigationMenuKeyRef: navigation.loadedNavigationMenuKeyRef
+  });
+
   useEffect(() => {
     const configKey = apiBase || '(same-origin)';
     if (configuredApiFetchRef.current === configKey) {
@@ -60,38 +82,16 @@ export function useAdminAppController() {
     });
   }, [apiBase, shell]);
 
-  // Initial data load after login
   useEffect(() => {
     if (!auth.user || hydratedRef.current) {
       return;
     }
     hydratedRef.current = true;
-    refreshAndSelectFirst().catch((nextError) => {
+    content.hydrate().catch((nextError) => {
       setError(asErrorMessage(nextError));
     });
-  }, [auth.user]);
+  }, [auth.user, content]);
 
-  // Refresh documents when content list is active
-  useEffect(() => {
-    if (!auth.user || appSection !== 'content' || contentView !== 'list') {
-      return;
-    }
-    docs.refresh().catch((nextError) => {
-      setError(asErrorMessage(nextError));
-    });
-  }, [
-    auth.user,
-    appSection,
-    contentView,
-    docs.contentSearch,
-    docs.contentTypeFilter,
-    docs.contentStatusFilter,
-    docs.sortBy,
-    docs.sortDir,
-    docs.page
-  ]);
-
-  // Load navigation menu when appearance section is active
   useEffect(() => {
     if (!auth.user || (appSection !== 'appearance' && appSection !== 'themes' && appSection !== 'menus' && appSection !== 'widgets')) {
       return;
@@ -104,30 +104,13 @@ export function useAdminAppController() {
     });
   }, [auth.user, appSection, navigation]);
 
-  // Refresh media when media section is active
-  useEffect(() => {
-    if (!auth.user || appSection !== 'media') {
-      return;
-    }
-    media.refresh().catch((nextError) => {
-      setError(asErrorMessage(nextError));
-    });
-  }, [auth.user, appSection, media.search, media.mimeTypeFilter, media.page]);
-
-  async function refreshAndSelectFirst() {
-    await docs.refresh();
-    await loop.refreshReleases();
-  }
-
   const actions = {
     ...sessionActions,
-    ...contentActions,
-    ...mediaActions,
+    ...content.actions,
+    ...mediaFeature.actions,
     onLoadNavigationMenu: navigation.onLoadNavigationMenu,
     onSaveNavigationMenu: navigation.onSaveNavigationMenu,
     onUpdateSettings,
-    onOpenContentList,
-    onOpenMediaList,
     onChangeSection,
     toggleTheme: () => setMode(mode === 'dark' ? 'light' : 'dark')
   };
@@ -137,15 +120,15 @@ export function useAdminAppController() {
     theme,
     mode,
     appSection,
-    contentView,
-    mediaView,
+    contentView: content.contentView,
+    mediaView: mediaFeature.mediaView,
     saveState,
     settings,
     auth,
-    docs,
+    docs: content.docs,
     editor,
-    loop,
-    media,
+    loop: content.loop,
+    media: mediaFeature.media,
     navigation: {
       menu: navigation.navigationMenu,
       isLoading: navigation.navigationMenuLoading,

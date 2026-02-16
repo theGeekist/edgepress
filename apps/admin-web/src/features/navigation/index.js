@@ -1,6 +1,6 @@
-import { NavigationEditor } from './NavigationEditor.jsx';
+import { NavigationEditor, navigationEditorPropTypes } from './NavigationEditor.jsx';
 
-export { NavigationEditor };
+export { NavigationEditor, navigationEditorPropTypes };
 export { useNavigationActions } from './hooks/useNavigationActions.js';
 
 export const navigationFeature = {

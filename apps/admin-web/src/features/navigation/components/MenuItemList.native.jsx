@@ -1,5 +1,7 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { View, StyleSheet } from 'react-native';
+import PropTypes from 'prop-types';
+import { palettePropTypes } from '@components/prop-types';
 import DraggableFlatList from 'react-native-draggable-flatlist';
 import { MenuItemCard } from './MenuItemCard.jsx';
 
@@ -68,3 +70,15 @@ const styles = StyleSheet.create({
         minHeight: 400,
     },
 });
+
+MenuItemList.propTypes = {
+  items: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.string.isRequired,
+      parentId: PropTypes.string,
+      label: PropTypes.string.isRequired
+    })
+  ).isRequired,
+  onItemsChange: PropTypes.func.isRequired,
+  palette: PropTypes.shape(palettePropTypes).isRequired
+};

@@ -4,6 +4,7 @@
  */
 
 import { View, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
+import PropTypes from 'prop-types';
 import { spacing, radius, createTransition } from '../tokens.js';
 
 // ========== Main Page Layout ==========
@@ -22,7 +23,7 @@ export function AdminPage({
   header,
   toolbar,
   rightRail,
-  scrollToTop,
+  scrollToTop: _scrollToTop,
   compact = false,
   flushContent = false,
 }) {
@@ -104,7 +105,7 @@ export function PageHeader({ palette, title, breadcrumb, actions }) {
 
 // ========== Page Toolbar ==========
 
-export function PageToolbar({ palette, children, left, right, compact = false }) {
+export function PageToolbar({ children, left, right, compact = false }) {
   return (
     <View style={[styles.toolbarContainer, compact && styles.toolbarContainerCompact]}>
       <View style={styles.toolbarLeft}>{left || children}</View>
@@ -221,7 +222,7 @@ export function CardFooter({ palette, children, style }) {
 
 // ========== Layout Sections ==========
 
-export function TwoColumnLayout({ palette, left, right, ratio = '2:1' }) {
+export function TwoColumnLayout({ left, right, ratio = '2:1' }) {
   const leftFlex = parseInt(ratio.split(':')[0]) || 2;
   const rightFlex = parseInt(ratio.split(':')[1]) || 1;
 
@@ -235,7 +236,7 @@ export function TwoColumnLayout({ palette, left, right, ratio = '2:1' }) {
 
 // ========== Utility Components ==========
 
-export function Section({ palette, children, title, actions, collapsible }) {
+export function Section({ palette, children, title, actions }) {
   return (
     <View style={[styles.section, { borderBottomColor: palette.borderSoft }]}>
       {(title || actions) && (
@@ -252,6 +253,93 @@ export function Section({ palette, children, title, actions, collapsible }) {
     </View>
   );
 }
+
+// ========== PropTypes ==========
+
+AdminPage.propTypes = {
+  palette: PropTypes.object.isRequired,
+  children: PropTypes.node,
+  header: PropTypes.node,
+  toolbar: PropTypes.node,
+  rightRail: PropTypes.node,
+  scrollToTop: PropTypes.bool,
+  compact: PropTypes.bool,
+  flushContent: PropTypes.bool
+};
+
+PageHeader.propTypes = {
+  palette: PropTypes.object.isRequired,
+  title: PropTypes.string.isRequired,
+  breadcrumb: PropTypes.string,
+  actions: PropTypes.node
+};
+
+PageToolbar.propTypes = {
+  palette: PropTypes.object.isRequired,
+  children: PropTypes.node,
+  left: PropTypes.node,
+  right: PropTypes.node,
+  compact: PropTypes.bool
+};
+
+PageContent.propTypes = {
+  children: PropTypes.node.isRequired,
+  style: PropTypes.object
+};
+
+PageRail.propTypes = {
+  palette: PropTypes.object.isRequired,
+  children: PropTypes.node.isRequired,
+  tabs: PropTypes.array,
+  activeTab: PropTypes.string,
+  onTabChange: PropTypes.func
+};
+
+RailTabs.propTypes = {
+  palette: PropTypes.object.isRequired,
+  tabs: PropTypes.array.isRequired,
+  activeTab: PropTypes.string.isRequired,
+  onTabChange: PropTypes.func
+};
+
+Card.propTypes = {
+  palette: PropTypes.object.isRequired,
+  children: PropTypes.node.isRequired,
+  style: PropTypes.object,
+  noPadding: PropTypes.bool
+};
+
+CardHeader.propTypes = {
+  palette: PropTypes.object.isRequired,
+  title: PropTypes.string.isRequired,
+  actions: PropTypes.node
+};
+
+CardBody.propTypes = {
+  children: PropTypes.node.isRequired,
+  style: PropTypes.object
+};
+
+CardFooter.propTypes = {
+  palette: PropTypes.object.isRequired,
+  children: PropTypes.node.isRequired,
+  style: PropTypes.object
+};
+
+TwoColumnLayout.propTypes = {
+  palette: PropTypes.object,
+  left: PropTypes.node.isRequired,
+  right: PropTypes.node.isRequired,
+  ratio: PropTypes.string
+};
+
+Section.propTypes = {
+  palette: PropTypes.object.isRequired,
+  children: PropTypes.node.isRequired,
+  title: PropTypes.string,
+  actions: PropTypes.node,
+  collapsible: PropTypes.bool
+};
 
 // ========== Styles ==========
 

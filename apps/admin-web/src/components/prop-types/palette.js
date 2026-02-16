@@ -1,0 +1,14 @@
+import PropTypes from 'prop-types';
+
+export const palettePropTypes = {
+  accent: PropTypes.string.isRequired,
+  border: PropTypes.string.isRequired,
+  borderSoft: PropTypes.string,
+  page: PropTypes.string,
+  surface: PropTypes.string.isRequired,
+  surfaceMuted: PropTypes.string.isRequired,
+  text: PropTypes.string.isRequired,
+  textMuted: PropTypes.string.isRequired,
+  onAccent: PropTypes.string.isRequired,
+  error: PropTypes.string,
+};

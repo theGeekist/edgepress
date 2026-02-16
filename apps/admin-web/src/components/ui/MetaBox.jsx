@@ -1,5 +1,7 @@
-import { useState } from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { useState } from "react";
+import { View, Text, Pressable, StyleSheet } from "react-native";
+import PropTypes from "prop-types";
+import { palettePropTypes } from "../prop-types";
 
 export function MetaBox({
     title,
@@ -41,6 +43,15 @@ export function MetaBox({
         </View>
     );
 }
+
+MetaBox.propTypes = {
+  title: PropTypes.string.isRequired,
+  children: PropTypes.node,
+  footer: PropTypes.node,
+  palette: PropTypes.shape(palettePropTypes).isRequired,
+  initialOpen: PropTypes.bool,
+  onToggle: PropTypes.func
+};
 
 const styles = StyleSheet.create({
     panel: {

@@ -108,7 +108,7 @@ export function useSidebarNavigation({ activeItemId, onSelectItem, menuItems = D
         setFocusedItemId(null);
         break;
     }
-  }, [expandedItems, handleToggleExpand, onSelectItem, focusedItemId]);
+  }, [expandedItems, handleToggleExpand, onSelectItem]);
 
   // Auto-expand parent of active item
   useEffect(() => {

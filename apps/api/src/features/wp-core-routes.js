@@ -1,5 +1,12 @@
 import { requireCapability } from '../auth.js';
 import { json, readJson } from '../http.js';
+import {
+  loadDocumentByType,
+  resolveInternalIdForWpId,
+  resolveInternalMediaIdForWpId,
+  toWpNumericId
+} from './wp-core-id-map.js';
+import { toPostTypeRecord, toWpTaxonomyRecord } from './wp-core-records.js';
 
 function notFoundEntity(entityType = 'post') {
   return json(
@@ -43,6 +50,8 @@ function toWpPost(doc, requestUrl) {
   const slug = String(doc?.slug || '');
   const siteOrigin = new URL(requestUrl).origin;
   const permalinkPath = slug ? `/${slug}` : '/';
+  const featuredMediaRaw = String(doc?.featuredImageId || '').trim();
+  const featuredMedia = featuredMediaRaw ? toWpNumericId(featuredMediaRaw) : 0;
   return {
     id: toWpNumericId(doc.id),
     date,
@@ -56,89 +65,13 @@ function toWpPost(doc, requestUrl) {
     title: { raw: title, rendered: title },
     content: { raw: content, rendered: content, protected: false },
     excerpt: { raw: excerpt, rendered: excerpt, protected: false },
-    featured_media: doc?.featuredImageId ? toWpNumericId(doc.featuredImageId) : 0,
+    featured_media: featuredMedia,
     meta: {}
   };
 }
 
-function toWpNumericId(internalId) {
-  const text = String(internalId || '');
-  // Deterministic non-zero 31-bit hash for WP-facing numeric entity IDs.
-  let hash = 0;
-  for (let i = 0; i < text.length; i += 1) {
-    hash = ((hash * 31) + text.charCodeAt(i)) | 0;
-  }
-  const value = Math.abs(hash) % 2147483647;
-  return value === 0 ? 1 : value;
-}
-
-async function resolveInternalIdForWpId(store, type, idParam) {
-  const raw = String(idParam || '').trim();
-  if (!raw) return null;
-  if (raw.startsWith('doc_')) {
-    const byInternal = await loadDocumentByType(store, type, raw);
-    return byInternal ? raw : null;
-  }
-  const numeric = Number.parseInt(raw, 10);
-  if (!Number.isFinite(numeric)) return null;
-  const rows = await listByType(store, type);
-  const match = rows.find((doc) => toWpNumericId(doc.id) === numeric);
-  return match?.id || null;
-}
-
-function toPostTypeRecord(type) {
-  const isPage = type === 'page';
-  const singular = isPage ? 'Page' : 'Post';
-  const plural = isPage ? 'Pages' : 'Posts';
-  return {
-    slug: type,
-    name: plural,
-    rest_base: `${type}s`,
-    viewable: true,
-    labels: {
-      name: plural,
-      singular_name: singular,
-      add_new_item: `Add New ${singular}`,
-      edit_item: `Edit ${singular}`,
-      view_item: `View ${singular}`,
-      item_published: `${singular} published.`,
-      item_published_privately: `${singular} published privately.`,
-      item_reverted_to_draft: `${singular} reverted to draft.`,
-      item_scheduled: `${singular} scheduled.`,
-      item_updated: `${singular} updated.`,
-      item_trashed: `${singular} moved to trash.`
-    },
-    supports: {
-      title: true,
-      editor: true,
-      excerpt: true,
-      thumbnail: true,
-      author: true
-    }
-  };
-}
-
 function normalizeTypeParam(typeParam) {
-  return typeParam === 'post' ? 'post' : 'page';
-}
-
-async function loadDocumentByType(store, type, id) {
-  const doc = await store.getDocument(id);
-  if (!doc) return null;
-  if ((doc.type || 'page') !== type) return null;
-  return doc;
-}
-
-async function listByType(store, type) {
-  const listed = await store.listDocuments({
-    type,
-    status: 'all',
-    sortBy: 'updatedAt',
-    sortDir: 'desc',
-    page: 1,
-    pageSize: 100
-  });
-  return Array.isArray(listed?.items) ? listed.items : [];
+  return String(typeParam || '').trim().toLowerCase();
 }
 
 export function createWpCoreRoutes({ runtime, store, route, authzErrorResponse }) {
@@ -225,6 +158,79 @@ export function createWpCoreRoutes({ runtime, store, route, authzErrorResponse }
     }
   });
 
+  add('GET', '/users/me', async (request) => {
+    try {
+      const user = await requireCapability({ runtime, store, request, capability: 'document:read' });
+      const registeredSource = user?.createdAt ?? user?.registeredAt;
+      const registeredDate = (() => {
+        if (!registeredSource) return new Date().toISOString();
+        const parsed = new Date(registeredSource);
+        return Number.isNaN(parsed.getTime()) ? new Date().toISOString() : parsed.toISOString();
+      })();
+      return json({
+        id: Number.parseInt(String(user?.id || '').replace(/\D/g, ''), 10) || 1,
+        username: user?.username || 'admin',
+        name: user?.displayName || user?.username || 'admin',
+        first_name: '',
+        last_name: '',
+        nickname: user?.username || 'admin',
+        slug: user?.username || 'admin',
+        email: user?.email || 'admin@example.com',
+        url: '',
+        description: '',
+        locale: 'en_US',
+        nickname_locked: false,
+        registered_date: registeredDate,
+        roles: ['administrator'],
+        capabilities: {
+          edit_posts: true,
+          publish_posts: true,
+          upload_files: true
+        },
+        avatar_urls: {
+          24: '',
+          48: '',
+          96: ''
+        }
+      });
+    } catch (e) {
+      return authzErrorResponse(e);
+    }
+  });
+
+  add('GET', '/block-patterns/categories', async (request) => {
+    try {
+      await requireCapability({ runtime, store, request, capability: 'document:read' });
+      return json([]);
+    } catch (e) {
+      return authzErrorResponse(e);
+    }
+  });
+
+  add('GET', '/block-patterns/patterns', async (request) => {
+    try {
+      await requireCapability({ runtime, store, request, capability: 'document:read' });
+      return json([]);
+    } catch (e) {
+      return authzErrorResponse(e);
+    }
+  });
+
+  add('GET', '/global-styles/themes/:stylesheet', async (request, params) => {
+    try {
+      await requireCapability({ runtime, store, request, capability: 'document:read' });
+      const stylesheet = String(params?.stylesheet || 'edgepress');
+      return json({
+        id: `global-styles-${stylesheet}`,
+        stylesheet,
+        settings: {},
+        styles: {}
+      });
+    } catch (e) {
+      return authzErrorResponse(e);
+    }
+  });
+
   add('GET', '/types', async (request) => {
       try {
         await requireCapability({ runtime, store, request, capability: 'document:read' });
@@ -246,11 +252,69 @@ export function createWpCoreRoutes({ runtime, store, route, authzErrorResponse }
       try {
         await requireCapability({ runtime, store, request, capability: 'document:read' });
         const type = normalizeTypeParam(params.type);
+        if (!type) {
+          return notFoundEntity('type');
+        }
+        if (type === 'post' || type === 'page') {
+          return json(toPostTypeRecord(type));
+        }
+        const contentTypes = await store.listContentTypes();
+        const match = (Array.isArray(contentTypes) ? contentTypes : []).find(
+          (entry) => entry?.kind === 'content' && String(entry?.slug || '') === type
+        );
+        if (!match) {
+          return notFoundEntity('type');
+        }
         return json(toPostTypeRecord(type));
       } catch (e) {
         return authzErrorResponse(e);
       }
     });
+
+  add('GET', '/templates/lookup', async (request) => {
+      try {
+        await requireCapability({ runtime, store, request, capability: 'document:read' });
+        // EdgePress does not currently implement WP block templates.
+        // Return a successful null payload so Gutenberg continues without hard-failing.
+        return json(null);
+      } catch (e) {
+        return authzErrorResponse(e);
+      }
+  });
+
+  add('GET', '/taxonomies', async (request) => {
+    try {
+      await requireCapability({ runtime, store, request, capability: 'document:read' });
+      const listed = await store.listTaxonomies();
+      const items = Array.isArray(listed) ? listed : [];
+      const payload = {};
+      for (const taxonomy of items) {
+        if (!taxonomy?.slug) continue;
+        payload[taxonomy.slug] = toWpTaxonomyRecord(taxonomy);
+      }
+      if (!payload.category) {
+        payload.category = toWpTaxonomyRecord({
+          slug: 'category',
+          name: 'Category',
+          label: 'Categories',
+          hierarchical: true,
+          objectTypes: ['post', 'page']
+        });
+      }
+      if (!payload.post_tag) {
+        payload.post_tag = toWpTaxonomyRecord({
+          slug: 'post_tag',
+          name: 'Tag',
+          label: 'Tags',
+          hierarchical: false,
+          objectTypes: ['post', 'page']
+        });
+      }
+      return json(payload);
+    } catch (e) {
+      return authzErrorResponse(e);
+    }
+  });
 
   add('GET', '/posts', async (request) => {
       try {
@@ -322,6 +386,7 @@ export function createWpCoreRoutes({ runtime, store, route, authzErrorResponse }
         const body = await readJson(request);
         const id = `doc_${runtime.uuid()}`;
         const content = parseFieldString(body.content);
+        const featuredImageId = await resolveInternalMediaIdForWpId(store, body.featured_media);
         const created = await store.createDocument({
           id,
           title: parseFieldString(body.title) || 'Untitled',
@@ -329,7 +394,7 @@ export function createWpCoreRoutes({ runtime, store, route, authzErrorResponse }
           legacyHtml: content,
           type: 'post',
           slug: String(body.slug || ''),
-          featuredImageId: body.featured_media || '',
+          featuredImageId,
           status: fromWpStatus(body.status),
           createdBy: user.id
         });
@@ -345,6 +410,7 @@ export function createWpCoreRoutes({ runtime, store, route, authzErrorResponse }
         const body = await readJson(request);
         const id = `doc_${runtime.uuid()}`;
         const content = parseFieldString(body.content);
+        const featuredImageId = await resolveInternalMediaIdForWpId(store, body.featured_media);
         const created = await store.createDocument({
           id,
           title: parseFieldString(body.title) || 'Untitled',
@@ -352,7 +418,7 @@ export function createWpCoreRoutes({ runtime, store, route, authzErrorResponse }
           legacyHtml: content,
           type: 'page',
           slug: String(body.slug || ''),
-          featuredImageId: body.featured_media || '',
+          featuredImageId,
           status: fromWpStatus(body.status),
           createdBy: user.id
         });
@@ -371,12 +437,15 @@ export function createWpCoreRoutes({ runtime, store, route, authzErrorResponse }
         if (!existing) return notFoundEntity('post');
         const body = await readJson(request);
         const nextContent = parseFieldString(body.content) || existing.legacyHtml || existing.content;
+        const featuredImageId = body.featured_media == null
+          ? existing.featuredImageId
+          : await resolveInternalMediaIdForWpId(store, body.featured_media);
         const updated = await store.updateDocument(internalId, {
           title: parseFieldString(body.title) || existing.title,
           content: nextContent,
           legacyHtml: nextContent,
           slug: body.slug ?? existing.slug,
-          featuredImageId: body.featured_media ?? existing.featuredImageId,
+          featuredImageId,
           status: body.status != null ? fromWpStatus(body.status) : existing.status,
           excerpt: existing.excerpt || '',
           fields: existing.fields || {},
@@ -400,12 +469,15 @@ export function createWpCoreRoutes({ runtime, store, route, authzErrorResponse }
         if (!existing) return notFoundEntity('page');
         const body = await readJson(request);
         const nextContent = parseFieldString(body.content) || existing.legacyHtml || existing.content;
+        const featuredImageId = body.featured_media == null
+          ? existing.featuredImageId
+          : await resolveInternalMediaIdForWpId(store, body.featured_media);
         const updated = await store.updateDocument(internalId, {
           title: parseFieldString(body.title) || existing.title,
           content: nextContent,
           legacyHtml: nextContent,
           slug: body.slug ?? existing.slug,
-          featuredImageId: body.featured_media ?? existing.featuredImageId,
+          featuredImageId,
           status: body.status != null ? fromWpStatus(body.status) : existing.status,
           excerpt: existing.excerpt || '',
           fields: existing.fields || {},

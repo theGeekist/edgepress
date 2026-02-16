@@ -1,5 +1,5 @@
-import { Text, View, Pressable } from 'react-native';
-
+import { Text, View, Pressable } from "react-native";
+import PropTypes from 'prop-types';
 import { ActionButton } from './ActionButton.jsx';
 import { layoutStyles } from '../styles.js';
 
@@ -49,3 +49,23 @@ export function TopBar({
     </View>
   );
 }
+
+TopBar.propTypes = {
+  palette: PropTypes.shape({
+    topbar: PropTypes.string.isRequired,
+    topbarText: PropTypes.string.isRequired
+  }).isRequired,
+  title: PropTypes.string.isRequired,
+  leftLabel: PropTypes.string,
+  onPressLeft: PropTypes.func,
+  metaText: PropTypes.string,
+  actions: PropTypes.arrayOf(
+    PropTypes.shape({
+      key: PropTypes.string,
+      label: PropTypes.string.isRequired,
+      onPress: PropTypes.func.isRequired,
+      disabled: PropTypes.bool,
+      palette: PropTypes.object
+    })
+  )
+};

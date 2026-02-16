@@ -1,5 +1,7 @@
 import { Pressable, Text, View } from 'react-native';
 import { useState } from 'react';
+import PropTypes from 'prop-types';
+import { palettePropTypes } from '@components/prop-types';
 import { ActionButton } from '@components/ui/ActionButton.jsx';
 import { ThemedTextInput } from '@components/ui/ThemedTextInput.jsx';
 import { DataTable } from '@components/ui/DataTable.jsx';
@@ -72,8 +74,6 @@ export function ContentListTable({
     }
     try {
       await onBulkApply(bulkAction);
-    } catch (e) {
-      throw e;
     } finally {
       setBulkAction('none');
       onClearSelected();
@@ -108,7 +108,7 @@ export function ContentListTable({
             <Text style={{ fontSize: 12, color: palette.border }}>|</Text>
             <Pressable onPress={() => onRowTrash(doc)}><Text style={{ fontSize: 12, color: palette.error }}>Trash</Text></Pressable>
             <Text style={{ fontSize: 12, color: palette.border }}>|</Text>
-            <Pressable onPress={() => onRowDelete?.(doc)}><Text style={{ fontSize: 12, color: palette.error }}>Delete</Text></Pressable>
+            <Pressable onPress={() => onRowDelete(doc)}><Text style={{ fontSize: 12, color: palette.error }}>Delete</Text></Pressable>
           </View>
         </View>
       )
@@ -257,3 +257,47 @@ function StatusBadge({ status, palette }) {
     <Text style={{ color, fontWeight: isPublished ? '600' : '400', fontSize: 13 }}>{label}</Text>
   );
 }
+
+StatusBadge.propTypes = {
+  status: PropTypes.string.isRequired,
+  palette: PropTypes.shape(palettePropTypes).isRequired
+};
+
+CheckboxCell.propTypes = {
+  palette: PropTypes.shape(palettePropTypes).isRequired,
+  checked: PropTypes.bool.isRequired,
+  onPress: PropTypes.func.isRequired,
+  label: PropTypes.string
+};
+
+export const contentListTablePropTypes = {
+  palette: PropTypes.shape(palettePropTypes).isRequired,
+  docs: PropTypes.array.isRequired,
+  selectedRowIds: PropTypes.array.isRequired,
+  contentSearch: PropTypes.string.isRequired,
+  onSearch: PropTypes.func.isRequired,
+  contentTypeFilter: PropTypes.string.isRequired,
+  onTypeFilter: PropTypes.func.isRequired,
+  contentStatusFilter: PropTypes.string.isRequired,
+  onStatusFilter: PropTypes.func.isRequired,
+  onToggleRow: PropTypes.func.isRequired,
+  onBulkApply: PropTypes.func.isRequired,
+  onClearSelected: PropTypes.func.isRequired,
+  onEdit: PropTypes.func.isRequired,
+  onRowTrash: PropTypes.func.isRequired,
+  onRowDelete: PropTypes.func.isRequired,
+  onNewPage: PropTypes.func.isRequired,
+  onNewPost: PropTypes.func.isRequired,
+  sortBy: PropTypes.string,
+  sortDir: PropTypes.string,
+  onSort: PropTypes.func.isRequired,
+  paginationState: PropTypes.shape({
+    page: PropTypes.number.isRequired,
+    totalPages: PropTypes.number.isRequired,
+    totalItems: PropTypes.number.isRequired
+  }),
+  onPageChange: PropTypes.func.isRequired,
+  hideHeader: PropTypes.bool
+};
+
+ContentListTable.propTypes = contentListTablePropTypes;

@@ -1,4 +1,6 @@
 export { useMediaState } from './hooks/useMediaState.js';
 export { useMediaActions } from './hooks/useMediaActions.js';
-export { MediaListTable } from './components/MediaListTable.jsx';
-export { MediaEditorView } from './components/MediaEditorView.jsx';
+export { useMediaRouteState } from './hooks/useMediaRouteState.js';
+export { useMediaFeature } from './hooks/useMediaFeature.js';
+export { MediaListTable, mediaListTablePropTypes } from './components/MediaListTable.jsx';
+export { MediaEditorView, mediaEditorViewPropTypes } from './components/MediaEditorView.jsx';

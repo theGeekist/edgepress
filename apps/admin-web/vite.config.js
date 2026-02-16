@@ -58,7 +58,7 @@ export default defineConfig({
       { find: /^@geekist\/edgepress\/hooks\/(.*)$/, replacement: path.resolve(process.cwd(), 'packages/hooks/src/$1') },
       { find: /^@geekist\/edgepress\/publish$/, replacement: path.resolve(process.cwd(), 'packages/publish/src') },
       { find: /^@geekist\/edgepress\/publish\/(.*)$/, replacement: path.resolve(process.cwd(), 'packages/publish/src/$1') },
-      { find: /^@geekist\/edgepress\/sdk$/, replacement: path.resolve(process.cwd(), 'packages/sdk/src') },
+      { find: /^@geekist\/edgepress\/sdk$/, replacement: path.resolve(process.cwd(), 'packages/sdk/src/client.js') },
       { find: /^@geekist\/edgepress\/sdk\/(.*)$/, replacement: path.resolve(process.cwd(), 'packages/sdk/src/$1') }
     ]
   },

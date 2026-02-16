@@ -1,15 +1,16 @@
 import { Component, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { SlotFillProvider, Popover } from '@wordpress/components';
 import {
-  BlockInspector,
-  store as blockEditorStore
+  BlockInspector
 } from '@wordpress/block-editor';
-import { createBlock, parse, serialize } from '@wordpress/blocks';
+import { parse, serialize } from '@wordpress/blocks';
 import { useDispatch, useSelect } from '@wordpress/data';
 import { EditorProvider, store as editorStore } from '@wordpress/editor';
 import { store as coreStore } from '@wordpress/core-data';
 import { initializeEditor } from '@wordpress/edit-post';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
+import PropTypes from 'prop-types';
+import { palettePropTypes } from '@components/prop-types';
 import { toCssVars, toWpEditorSettings } from '@features/theme';
 import {
   applyHostBootstrap,
@@ -149,6 +150,7 @@ export function EditorWorkspaceProvider({
     entitiesReady,
     receiveEntityRecords,
     editEntityRecord,
+    hostContract,
     hostContract.postId,
     hostContract.postType
   ]);
@@ -185,7 +187,7 @@ function WpEditorHost({ postType, postId, title, content, settings }) {
   });
 
   useEffect(() => {
-    const host = document.getElementById(hostId);
+    const host = globalThis.document?.getElementById(hostId);
     if (!host) {
       return undefined;
     }
@@ -201,35 +203,13 @@ function WpEditorHost({ postType, postId, title, content, settings }) {
     return () => {
       const rootToUnmount = rootRef.current;
       rootRef.current = null;
-      // Defer teardown to avoid React warning about synchronous unmount during render.
-      setTimeout(() => {
-        try {
-          rootToUnmount?.unmount?.();
-        } catch {
-          // Ignore teardown issues from Gutenberg internals.
-        }
-      }, 0);
+      try {
+        rootToUnmount?.unmount?.();
+      } catch {
+        // Ignore teardown issues from Gutenberg internals.
+      }
     };
-  }, [hostId, postType, wpPostId]);
-
-  const firstBlockClientId = useSelect((select) => {
-    const blocks = select(blockEditorStore).getBlocks();
-    return blocks?.[0]?.clientId || null;
-  }, []);
-  const selectedBlockClientId = useSelect(
-    (select) => select(blockEditorStore).getSelectedBlockClientId(),
-    []
-  );
-  const { selectBlock } = useDispatch(blockEditorStore);
-
-  useEffect(() => {
-    if (!firstBlockClientId) return;
-    if (selectedBlockClientId) return;
-    const handle = window.requestAnimationFrame(() => {
-      selectBlock(firstBlockClientId);
-    });
-    return () => window.cancelAnimationFrame(handle);
-  }, [firstBlockClientId, selectedBlockClientId, selectBlock]);
+  }, [hostId, postType, wpPostId, settings]);
 
   return <div id={hostId} className="ep-editor-wp-host" style={{ minHeight: 680, width: '100%' }} />;
 }
@@ -359,10 +339,15 @@ class CanvasErrorBoundary extends Component {
   }
 }
 
-export function EditorCanvas({ blocks, setBlocks, palette, theme, title, onTitleChange, postId, postType }) {
+export function EditorCanvas({ blocks, setBlocks, palette, theme, siteTheme, title, onTitleChange: _onTitleChange, postId, postType }) {
   const [visualFailed, setVisualFailed] = useState(false);
   const p = palette || DEFAULT_PALETTE;
-  const themeVars = useMemo(() => toCssVars(theme || {}, { prefix: '--ep' }), [theme]);
+  const adminThemeVars = useMemo(() => toCssVars(theme || {}, { prefix: '--ep-admin' }), [theme]);
+  const contentThemeVars = useMemo(() => toCssVars(siteTheme || theme || {}, { prefix: '--ep-site' }), [siteTheme, theme]);
+  const editorSettings = useMemo(
+    () => toWpEditorSettings(siteTheme || theme || {}, { allowedBlockTypes: SUPPORTED_BLOCK_TYPES }),
+    [siteTheme, theme]
+  );
 
   return (
     <View style={styles.container}>
@@ -376,13 +361,13 @@ export function EditorCanvas({ blocks, setBlocks, palette, theme, title, onTitle
           }
         >
           <View style={[styles.paperSheet, { backgroundColor: p.surfaceMuted, shadowColor: p.text, borderColor: p.border }]}>
-            <div className="ep-editor-canvas-root" style={toWpThemeVars(p, themeVars)}>
+            <div className="ep-editor-canvas-root" style={toWpThemeVars(p, adminThemeVars, contentThemeVars)}>
               <WpEditorHost
                 postType={postType === 'page' ? 'page' : 'post'}
                 postId={postId || 'editor-local'}
                 title={title}
                 content={String(serialize(Array.isArray(blocks) ? blocks : []))}
-                settings={toWpEditorSettings(theme || {}, { allowedBlockTypes: SUPPORTED_BLOCK_TYPES })}
+                settings={editorSettings}
               />
             </div>
           </View>
@@ -408,6 +393,67 @@ export function BlockInspectorPanel({ palette }) {
 }
 
 const BORDER_RADIUS = 4;
+
+EditorStateBridge.propTypes = {
+  setBlocks: PropTypes.func.isRequired,
+  onTitleChange: PropTypes.func
+};
+
+EditorReadyGate.propTypes = {
+  expectedPostType: PropTypes.string,
+  expectedPostId: PropTypes.string,
+  children: PropTypes.node.isRequired
+};
+
+EditorWorkspaceProvider.propTypes = {
+  blocks: PropTypes.array.isRequired,
+  setBlocks: PropTypes.func.isRequired,
+  palette: PropTypes.shape(palettePropTypes),
+  theme: PropTypes.object,
+  siteTheme: PropTypes.object,
+  title: PropTypes.string,
+  onTitleChange: PropTypes.func,
+  postId: PropTypes.string,
+  postType: PropTypes.string,
+  children: PropTypes.node.isRequired
+};
+
+WpEditorHost.propTypes = {
+  postType: PropTypes.string,
+  postId: PropTypes.string,
+  title: PropTypes.string,
+  content: PropTypes.string,
+  settings: PropTypes.object.isRequired
+};
+
+FallbackEditor.propTypes = {
+  blocks: PropTypes.array.isRequired,
+  setBlocks: PropTypes.func.isRequired,
+  palette: PropTypes.shape(palettePropTypes)
+};
+
+CanvasErrorBoundary.propTypes = {
+  onError: PropTypes.func,
+  fallback: PropTypes.node,
+  children: PropTypes.node.isRequired
+};
+
+EditorCanvas.propTypes = {
+  blocks: PropTypes.array.isRequired,
+  setBlocks: PropTypes.func.isRequired,
+  palette: PropTypes.shape(palettePropTypes),
+  theme: PropTypes.object,
+  siteTheme: PropTypes.object,
+  title: PropTypes.string,
+  onTitleChange: PropTypes.func,
+  postId: PropTypes.string,
+  postType: PropTypes.string
+};
+
+BlockInspectorPanel.propTypes = {
+  palette: PropTypes.shape(palettePropTypes).isRequired
+};
+
 const styles = StyleSheet.create({
   container: {
     flex: 1

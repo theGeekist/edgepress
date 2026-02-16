@@ -5,13 +5,18 @@ function asErrorMessage(error) {
   return error instanceof Error ? error.message : String(error);
 }
 
-export function useContentActions({ docs, editor, loop, setStatus, setError, setPreviewLink, setSaveState, setAppSection, setContentView }) {
+export function useContentActions({ docs, editor, loop, setStatus, setError, setPreviewLink, setSaveState, setAppSection, setContentView, setContentDocumentId, onOpenContentEditor }) {
   const onEditContent = useCallback(async (doc) => {
     editor.openDocument(doc, docs.setSelectedId, docs.setTitle);
     await loop.refreshRevisions(doc.id);
-    setAppSection('content');
-    setContentView('editor');
-  }, [editor, docs, loop, setAppSection, setContentView]);
+    if (typeof onOpenContentEditor === 'function') {
+      onOpenContentEditor(doc.id);
+    } else {
+      setAppSection('content');
+      setContentView('editor');
+      setContentDocumentId?.(doc.id);
+    }
+  }, [editor, docs, loop, setAppSection, setContentView, setContentDocumentId, onOpenContentEditor]);
 
   const onCreate = useCallback(async (type = 'page') => {
     setAppSection('content');
@@ -25,7 +30,12 @@ export function useContentActions({ docs, editor, loop, setStatus, setError, set
       const created = await docs.createDraft({ type });
       editor.openDocument(created, docs.setSelectedId, docs.setTitle);
       await loop.refreshRevisions(created.id);
-      setContentView('editor');
+      if (typeof onOpenContentEditor === 'function') {
+        onOpenContentEditor(created.id);
+      } else {
+        setContentView('editor');
+        setContentDocumentId?.(created.id);
+      }
       setStatus(`${type === 'post' ? 'Post' : 'Page'} draft created`);
       setSaveState('saved');
     } catch (nextError) {
@@ -33,7 +43,7 @@ export function useContentActions({ docs, editor, loop, setStatus, setError, set
       setStatus('');
       setSaveState('idle');
     }
-  }, [setAppSection, docs, editor, loop, setContentView, setError, setPreviewLink, setStatus, setSaveState]);
+  }, [setAppSection, docs, editor, loop, setContentView, setContentDocumentId, onOpenContentEditor, setError, setPreviewLink, setStatus, setSaveState]);
 
   const onSave = useCallback(async () => {
     if (!docs.selectedId) {
@@ -45,9 +55,14 @@ export function useContentActions({ docs, editor, loop, setStatus, setError, set
     setSaveState('saving');
     try {
       const selectedDoc = docs.getSelectedDoc();
+      const resolvedSlug =
+        selectedDoc?.ui?.slug ||
+        selectedDoc?.slug ||
+        (docs.title ? String(docs.title).trim().toLowerCase().replace(/\s+/g, '-') : '') ||
+        'untitled';
       const updated = await editor.saveDocument(docs.selectedId, docs.title, {
         type: selectedDoc?.ui?.type || selectedDoc?.type || 'page',
-        slug: selectedDoc?.ui?.slug || selectedDoc?.slug || '',
+        slug: resolvedSlug,
         featuredImageId: selectedDoc?.ui?.featuredImageId || selectedDoc?.featuredImageId || ''
       });
       await docs.refresh();

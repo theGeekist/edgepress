@@ -1,55 +1,66 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
+function normalizeKind(item) {
+  if (item?.kind === 'external' || item?.kind === 'internal') {
+    return item.kind;
+  }
+  if (item?.documentId) {
+    return 'internal';
+  }
+  return 'external';
+}
+
+function normalizeMenuItem(item, index) {
+  const kind = normalizeKind(item);
+  const route = String(item?.route || item?.url || '');
+  const externalUrl = String(item?.externalUrl || item?.url || '');
+  return {
+    ...item,
+    id: String(item?.id || `item_${index}`),
+    label: String(item?.label || ''),
+    kind,
+    documentId: item?.documentId ? String(item.documentId) : null,
+    route: kind === 'internal' ? route : '',
+    externalUrl: kind === 'external' ? externalUrl : '',
+    url: kind === 'internal' ? route : externalUrl,
+    parentId: item?.parentId ? String(item.parentId) : null,
+    order: Number.isFinite(Number(item?.order)) ? Number(item.order) : index,
+    target: String(item?.target || '_self'),
+    rel: String(item?.rel || '')
+  };
+}
 
 function normalizeItems(items) {
-  const input = Array.isArray(items) ? items : [];
-  return input.map((entry, index) => ({
-    id: String(entry?.id || `menu_item_${index + 1}`),
-    label: String(entry?.label || '').trim() || `Item ${index + 1}`,
-    kind: entry?.kind === 'external' ? 'external' : 'internal',
-    route: String(entry?.route || ''),
-    documentId: String(entry?.documentId || ''),
-    externalUrl: String(entry?.externalUrl || ''),
-    parentId: entry?.parentId || null,
-    order: Number.isFinite(Number(entry?.order)) ? Number(entry.order) : index,
-    target: String(entry?.target || '_self'),
-    rel: String(entry?.rel || ''),
-  }));
+  if (!Array.isArray(items)) return [];
+  return items
+    .filter(Boolean)
+    .map((item, index) => normalizeMenuItem(item, index));
 }
 
 function normalizeForSave(title, items) {
   return {
-    title: String(title || '').trim() || 'Primary Menu',
-    items: normalizeItems(items).map((entry, index) => ({
-      ...entry,
-      order: index
-    }))
+    title: String(title || 'Primary Menu'),
+    items: normalizeItems(items)
   };
 }
 
-function stableSignature(value) {
-  return JSON.stringify(value);
+function stableSignature(payload) {
+  return JSON.stringify(payload);
 }
 
 export function useNavigationMenuEditor({ navigation, actions, menuKey = 'primary' }) {
+  const onSaveNavigationMenu = actions?.onSaveNavigationMenu;
+  const newItemCounterRef = useRef(0);
   const [menuTitle, setMenuTitle] = useState('Primary Menu');
   const [items, setItems] = useState([]);
-  const [baselineSignature, setBaselineSignature] = useState(stableSignature(normalizeForSave('Primary Menu', [])));
-  const onLoadNavigationMenu = actions?.onLoadNavigationMenu;
-
-  useEffect(() => {
-    onLoadNavigationMenu?.(menuKey).catch(() => {});
-  }, [onLoadNavigationMenu, menuKey]);
-
-  useEffect(() => {
-    const menu = navigation?.menu;
-    if (!menu) return;
-    const normalizedTitle = menu.title || 'Primary Menu';
-    const normalizedItems = normalizeItems(menu.items);
-    const normalizedMenu = normalizeForSave(normalizedTitle, normalizedItems);
-    setMenuTitle(normalizedTitle);
-    setItems(normalizedItems);
-    setBaselineSignature(stableSignature(normalizedMenu));
-  }, [navigation?.menu?.updatedAt, navigation?.menu?.key]);
+  const [baselineSignature, setBaselineSignature] = useState(
+    stableSignature(normalizeForSave('Primary Menu', []))
+  );
+  const [uiState, setUiState] = useState({
+    isLoading: true,
+    isSaving: false,
+    isDirty: false
+  });
 
   const currentSignature = useMemo(
     () => stableSignature(normalizeForSave(menuTitle, items)),
@@ -57,29 +68,59 @@ export function useNavigationMenuEditor({ navigation, actions, menuKey = 'primar
   );
   const isDirty = currentSignature !== baselineSignature;
 
-  const uiState = useMemo(() => ({
-    isLoading: Boolean(navigation?.isLoading),
-    isSaving: Boolean(navigation?.isSaving),
-    isDirty
-  }), [navigation?.isLoading, navigation?.isSaving, isDirty]);
+  useEffect(() => {
+    setUiState((prev) => ({ ...prev, isDirty }));
+  }, [isDirty]);
 
-  function addItem(partialItem) {
-    const newItem = {
-      ...partialItem,
-      id: `new_${Date.now()}`,
-      parentId: null,
-      order: items.length,
-      target: '_self',
-      rel: '',
-    };
-    setItems((prev) => [...prev, newItem]);
-  }
+  useEffect(() => {
+    const menu = navigation?.menu;
+    if (!menu) return;
+    const nextTitle = String(menu.title || 'Primary Menu');
+    const nextItems = normalizeItems(menu.items);
+    const signature = stableSignature(normalizeForSave(nextTitle, nextItems));
+    setMenuTitle(nextTitle);
+    setItems(nextItems);
+    setBaselineSignature(signature);
+    setUiState((prev) => ({ ...prev, isLoading: false, isDirty: false }));
+  }, [navigation?.menu]);
 
-  async function saveMenu() {
+  const addItem = useCallback((partialItem) => {
+    setItems((prev) => {
+      const next = normalizeItems(prev);
+      newItemCounterRef.current += 1;
+      next.push({
+        id: `new_${Date.now()}_${newItemCounterRef.current}`,
+        label: String(partialItem?.label || ''),
+        kind: normalizeKind(partialItem),
+        documentId: partialItem?.documentId ? String(partialItem.documentId) : null,
+        route: String(partialItem?.route || ''),
+        externalUrl: String(partialItem?.externalUrl || ''),
+        url: String(partialItem?.url || partialItem?.route || partialItem?.externalUrl || ''),
+        parentId: null,
+        order: next.length,
+        target: '_self',
+        rel: ''
+      });
+      return next;
+    });
+  }, []);
+
+  const saveMenu = useCallback(async () => {
+    if (!onSaveNavigationMenu) {
+      return false;
+    }
+    setUiState((prev) => ({ ...prev, isSaving: true }));
     const payload = normalizeForSave(menuTitle, items);
-    await actions.onSaveNavigationMenu?.(payload, menuKey);
-    setBaselineSignature(stableSignature(payload));
-  }
+    try {
+      await onSaveNavigationMenu(payload, menuKey);
+      setBaselineSignature(stableSignature(payload));
+      setUiState((prev) => ({ ...prev, isSaving: false, isDirty: false }));
+      return true;
+    } catch (error) {
+      setUiState((prev) => ({ ...prev, isSaving: false }));
+      throw error;
+    }
+  }, [items, menuKey, menuTitle, onSaveNavigationMenu]);
 
   return {
     menuTitle,
@@ -88,6 +129,6 @@ export function useNavigationMenuEditor({ navigation, actions, menuKey = 'primar
     setItems,
     addItem,
     saveMenu,
-    uiState,
+    uiState
   };
 }
