@@ -1,13 +1,11 @@
 import { assertPlatformPorts } from '@geekist/edgepress/ports';
 import { createAuthRoutes } from '@geekist/edgepress/cap-auth';
 import { createContentModelRoutes } from '@geekist/edgepress/cap-content-model';
-import { createDocumentRoutes } from '@geekist/edgepress/cap-document';
+import { createContentRoutes } from '@geekist/edgepress/cap-content';
 import { createFormRoutes } from '@geekist/edgepress/cap-form';
 import { createMediaRoutes } from '@geekist/edgepress/cap-media';
 import { createNavigationRoutes } from '@geekist/edgepress/cap-navigation';
-import { createPreviewRoutes } from '@geekist/edgepress/cap-preview';
 import { createPrivateRoutes } from '@geekist/edgepress/cap-private';
-import { createPublishRoutes } from '@geekist/edgepress/cap-publish';
 import { createWpCoreRoutes } from '@geekist/edgepress/cap-wp-core';
 import { requireCapability } from '@geekist/edgepress/platform-api-core/auth.js';
 import { error, getCorsHeaders, json, matchPath, readJson, withCors } from '@geekist/edgepress/platform-api-core/http.js';
@@ -27,10 +25,8 @@ function authzErrorResponse(e) {
 function createFeatureRoutes(context) {
   return [
     ...createAuthRoutes(context),
-    ...createDocumentRoutes(context),
+    ...createContentRoutes(context),
     ...createMediaRoutes(context),
-    ...createPublishRoutes(context),
-    ...createPreviewRoutes(context),
     ...createFormRoutes(context),
     ...createNavigationRoutes(context),
     ...createContentModelRoutes(context),

@@ -29,14 +29,12 @@
       "@geekist/edgepress/cloudflare/*": ["./packages/cloudflare/src/*"],
       "@geekist/edgepress/cap-wp-core": ["./packages/cap-wp-core/src"],
       "@geekist/edgepress/cap-auth": ["./packages/cap-auth/src"],
+      "@geekist/edgepress/cap-content": ["./packages/cap-content/src"],
       "@geekist/edgepress/cap-content-model": ["./packages/cap-content-model/src"],
-      "@geekist/edgepress/cap-document": ["./packages/cap-document/src"],
       "@geekist/edgepress/cap-form": ["./packages/cap-form/src"],
       "@geekist/edgepress/cap-media": ["./packages/cap-media/src"],
       "@geekist/edgepress/cap-navigation": ["./packages/cap-navigation/src"],
-      "@geekist/edgepress/cap-preview": ["./packages/cap-preview/src"],
       "@geekist/edgepress/cap-private": ["./packages/cap-private/src"],
-      "@geekist/edgepress/cap-publish": ["./packages/cap-publish/src"],
       "@geekist/edgepress/platform-api-core": ["./packages/platform-api-core/src"],
       "@geekist/edgepress/platform-api-core/*": ["./packages/platform-api-core/src/*"]
     }
