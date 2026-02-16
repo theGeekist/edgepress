@@ -1,8 +1,6 @@
 import { assertPlatformPorts } from '@geekist/edgepress/ports';
 import { createAuthRoutes } from '@geekist/edgepress/cap-auth';
-import { createContentModelRoutes } from '@geekist/edgepress/cap-content-model';
 import { createContentRoutes } from '@geekist/edgepress/cap-content';
-import { createFormRoutes } from '@geekist/edgepress/cap-form';
 import { createMediaRoutes } from '@geekist/edgepress/cap-media';
 import { createNavigationRoutes } from '@geekist/edgepress/cap-navigation';
 import { createPrivateRoutes } from '@geekist/edgepress/cap-private';
@@ -27,9 +25,7 @@ function createFeatureRoutes(context) {
     ...createAuthRoutes(context),
     ...createContentRoutes(context),
     ...createMediaRoutes(context),
-    ...createFormRoutes(context),
     ...createNavigationRoutes(context),
-    ...createContentModelRoutes(context),
     ...createPrivateRoutes(context),
     ...createWpCoreRoutes({
       ...context,
