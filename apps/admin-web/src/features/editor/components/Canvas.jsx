@@ -342,8 +342,8 @@ class CanvasErrorBoundary extends Component {
 export function EditorCanvas({ blocks, setBlocks, palette, theme, siteTheme, title, onTitleChange: _onTitleChange, postId, postType }) {
   const [visualFailed, setVisualFailed] = useState(false);
   const p = palette || DEFAULT_PALETTE;
-  const adminThemeVars = useMemo(() => toCssVars(theme || {}, { prefix: '--ep-admin' }), [theme]);
   const contentThemeVars = useMemo(() => toCssVars(siteTheme || theme || {}, { prefix: '--ep-site' }), [siteTheme, theme]);
+  const canvasThemeVars = useMemo(() => toWpThemeVars(p, {}, contentThemeVars), [p, contentThemeVars]);
   const editorSettings = useMemo(
     () => toWpEditorSettings(siteTheme || theme || {}, { allowedBlockTypes: SUPPORTED_BLOCK_TYPES }),
     [siteTheme, theme]
@@ -361,7 +361,7 @@ export function EditorCanvas({ blocks, setBlocks, palette, theme, siteTheme, tit
           }
         >
           <View style={[styles.paperSheet, { backgroundColor: p.surfaceMuted, shadowColor: p.text, borderColor: p.border }]}>
-            <div className="ep-editor-canvas-root" style={toWpThemeVars(p, adminThemeVars, contentThemeVars)}>
+            <div className="ep-editor-canvas-root" style={canvasThemeVars}>
               <WpEditorHost
                 postType={postType === 'page' ? 'page' : 'post'}
                 postId={postId || 'editor-local'}

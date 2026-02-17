@@ -18,6 +18,8 @@ export function RootScene({
   docs,
   media,
   editor,
+  loop,
+  previewLink,
   isAuthenticated,
   navigation,
   settings,
@@ -37,7 +39,10 @@ export function RootScene({
           siteTheme={settings?.siteTheme || theme}
           contentView={contentView}
           docs={docs}
+          media={media}
           editor={editor}
+          loop={loop}
+          previewLink={previewLink}
           isAuthenticated={Boolean(isAuthenticated)}
           actions={actions}
         />

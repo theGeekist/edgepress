@@ -2,6 +2,7 @@ import { assertPreviewNotExpired } from '@geekist/edgepress/domain';
 import { normalizeBlocksInput } from '@geekist/edgepress/domain/blocks.js';
 import { serialize } from '@wordpress/blocks';
 import { parseTtlSeconds, signPreviewToken, verifyPreviewTokenSignature } from '@geekist/edgepress/api-core/runtime-utils.js';
+import { buildPreviewShell } from './renderShell.js';
 
 function collectMediaIds(blocks, featuredImageId) {
   const ids = new Set();
@@ -51,54 +52,73 @@ function parseThemeVarsFromRequest(request) {
   }
 }
 
-function toCssVarBlock(themeVars) {
-  const entries = Object.entries(themeVars || {});
-  if (entries.length === 0) return '';
-  return entries
-    .filter(([, value]) => {
-      const v = String(value || '');
-      return !v.includes('<') && !v.includes('>') && !v.toLowerCase().includes('</');
-    })
-    .map(([key, value]) => `${key}: ${value};`)
-    .join('\n');
+function normalizeRevisionIdsInput(input) {
+  if (!Array.isArray(input)) return [];
+  const ids = [];
+  for (const entry of input) {
+    const normalized = String(entry || '').trim();
+    if (!normalized || ids.includes(normalized)) continue;
+    ids.push(normalized);
+  }
+  return ids;
+}
+
+function normalizeMenuSnapshotItem(item, index) {
+  const kind = item?.kind === 'external' ? 'external' : 'internal';
+  return {
+    id: String(item?.id || '').trim() || `nav_item_${index + 1}`,
+    label: String(item?.label || '').trim() || `Item ${index + 1}`,
+    kind,
+    route: kind === 'internal' ? String(item?.route || '').trim() : '',
+    documentId: kind === 'internal' ? String(item?.documentId || '').trim() : '',
+    externalUrl: kind === 'external' ? String(item?.externalUrl || '').trim() : '',
+    order: Number.isFinite(Number(item?.order)) ? Number(item.order) : index,
+    parentId: String(item?.parentId || '').trim() || null,
+    target: String(item?.target || '_self').trim() || '_self',
+    rel: String(item?.rel || '').trim()
+  };
+}
+
+function normalizeMenuSnapshot(menu, index) {
+  const key = String(menu?.key || '').trim() || `menu_${index + 1}`;
+  const id = String(menu?.id || '').trim() || `nav_${key}`;
+  const normalizedItems = (Array.isArray(menu?.items) ? menu.items : [])
+    .map((entry, itemIndex) => normalizeMenuSnapshotItem(entry, itemIndex))
+    .sort((a, b) => a.order - b.order || a.label.localeCompare(b.label))
+    .map((entry, itemIndex) => ({ ...entry, order: itemIndex }));
+  return {
+    id,
+    key,
+    title: String(menu?.title || key).trim() || key,
+    items: normalizedItems,
+    updatedAt: String(menu?.updatedAt || '')
+  };
+}
+
+function normalizePreviewSourceRevisionSet(input) {
+  if (Array.isArray(input)) {
+    return {
+      schemaVersion: 1,
+      revisions: normalizeRevisionIdsInput(input),
+      menus: []
+    };
+  }
+  if (!input || typeof input !== 'object') return null;
+  const revisions = normalizeRevisionIdsInput(input.revisions);
+  const menus = (Array.isArray(input.menus) ? input.menus : []).map((menu, index) => normalizeMenuSnapshot(menu, index));
+  return {
+    schemaVersion: Number.isFinite(Number(input.schemaVersion)) ? Number(input.schemaVersion) : 1,
+    revisions,
+    menus
+  };
 }
 
 function buildPreviewHtml(doc, themeVars, serializedBlocks, featuredImageMarkup) {
-  const cssVarBlock = toCssVarBlock(themeVars);
-  return `<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>${escapeHtml(doc.title || 'Preview')}</title>
-    <style>
-      :root {
-        ${cssVarBlock}
-      }
-      * { box-sizing: border-box; }
-      html, body { margin: 0; padding: 0; }
-      body {
-        background: var(--ep-surface-page, #f0f0f1);
-        color: var(--ep-color-text, #1d2327);
-        font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-      }
-      .ep-preview-wrap {
-        max-width: 860px;
-        margin: 24px auto;
-        padding: 24px;
-        background: var(--ep-surface-surface, #fff);
-        border: 1px solid var(--ep-color-border, #dcdcde);
-      }
-      h1 { margin-top: 0; margin-bottom: 1rem; }
-      a { color: var(--ep-color-accent, #2271b1); }
-    </style>
-  </head>
-  <body>
-    <main class="ep-preview-wrap">
-      <article>${featuredImageMarkup}<h1>${escapeHtml(doc.title)}</h1>${serializedBlocks}</article>
-    </main>
-  </body>
-</html>`;
+  const siteTheme = doc?.siteTheme ?? doc?.raw?.siteTheme ?? {};
+  return buildPreviewShell(siteTheme, themeVars, {
+    title: doc.title || 'Preview',
+    content: `<article>${featuredImageMarkup}<h1>${escapeHtml(doc.title)}</h1>${serializedBlocks}</article>`
+  });
 }
 
 export function createPreviewFeature({ runtime, store, previewStore, resolveImageBlocks }) {
@@ -121,7 +141,11 @@ export function createPreviewFeature({ runtime, store, previewStore, resolveImag
     let serializedBlocks;
     if (Array.isArray(doc.blocks) && doc.blocks.length > 0) {
       const canonicalBlocks = normalizeBlocksInput(doc.blocks);
-      const resolvedBlocks = resolveImageBlocks(canonicalBlocks, mediaById);
+      const sourceRevisionSet = normalizePreviewSourceRevisionSet(doc?.sourceRevisionSet ?? doc?.raw?.sourceRevisionSet);
+      const renderContext = sourceRevisionSet
+        ? { sourceRevisionSet, menus: sourceRevisionSet.menus }
+        : {};
+      const resolvedBlocks = resolveImageBlocks(canonicalBlocks, mediaById, renderContext);
       serializedBlocks = serialize(resolvedBlocks);
     } else {
       serializedBlocks = doc.content || doc.legacyHtml || '';

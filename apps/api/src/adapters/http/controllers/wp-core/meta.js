@@ -1,5 +1,42 @@
 import { toWpNumericId } from '@geekist/edgepress/wp-core';
 
+function toWpPatternRecord(document, requestUrl) {
+  const title = String(document?.title || '');
+  const content = String(document?.legacyHtml ?? document?.content ?? '');
+  const slug = String(document?.slug || '');
+  const createdAt = String(document?.createdAt || '1970-01-01T00:00:00.000Z');
+  const updatedAt = String(document?.updatedAt || createdAt);
+  const origin = new URL(requestUrl).origin;
+  return {
+    id: toWpNumericId(document?.id),
+    slug,
+    title: { raw: title, rendered: title },
+    content: { raw: content, rendered: content },
+    status: String(document?.status || 'draft'),
+    type: String(document?.type || 'pattern'),
+    date: createdAt,
+    modified: updatedAt,
+    link: `${origin}/${slug}`
+  };
+}
+
+async function listRegistryDocuments({ request, store, type }) {
+  const url = new URL(request.url);
+  const page = Math.max(1, Number.parseInt(url.searchParams.get('page') || '1', 10) || 1);
+  const pageSize = Math.min(100, Math.max(1, Number.parseInt(url.searchParams.get('per_page') || '100', 10) || 100));
+  const status = String(url.searchParams.get('status') || 'all');
+  const query = {
+    type,
+    status,
+    sortBy: 'updatedAt',
+    sortDir: 'desc',
+    page,
+    pageSize
+  };
+  const listed = await store.listDocuments(query);
+  return Array.isArray(listed?.items) ? listed.items : [];
+}
+
 function toWpRoles(user) {
   const explicitRoles = Array.isArray(user?.roles) ? user.roles.map((entry) => String(entry || '').trim()).filter(Boolean) : [];
   if (explicitRoles.length > 0) return explicitRoles;
@@ -117,7 +154,18 @@ export function registerWpCoreMetaRoutes({ add, runtime, store, authzErrorRespon
   add('GET', '/block-patterns/patterns', async (request) => {
     try {
       await requireCapability({ runtime, store, request, capability: 'document:read' });
-      return json([]);
+      const items = await listRegistryDocuments({ request, store, type: 'pattern' });
+      return json(items.map((entry) => toWpPatternRecord(entry, request.url)));
+    } catch (e) {
+      return authzErrorResponse(e);
+    }
+  });
+
+  add('GET', '/patterns', async (request) => {
+    try {
+      await requireCapability({ runtime, store, request, capability: 'document:read' });
+      const items = await listRegistryDocuments({ request, store, type: 'pattern' });
+      return json(items.map((entry) => toWpPatternRecord(entry, request.url)));
     } catch (e) {
       return authzErrorResponse(e);
     }
@@ -141,7 +189,45 @@ export function registerWpCoreMetaRoutes({ add, runtime, store, authzErrorRespon
   add('GET', '/templates/lookup', async (request) => {
     try {
       await requireCapability({ runtime, store, request, capability: 'document:read' });
-      return json(null);
+      const url = new URL(request.url);
+      const slug = String(url.searchParams.get('slug') || '').trim().toLowerCase();
+      if (!slug) {
+        return json(
+          {
+            code: 'rest_missing_callback_param',
+            message: 'Missing parameter(s): slug',
+            data: {
+              status: 400,
+              params: ['slug']
+            }
+          },
+          400
+        );
+      }
+
+      const listed = await store.listDocuments({
+        type: 'template',
+        status: 'all',
+        slug,
+        page: 1,
+        pageSize: 5,
+        sortBy: 'updatedAt',
+        sortDir: 'desc'
+      });
+      const items = Array.isArray(listed?.items) ? listed.items : [];
+      const match = items.find((entry) => String(entry?.slug || '').toLowerCase() === slug) || null;
+      if (!match) {
+        return json(
+          {
+            code: 'rest_template_invalid_id',
+            message: 'Template not found.',
+            data: { status: 404 }
+          },
+          404
+        );
+      }
+
+      return json(toWpPatternRecord(match, request.url));
     } catch (e) {
       return authzErrorResponse(e);
     }

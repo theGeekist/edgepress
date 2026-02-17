@@ -4,13 +4,21 @@ import { palettePropTypes } from '@components/prop-types';
 import { ActionButton } from '@components/ui/ActionButton.jsx';
 import { ThemedTextInput } from '@components/ui/ThemedTextInput.jsx';
 import { MetaBox } from '@components/ui/MetaBox.jsx';
+import { MediaPicker } from '@features/media';
 
 const BUILT_IN_CONTENT_TYPES = [
   { id: 'page', label: 'Page' },
   { id: 'post', label: 'Post' }
 ];
 
-export function ContentSettingsPanel({ palette, hasSelection, meta, onUpdateMeta }) {
+export function ContentSettingsPanel({
+  palette,
+  hasSelection,
+  meta,
+  mediaItems,
+  onUpdateMeta,
+  onRefreshMedia
+}) {
   const categoriesText = Array.isArray(meta.categories) ? meta.categories.join(', ') : '';
   const tagsText = Array.isArray(meta.tags) ? meta.tags.join(', ') : '';
   const taxonomyMode = meta.taxonomyMode === 'hierarchical' ? 'hierarchical' : 'flat';
@@ -104,13 +112,13 @@ export function ContentSettingsPanel({ palette, hasSelection, meta, onUpdateMeta
       </MetaBox>
 
       <MetaBox title="Featured Image" palette={palette}>
-        <Text style={[style.label, { color: palette.text }]}>Media ID</Text>
-        <ThemedTextInput
+        <MediaPicker
           palette={palette}
           value={meta.featuredImageId}
-          onChangeText={(next) => onUpdateMeta({ featuredImageId: next })}
-          placeholder="med_xxxxx"
-          editable={hasSelection}
+          items={mediaItems}
+          onChange={(next) => onUpdateMeta({ featuredImageId: next })}
+          onRefresh={onRefreshMedia}
+          disabled={!hasSelection}
         />
       </MetaBox>
     </View>
@@ -139,7 +147,9 @@ ContentSettingsPanel.propTypes = {
     taxonomyMode: PropTypes.string,
     featuredImageId: PropTypes.string
   }).isRequired,
-  onUpdateMeta: PropTypes.func.isRequired
+  mediaItems: PropTypes.array,
+  onUpdateMeta: PropTypes.func.isRequired,
+  onRefreshMedia: PropTypes.func
 };
 
 export const contentSettingsPanelPropTypes = ContentSettingsPanel.propTypes;

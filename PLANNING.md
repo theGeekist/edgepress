@@ -8,7 +8,7 @@ This file turns the architectural story from `docs/internal/edgepress-content-ex
 - Runtime portability rule: edge runtime is an adapter/DI concern, not the product architecture.
 - API invariants in force: two-phase media (`init` + `finalize`), preview returns `{ previewUrl, expiresAt, releaseLikeRef }`, canonical `{ error: { code, message } }` envelope.
 - Release invariants target: immutable manifest, active-release pointer switching, release history retained.
-- Explicitly deferred: collaborative editing/presence, server-side runtime block rendering, broad plugin compatibility, multi-tenant isolation.
+- Explicitly deferred: collaborative editing/presence, server-side runtime block rendering (including dynamic blocks such as `core/query`/query-loop), broad plugin compatibility, multi-tenant isolation.
 
 ## DI / Adapter Milestone Status
 - [x] Composition root exists: `apps/api/src/worker.js` builds platform and injects it into `createApiHandler`.
@@ -193,8 +193,24 @@ Exit criteria:
 - `Increment complete (2026-02-11)`: editor chrome/workspace alignment pass landed for Gutenberg shell integration in admin layout (`apps/admin-web/src/features/editor/components/canvas.web.css`).
 - `Phase closeout note (planned)`: architecture/package refactors and controller-thinning are complete in this branch; remaining product-parity work is moved to Phase 12C.
 
-## Phase 12C – Product Parity Completion (next branch)
-- [ ] Implement foundational block set end-to-end hardening: rich text, image+caption, embed validation policy finalization.
+## Phase 12C – Product Parity Completion (IN PROGRESS)
+
+**Detailed execution plan**: [`docs/internal/phase-12c-execution-plan.md`](docs/internal/phase-12c-execution-plan.md)
+
+### High-Level Progress
+
+| Slice | Description | Status |
+|-------|-------------|--------|
+| 0 | Editor DevTools | [x] Complete (2026-02-17) |
+| 1 | Block Hardening | [x] Complete (2026-02-17) |
+| 2 | Featured Image/Media Parity | [ ] In Progress |
+| 3 | Navigation Block Parity | [ ] Pending |
+| 4 | Theme Parity Completion | [ ] Pending |
+| 5 | Templates/Patterns Lifecycle | [ ] Pending |
+| 6 | Parity Gap Closeout | [ ] Pending |
+
+### Checklist (high-level)
+- [x] Implement foundational block set end-to-end hardening: rich text, image+caption, embed validation policy finalization.
 - [ ] Implement Gutenberg navigation block parity and menu rendering semantics (no bespoke parallel pipeline).
 - [ ] Replace transitional featured-image/media-id controls with block-parity media selection primitives.
 - [ ] Ensure media/nav block flows survive revision -> preview -> publish -> live without special cases.
@@ -202,9 +218,113 @@ Exit criteria:
 - [ ] Apply full theme parity across admin editing chrome, preview skin, and published output.
 - [ ] Finalize parity gap review and close remaining nits/findings in a focused PR.
 
+Phase 12C incremental notes:
+- `Increment complete (2026-02-17)`: Slice 0 DevTools landed and integrated into content editor scene (`apps/admin-web/src/features/editor/devtools/*`, `apps/admin-web/src/scenes/content/Scene.jsx`).
+- `Increment complete (2026-02-17)`: Slice 1 hardening landed with sanitizer + embed policy + import diagnostics and regression tests (`apps/admin-web/src/features/editor/parity/{sanitize.js,embedPolicy.js,mappings/coreContent.js,mappings/coreImage.js,pipeline.js}`, `apps/admin-web/test/editor.parity.{sanitize,transforms}.test.js`).
+- `Increment in progress (2026-02-17)`: Slice 2 media-picker parity is in flight; transitional featured-image raw-id input has been replaced in content settings UI and is being validated through scene wiring and tests (`apps/admin-web/src/features/media/components/MediaPicker.jsx`, `apps/admin-web/src/features/content/components/ContentSettingsPanel.jsx`, `apps/admin-web/src/scenes/content/Scene.jsx`).
+
 Exit criteria:
 - All remaining product parity items are closed without reopening architecture/package boundary decisions.
 - Media/navigation/theme/templates behavior is parity-complete across editor, preview, and live delivery.
+
+### Phase 12C Execution Plan Details (branch: `phase-12c-product-parity`)
+
+Execution model:
+1. Keep architecture stable: feature-local changes in `apps/admin-web/src/features/*` and capability/orchestration changes in `packages/content/*` + `apps/api/src/orchestration/*` only when cross-capability flow is required.
+2. Land vertical slices in this order: block hardening -> featured image parity -> navigation block parity -> templates/patterns lifecycle -> theme parity completion -> focused parity gap closeout.
+3. Each slice must ship with acceptance tests for revision -> preview -> publish -> private/live reads.
+
+Current gap review (code-verified):
+- Transitional featured-image control is still a raw Media ID input in `apps/admin-web/src/features/content/components/ContentSettingsPanel.jsx`.
+- Navigation is currently editor-external menu CRUD (`apps/admin-web/src/features/navigation/*`, `packages/content/src/navigation.js`) with no block parity integration in publish/preview.
+- WP compatibility template/pattern surfaces are placeholders in `apps/api/src/adapters/http/controllers/wp-core/meta.js` (`/block-patterns/*` => `[]`, `/templates/lookup` => `null`).
+- Publish/preview output still uses minimal hardcoded wrappers instead of shared theme rendering contracts (`apps/api/src/orchestration/release-workflow.js`, `packages/content/src/previews.js`).
+
+#### Slice 1 - Foundational block hardening
+- [ ] Finalize rich-text/image/embed import+render policy for deterministic parity behavior (lossiness + validation reasons captured in diagnostics).
+- [ ] Tighten embed validation policy (allowed providers, URL normalization, unsupported-provider behavior) in parity mappings and publish/preview paths.
+- [ ] Add golden fixtures for rich text/image caption/embed covering editor, preview, and publish targets.
+- [ ] Add explicit regression tests for caption persistence and safe fallback behavior.
+
+Primary files:
+- `apps/admin-web/src/features/editor/parity/mappings/coreImage.js`
+- `apps/admin-web/src/features/editor/parity/mappings/coreContent.js`
+- `apps/admin-web/src/features/editor/parity/{pipeline.js,diagnostics.js}`
+- `apps/admin-web/test/editor.parity.transforms.test.js`
+- `apps/api/test/api.flow.acceptance.test.js`
+
+#### Slice 2 - Featured image/media block parity (remove transitional UI)
+- [ ] Replace `featuredImageId` text input with media-picker parity primitive wired through feature public APIs.
+- [ ] Keep canonical persistence in document model (`featuredImageId`) but source selection from block-parity media UI, not manual IDs.
+- [ ] Ensure create/update/save flows preserve featured image + image block metadata without scene-level special casing.
+- [ ] Add admin interaction tests for selecting/changing/removing featured image from parity UI.
+
+Primary files:
+- `apps/admin-web/src/features/content/components/ContentSettingsPanel.jsx`
+- `apps/admin-web/src/features/media/*`
+- `apps/admin-web/src/features/content/hooks/{useContentActions.js,useDocumentsState.js}`
+- `apps/admin-web/test/admin.shell.test.js`
+
+#### Slice 3 - Navigation block parity and render semantics
+- [ ] Implement Gutenberg navigation block parity path and map menu selection/identity into canonical document content.
+- [ ] Resolve menu items by canonical route identity during preview/publish without introducing a parallel menu artifact pipeline.
+- [ ] Support nested items, internal/external targets, and deterministic order across revision -> publish cycles.
+- [ ] Add acceptance tests proving nav blocks survive revision -> preview -> publish -> private delivery.
+
+Primary files:
+- `apps/admin-web/src/features/editor/registerBlocks.js`
+- `apps/admin-web/src/features/navigation/*`
+- `packages/content/src/navigation.js`
+- `apps/api/src/orchestration/release-workflow.js`
+- `packages/content/src/previews.js`
+- `apps/api/test/api.flow.acceptance.test.js`
+
+#### Slice 4 - Templates/patterns lifecycle
+- [ ] Implement WP-like template resolution semantics (for example `page.php`, `single.php`/post-like templates) using block-template HTML constructs, not PHP runtime templates.
+- [ ] Define canonical template/pattern registry contract (id/version/source/schemaVersion/migration metadata).
+- [ ] Implement registration + lookup + versioned migration behavior and wire WP façade endpoints to real registry-backed responses.
+- [ ] Replace `/wp/v2/block-patterns/*` and `/wp/v2/templates/lookup` placeholders with compatibility-profiled behavior.
+- [ ] Publish docs for guaranteed/partial behavior and migration policy.
+
+Primary files:
+- `apps/api/src/adapters/http/controllers/wp-core/meta.js`
+- `packages/content/src/content-model.js`
+- `docs/reference/wp-compatibility-profile.md`
+- `apps/api/test/api.wp-core.test.js`
+
+#### Slice 5 - Theme parity completion (editor chrome, preview, publish)
+- [ ] Apply one shared theme token contract across admin editor canvas, preview HTML, and publish HTML wrappers.
+- [ ] Enforce strict token-surface isolation: admin chrome tokens (`--ep-admin-*`) must not leak into site rendering tokens (`--ep-site-*`), while site tokens must drive editor content canvas + preview + publish output.
+- [ ] Remove divergence where preview/publish render hardcoded typography/surface defaults unrelated to active site theme.
+- [ ] Ensure block-level style refs resolve consistently in all three targets.
+- [ ] Add contract tests validating same token inputs produce aligned CSS variable outputs in editor, preview, and published artifacts.
+
+Primary files:
+- `apps/admin-web/src/features/theme/{tokenRuntime.js,wpEditorSettingsAdapter.js}`
+- `apps/admin-web/src/features/editor/components/{Canvas.jsx,canvas.web.css}`
+- `packages/content/src/previews.js`
+- `apps/api/src/orchestration/release-workflow.js`
+- `apps/admin-web/test/admin.theme.editor-settings.test.js`
+- `apps/api/test/api.flow.acceptance.test.js`
+
+#### Slice 6 - Focused parity gap closeout PR
+- [ ] Run full parity gap checklist against `docs/reference/wp-compatibility-profile.md`.
+- [ ] Close remaining nits/findings with explicit before/after behavior notes and coverage links.
+- [ ] Update Phase 12C checkboxes/increments in this file with completion date and scope notes.
+
+Verification gate (required per slice):
+- `bun run lint`
+- `bun run test:unit`
+- Targeted parity suites:
+  - `bun test apps/admin-web/test/editor.parity.transforms.test.js`
+  - `bun test apps/admin-web/test/admin.theme.editor-settings.test.js`
+  - `bun test apps/api/test/api.flow.acceptance.test.js`
+  - `bun test apps/api/test/api.wp-core.test.js`
+
+Phase close gate:
+- `bun run test:coverage`
+- `bun run check:boundaries`
+- Manual smoke: authoring loop + nav/media/template/pattern + preview + publish + private read.
 
 ### Archived — Phase 12B Parallel Execution Plan (primary + agent-2)
 
@@ -341,6 +461,7 @@ Exit criteria:
 - [ ] Normalize API versioning/envelope/pagination rules and publish as stable guarantees.
 - [ ] Add webhook delivery surface for publish completed + release activated events.
 - [ ] Harden and version the shipped WP REST façade + publish compatibility profile (guaranteed/partial/out-of-scope), excluding block/editor parity scope tracked in Phase 12B.
+- [ ] Define dynamic block compatibility profile + execution plan (initial focus: query loop semantics, data-source contract, cacheability, and static-vs-runtime rendering boundaries).
 
 Exit criteria:
 - Platform assembly, API schema, runtime parity, and compatibility guarantees are all versioned artifacts.
