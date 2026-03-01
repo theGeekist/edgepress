@@ -17,8 +17,8 @@ Phase 12C focuses on Product Parity Completion - closing the gap between transit
 | 1 | [Block Hardening](#slice-1-block-hardening) | [x] Complete | 2026-02-17 | 2026-02-17 |
 | 2 | [Featured Image/Media Parity](#slice-2-featured-imagemedia-parity) | [x] Complete | 2026-02-17 | 2026-02-17 |
 | 3 | [Navigation Block Parity](#slice-3-navigation-block-parity) | [x] Complete | 2026-02-17 | 2026-02-17 |
-| 4 | [Templates/Patterns Lifecycle](#slice-4-templatespatterns-lifecycle) | [ ] Pending | | |
-| 5 | [Theme Parity Completion](#slice-5-theme-parity-completion) | [ ] Pending | | |
+| 4 | [Templates/Patterns Lifecycle](#slice-4-templatespatterns-lifecycle) | [x] Complete | 2026-02-17 | 2026-02-17 |
+| 5 | [Theme Parity Completion](#slice-5-theme-parity-completion) | [x] Complete | 2026-02-17 | 2026-02-17 |
 | 6 | [Parity Gap Closeout](#slice-6-parity-gap-closeout) | [ ] Pending | | |
 
 ---
@@ -399,6 +399,10 @@ bun run check:boundaries    # No CF imports outside adapters
 |------|-------|-------|--------|
 | 2026-02-17 | 0 | DevTools integrated into content scene, editor barrel export added, state helpers + tests added, lint/test/build verified | |
 | 2026-02-17 | 1 | Added rich-text sanitizer + embed policy modules, hardened image/embed transforms, surfaced import diagnostics, and added sanitize/caption regression tests | |
+| 2026-02-17 | 2 | Replaced featured-image raw-id workflow with media picker UX and persisted featured image metadata in end-to-end flows | |
+| 2026-02-17 | 3 | Landed navigation block parity with menu snapshot resolution in preview/publish and deterministic release behavior | |
+| 2026-02-17 | 4 | Added document-backed pattern/template lifecycle and wired wp-core facade endpoints + tests | |
+| 2026-02-17 | 5 | Unified theme shell/token contract across editor, preview, and publish targets with parity tests | |
 
 ---
 

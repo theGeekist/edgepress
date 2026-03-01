@@ -2,7 +2,7 @@
 
 **Version**: 1.0.0
 **Schema Version**: 1
-**Last Updated**: 2026-02-17
+**Last Updated**: 2026-03-01
 
 This document describes the compatibility level between EdgePress and the WordPress REST API (WP v2). It is intended for developers integrating WordPress clients or plugins with EdgePress.
 

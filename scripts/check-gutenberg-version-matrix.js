@@ -19,6 +19,7 @@ const EXPECTED = {
 
 const packageJson = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 const deps = packageJson.dependencies || {};
+const EXACT_SEMVER_RE = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/;
 
 const failures = [];
 for (const [name, expected] of Object.entries(EXPECTED)) {
@@ -27,8 +28,8 @@ for (const [name, expected] of Object.entries(EXPECTED)) {
     failures.push(`${name}: missing (expected ${expected})`);
     continue;
   }
-  if (actual.startsWith('^') || actual.startsWith('~')) {
-    failures.push(`${name}: floating range ${actual} is not allowed`);
+  if (!EXACT_SEMVER_RE.test(actual)) {
+    failures.push(`${name}: version specifier ${actual} is not an exact pin`);
     continue;
   }
   if (actual !== expected) {

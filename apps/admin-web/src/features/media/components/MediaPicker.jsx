@@ -52,9 +52,17 @@ export function MediaPicker({ palette, value, items, disabled, onChange, onRefre
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
 
+  const filterImageFiles = (files) => {
+    return Array.from(files || []).filter((file) => {
+      const mime = String(file?.type || '').toLowerCase();
+      return mime.startsWith('image/');
+    });
+  };
+
   const handleUpload = (files) => {
-    if (onUpload && files && files.length > 0) {
-      onUpload(files);
+    const imageFiles = filterImageFiles(files);
+    if (onUpload && imageFiles.length > 0) {
+      onUpload(imageFiles);
     }
   };
 
@@ -67,6 +75,7 @@ export function MediaPicker({ palette, value, items, disabled, onChange, onRefre
         onChange={(e) => {
           if (e.target.files && e.target.files.length > 0) {
             handleUpload(e.target.files);
+            e.target.value = '';
           }
         }}
         multiple

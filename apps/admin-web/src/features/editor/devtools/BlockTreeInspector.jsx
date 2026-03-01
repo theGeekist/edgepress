@@ -1,6 +1,6 @@
 import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native';
 import PropTypes from 'prop-types';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { palettePropTypes } from '@components/prop-types';
 import { useEditorBlocks } from './useDevToolsState.js';
 
@@ -10,6 +10,7 @@ const LOSSINESS_COLORS = {
   fallback: '#f97316',
   unknown: '#ef4444'
 };
+const EMPTY_EXPANDED_NODES = new Set();
 
 function LossinessBadge({ lossiness }) {
   const color = LOSSINESS_COLORS[lossiness] || LOSSINESS_COLORS.unknown;
@@ -173,7 +174,7 @@ export function BlockTreeInspector(props) {
   const {
     canonicalNodes = [],
     selectedBlockIndex,
-    expandedNodes,
+    expandedNodes = EMPTY_EXPANDED_NODES,
     onToggleExpand,
     onSelectBlock,
     palette
@@ -181,6 +182,23 @@ export function BlockTreeInspector(props) {
 
   const [selectedPath, setSelectedPath] = useState(null);
   const blocks = useEditorBlocks(props);
+
+  useEffect(() => {
+    if (Number.isInteger(selectedBlockIndex) && selectedBlockIndex >= 0) {
+      setSelectedPath((prev) => {
+        if (typeof prev === 'string') {
+          const prevTopLevel = Number.parseInt(prev.split('.')[0], 10);
+          if (prevTopLevel === selectedBlockIndex) {
+            return prev;
+          }
+        }
+        return String(selectedBlockIndex);
+      });
+      return;
+    }
+    setSelectedPath(null);
+  }, [selectedBlockIndex]);
+
   const selectedCanonical = useMemo(() => {
     if (typeof selectedPath === 'string' && selectedPath.length > 0) {
       const segments = selectedPath
@@ -254,7 +272,7 @@ BlockTreeInspector.propTypes = {
   blocks: PropTypes.array,
   canonicalNodes: PropTypes.array,
   selectedBlockIndex: PropTypes.number,
-  expandedNodes: PropTypes.instanceOf(Set),
+  expandedNodes: PropTypes.instanceOf(Set).isRequired,
   onToggleExpand: PropTypes.func.isRequired,
   onSelectBlock: PropTypes.func.isRequired,
   palette: PropTypes.shape(palettePropTypes).isRequired

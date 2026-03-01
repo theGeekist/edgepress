@@ -11,9 +11,14 @@ const PROVIDER_HOST_PATTERNS = [
   { slug: 'spotify', hostPattern: /(^|\.)spotify\.com$/i },
   { slug: 'tiktok', hostPattern: /(^|\.)tiktok\.com$/i }
 ];
+const PROVIDER_SLUG_ALIASES = new Map([
+  ['x', 'twitter'],
+  ['x.com', 'twitter']
+]);
 
 function normalizeProviderSlug(value) {
-  return String(value || '').trim().toLowerCase();
+  const normalized = String(value || '').trim().toLowerCase();
+  return PROVIDER_SLUG_ALIASES.get(normalized) || normalized;
 }
 
 const SUPPORTED_PROVIDER_SLUGS = new Set(PROVIDER_HOST_PATTERNS.map((entry) => entry.slug));

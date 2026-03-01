@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { View } from 'react-native';
 
 import { ContentListTable, ContentSettingsPanel, PublishPanel } from '@features/content';
@@ -48,17 +48,38 @@ export function ContentScene({
     themeTokens
   });
   const hasLoadedEditorMediaRef = useRef(false);
+  const isLoadingEditorMediaRef = useRef(false);
   const refreshMedia = media?.refresh;
+  const reportSceneError = useCallback(
+    (error) => {
+      actions.onSceneError?.(error instanceof Error ? error.message : String(error));
+    },
+    [actions]
+  );
 
   useEffect(() => {
-    if (!isAuthenticated || !isEditorView || !refreshMedia || hasLoadedEditorMediaRef.current) {
+    if (
+      !isAuthenticated
+      || !isEditorView
+      || !refreshMedia
+      || hasLoadedEditorMediaRef.current
+      || isLoadingEditorMediaRef.current
+    ) {
       return;
     }
-    hasLoadedEditorMediaRef.current = true;
-    refreshMedia().catch((error) => {
-      actions.onSceneError?.(error instanceof Error ? error.message : String(error));
-    });
-  }, [actions, isAuthenticated, isEditorView, refreshMedia]);
+    isLoadingEditorMediaRef.current = true;
+    Promise.resolve()
+      .then(() => refreshMedia())
+      .then(() => {
+        hasLoadedEditorMediaRef.current = true;
+      })
+      .catch((error) => {
+        reportSceneError(error);
+      })
+      .finally(() => {
+        isLoadingEditorMediaRef.current = false;
+      });
+  }, [isAuthenticated, isEditorView, refreshMedia, reportSceneError]);
 
   if (!isEditorView) {
     return (
@@ -152,8 +173,12 @@ export function ContentScene({
           meta={selectedMeta}
           mediaItems={media?.items || []}
           onUpdateMeta={(patch) => docs.updateMeta?.(docs.selectedId, patch)}
-          onRefreshMedia={() => media?.refresh?.()}
-          onUploadMedia={(files) => media?.uploadFiles?.(files)}
+          onRefreshMedia={() =>
+            Promise.resolve().then(() => media?.refresh?.()).catch(reportSceneError)
+          }
+          onUploadMedia={(files) =>
+            Promise.resolve().then(() => media?.uploadFiles?.(files)).catch(reportSceneError)
+          }
           isUploadingMedia={media?.isUploading}
         />
         <PublishPanel
