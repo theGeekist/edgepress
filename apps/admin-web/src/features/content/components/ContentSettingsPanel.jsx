@@ -17,7 +17,9 @@ export function ContentSettingsPanel({
   meta,
   mediaItems,
   onUpdateMeta,
-  onRefreshMedia
+  onRefreshMedia,
+  onUploadMedia,
+  isUploadingMedia
 }) {
   const categoriesText = Array.isArray(meta.categories) ? meta.categories.join(', ') : '';
   const tagsText = Array.isArray(meta.tags) ? meta.tags.join(', ') : '';
@@ -118,6 +120,8 @@ export function ContentSettingsPanel({
           items={mediaItems}
           onChange={(next) => onUpdateMeta({ featuredImageId: next })}
           onRefresh={onRefreshMedia}
+          onUpload={onUploadMedia}
+          isUploading={isUploadingMedia}
           disabled={!hasSelection}
         />
       </MetaBox>
@@ -149,7 +153,9 @@ ContentSettingsPanel.propTypes = {
   }).isRequired,
   mediaItems: PropTypes.array,
   onUpdateMeta: PropTypes.func.isRequired,
-  onRefreshMedia: PropTypes.func
+  onRefreshMedia: PropTypes.func,
+  onUploadMedia: PropTypes.func,
+  isUploadingMedia: PropTypes.bool
 };
 
 export const contentSettingsPanelPropTypes = ContentSettingsPanel.propTypes;

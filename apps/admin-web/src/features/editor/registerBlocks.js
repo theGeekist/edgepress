@@ -8,6 +8,7 @@ import { init as initSpacer } from '@wordpress/block-library/build-module/spacer
 import { init as initGroup } from '@wordpress/block-library/build-module/group/index.mjs';
 import { init as initColumns } from '@wordpress/block-library/build-module/columns/index.mjs';
 import { init as initColumn } from '@wordpress/block-library/build-module/column/index.mjs';
+import { init as initNavigation } from '@wordpress/block-library/build-module/navigation/index.mjs';
 import { getBlockVariations, registerBlockVariation, unregisterBlockVariation } from '@wordpress/blocks';
 
 const REGISTERED_KEY = '__edgepress_foundational_blocks_registered__';
@@ -83,6 +84,7 @@ export function registerFoundationalBlocks() {
     initGroup();
     initColumns();
     initColumn();
+    initNavigation();
     // Keep Group as a single entry (hide Row/Stack/Grid presets in inserter).
     pruneBlockVariations('core/group', new Set());
     // Keep only our curated embed variations.

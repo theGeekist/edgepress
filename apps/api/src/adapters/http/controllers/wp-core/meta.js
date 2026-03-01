@@ -34,7 +34,18 @@ async function listRegistryDocuments({ request, store, type }) {
     pageSize
   };
   const listed = await store.listDocuments(query);
-  return Array.isArray(listed?.items) ? listed.items : [];
+  const items = Array.isArray(listed?.items) ? listed.items.slice() : [];
+  items.sort((a, b) => {
+    const aUpdatedAt = String(a?.updatedAt || '');
+    const bUpdatedAt = String(b?.updatedAt || '');
+    if (aUpdatedAt !== bUpdatedAt) {
+      return bUpdatedAt.localeCompare(aUpdatedAt);
+    }
+    const aId = String(a?.id || '');
+    const bId = String(b?.id || '');
+    return aId.localeCompare(bId);
+  });
+  return items;
 }
 
 function toWpRoles(user) {

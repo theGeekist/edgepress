@@ -73,6 +73,15 @@ for (const file of scannedFiles) {
       }
     }
 
+    if (file.startsWith('apps/admin-web/src/scenes/') && spec.startsWith('@features/')) {
+      const featurePath = spec.replace('@features/', '');
+      const featureSegments = featurePath.split('/').filter(Boolean);
+      if (featureSegments.length > 1) {
+        console.error(`Boundary violation in ${file}: scenes must import feature public surfaces only ('${spec}').`);
+        failed = true;
+      }
+    }
+
     const resolvedRelative = resolveRelativeImport(file, spec);
     if (file.startsWith('packages/') && resolvedRelative?.startsWith('apps/')) {
       console.error(`Boundary violation in ${file}: packages must not import app code ('${spec}').`);

@@ -1,4 +1,5 @@
 import { Pressable, Text, View, Image } from 'react-native';
+import { useState, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { palettePropTypes } from '@components/prop-types';
 import { ActionButton } from '@components/ui/ActionButton.jsx';
@@ -45,49 +46,106 @@ MediaOption.propTypes = {
   palette: PropTypes.shape(palettePropTypes).isRequired
 };
 
-export function MediaPicker({ palette, value, items, disabled, onChange, onRefresh }) {
+export function MediaPicker({ palette, value, items, disabled, onChange, onRefresh, onUpload, isUploading }) {
   const mediaItems = Array.isArray(items) ? items : [];
   const selected = mediaItems.find((item) => item.id === value) || null;
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef(null);
+
+  const handleUpload = (files) => {
+    if (onUpload && files && files.length > 0) {
+      onUpload(files);
+    }
+  };
 
   return (
     <View style={{ gap: 10 }}>
+      <input
+        type="file"
+        ref={fileInputRef}
+        style={{ display: 'none' }}
+        onChange={(e) => {
+          if (e.target.files && e.target.files.length > 0) {
+            handleUpload(e.target.files);
+          }
+        }}
+        multiple
+        accept="image/*"
+      />
+
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
         <Text style={{ color: palette.textMuted, fontSize: 12 }}>
           {selected ? `Selected: ${selected.id}` : 'No featured image selected'}
         </Text>
         <View style={{ flexDirection: 'row', gap: 8 }}>
           <ActionButton
+            label={isUploading ? 'Uploading...' : 'Upload'}
+            onPress={() => fileInputRef.current?.click()}
+            disabled={disabled || isUploading}
+            palette={palette}
+          />
+          <ActionButton
             label="Refresh"
             onPress={onRefresh}
-            disabled={disabled}
+            disabled={disabled || isUploading}
             palette={palette}
           />
           <ActionButton
             label="Clear"
             onPress={() => onChange('')}
-            disabled={disabled || !value}
+            disabled={disabled || !value || isUploading}
             palette={palette}
           />
         </View>
       </View>
 
-      {mediaItems.length === 0 ? (
-        <Text style={{ color: palette.textMuted, fontSize: 12 }}>
-          Upload media in the Media section, then return here to select it.
-        </Text>
-      ) : (
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-          {mediaItems.slice(0, 8).map((item) => (
-            <MediaOption
-              key={item.id}
-              item={item}
-              isActive={item.id === value}
-              onSelect={onChange}
-              palette={palette}
-            />
-          ))}
-        </View>
-      )}
+      <View
+        onDragOver={(e) => {
+          if (disabled || isUploading) return;
+          e.preventDefault();
+          setIsDragging(true);
+        }}
+        onDragLeave={() => setIsDragging(false)}
+        onDrop={(e) => {
+          if (disabled || isUploading) return;
+          e.preventDefault();
+          setIsDragging(false);
+          const files = e.dataTransfer.files;
+          if (files && files.length > 0) {
+            handleUpload(files);
+          }
+        }}
+        style={{
+          borderWidth: 2,
+          borderStyle: 'dashed',
+          borderColor: isDragging ? palette.accent : 'transparent',
+          borderRadius: 6,
+          padding: 4,
+          backgroundColor: isDragging ? `${palette.accent}0a` : 'transparent',
+          minHeight: 100,
+          justifyContent: 'center'
+        }}
+      >
+        {mediaItems.length === 0 ? (
+          <View style={{ alignItems: 'center', gap: 8, padding: 20 }}>
+            <Text style={{ color: palette.textMuted, fontSize: 12, textAlign: 'center' }}>
+              {isUploading ? 'Uploading...' : 'No media found. Drop files here or click Upload.'}
+            </Text>
+          </View>
+        ) : (
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+            {mediaItems.slice(0, 8).map((item) => (
+              <MediaOption
+                key={item.id}
+                item={item}
+                isActive={item.id === value}
+                onSelect={onChange}
+                palette={palette}
+              />
+            ))}
+          </View>
+        )}
+      </View>
     </View>
   );
 }
@@ -102,5 +160,7 @@ MediaPicker.propTypes = {
   })),
   disabled: PropTypes.bool,
   onChange: PropTypes.func.isRequired,
-  onRefresh: PropTypes.func
+  onRefresh: PropTypes.func,
+  onUpload: PropTypes.func,
+  isUploading: PropTypes.bool
 };

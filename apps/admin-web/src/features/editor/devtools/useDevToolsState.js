@@ -80,6 +80,8 @@ function saveEnabledState(enabled) {
 
 const TABS = ['blocks', 'diagnostics', 'tracer', 'tokens'];
 
+export const useEditorBlocks = (state) => state?.blocks || [];
+
 export function useDevToolsState({ blocks = [], themeTokens = {} } = {}) {
   const [isAvailable] = useState(() => isDevMode());
   const [isOpen, setIsOpen] = useState(() => loadEnabledState());

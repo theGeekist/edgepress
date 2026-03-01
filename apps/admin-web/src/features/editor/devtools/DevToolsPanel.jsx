@@ -5,6 +5,7 @@ import { BlockTreeInspector } from './BlockTreeInspector.jsx';
 import { DiagnosticsInspector } from './DiagnosticsInspector.jsx';
 import { TransformTracer } from './TransformTracer.jsx';
 import { ThemeTokenInspector } from './ThemeTokenInspector.jsx';
+import { useEditorBlocks } from './useDevToolsState.js';
 
 const TAB_LABELS = {
   blocks: 'Blocks',
@@ -45,27 +46,30 @@ TabButton.propTypes = {
   palette: PropTypes.shape(palettePropTypes).isRequired
 };
 
-export function DevToolsPanel({
-  isOpen,
-  onToggle,
-  activeTab,
-  onSelectTab,
-  tabs,
-  blocks,
-  canonicalNodes,
-  selectedBlockIndex,
-  onSelectBlock,
-  expandedNodes,
-  onToggleExpand,
-  diagnostics,
-  tracerData,
-  tracerStep,
-  onTracerStepChange,
-  onTracerPrev,
-  onTracerNext,
-  themeTokens,
-  palette
-}) {
+export function DevToolsPanel(props) {
+  const {
+    isOpen,
+    onToggle,
+    activeTab,
+    onSelectTab,
+    tabs,
+    canonicalNodes,
+    selectedBlockIndex,
+    onSelectBlock,
+    expandedNodes,
+    onToggleExpand,
+    diagnostics,
+    tracerData,
+    tracerStep,
+    onTracerStepChange,
+    onTracerPrev,
+    onTracerNext,
+    themeTokens,
+    palette
+  } = props;
+
+  const blocks = useEditorBlocks(props);
+
   if (!isOpen) {
     return (
       <Pressable

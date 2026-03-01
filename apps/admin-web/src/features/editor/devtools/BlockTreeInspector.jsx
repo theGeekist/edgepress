@@ -1,6 +1,7 @@
 import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native';
 import PropTypes from 'prop-types';
 import { palettePropTypes } from '@components/prop-types';
+import { useEditorBlocks } from './useDevToolsState.js';
 
 const LOSSINESS_COLORS = {
   none: '#22c55e',
@@ -155,20 +156,24 @@ DetailsPanel.propTypes = {
   palette: PropTypes.shape(palettePropTypes).isRequired
 };
 
-export function BlockTreeInspector({
-  blocks,
-  canonicalNodes,
-  selectedBlockIndex,
-  expandedNodes,
-  onToggleExpand,
-  onSelectBlock,
-  palette
-}) {
+export function BlockTreeInspector(props) {
+  const {
+    canonicalNodes = [],
+    selectedBlockIndex,
+    expandedNodes,
+    onToggleExpand,
+    onSelectBlock,
+    palette
+  } = props;
+
+  const blocks = useEditorBlocks(props);
   const selectedCanonical = typeof selectedBlockIndex === 'number'
     ? canonicalNodes[selectedBlockIndex]
     : null;
 
-  if (!blocks || blocks.length === 0) {
+  const blockCount = blocks.length;
+
+  if (blockCount === 0) {
     return (
       <View style={styles.emptyState}>
         <Text style={{ color: palette.textMuted }}>No blocks to inspect</Text>
@@ -176,24 +181,33 @@ export function BlockTreeInspector({
     );
   }
 
+  const countLabel = `${blockCount} block${blockCount === 1 ? '' : 's'} to inspect`;
+
   return (
     <View style={styles.container}>
-      <ScrollView style={styles.treeContainer}>
-        {blocks.map((block, index) => (
-          <BlockNode
-            key={block.clientId || index}
-            wpBlock={block}
-            canonicalNode={canonicalNodes[index]}
-            depth={0}
-            index={index}
-            isExpanded={expandedNodes.has(canonicalNodes[index]?.id)}
-            isSelected={selectedBlockIndex === index}
-            onToggleExpand={onToggleExpand}
-            onSelect={onSelectBlock}
-            palette={palette}
-          />
-        ))}
-      </ScrollView>
+      <View style={styles.treeContainer}>
+        <View style={[styles.inspectorHeader, { borderBottomColor: palette.border }]}>
+          <Text style={[styles.countText, { color: palette.textMuted }]}>
+            {countLabel}
+          </Text>
+        </View>
+        <ScrollView style={styles.treeScroll}>
+          {blocks.map((block, index) => (
+            <BlockNode
+              key={block.clientId || index}
+              wpBlock={block}
+              canonicalNode={canonicalNodes[index]}
+              depth={0}
+              index={index}
+              isExpanded={expandedNodes.has(canonicalNodes[index]?.id)}
+              isSelected={selectedBlockIndex === index}
+              onToggleExpand={onToggleExpand}
+              onSelect={onSelectBlock}
+              palette={palette}
+            />
+          ))}
+        </ScrollView>
+      </View>
       <DetailsPanel canonicalNode={selectedCanonical} palette={palette} />
     </View>
   );
@@ -216,7 +230,21 @@ const styles = StyleSheet.create({
   },
   treeContainer: {
     flex: 1,
-    minWidth: 300
+    minWidth: 300,
+    flexDirection: 'column'
+  },
+  inspectorHeader: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderBottomWidth: 1
+  },
+  countText: {
+    fontSize: 11,
+    fontWeight: '600',
+    textTransform: 'uppercase'
+  },
+  treeScroll: {
+    flex: 1
   },
   nodeContainer: {
     flexDirection: 'column'

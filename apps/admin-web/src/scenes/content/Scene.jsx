@@ -152,6 +152,8 @@ export function ContentScene({
           mediaItems={media?.items || []}
           onUpdateMeta={(patch) => docs.updateMeta?.(docs.selectedId, patch)}
           onRefreshMedia={() => media?.refresh?.()}
+          onUploadMedia={(files) => media?.uploadFiles?.(files)}
+          isUploadingMedia={media?.isUploading}
         />
         <PublishPanel
           palette={palette}

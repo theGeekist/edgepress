@@ -1,41 +1,14 @@
-import { Component, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { SlotFillProvider, Popover } from '@wordpress/components';
-import {
-  BlockInspector
-} from '@wordpress/block-editor';
+import { Component, useEffect, useMemo, useRef, useState } from 'react';
 import { parse, serialize } from '@wordpress/blocks';
-import { useDispatch, useSelect } from '@wordpress/data';
-import { EditorProvider, store as editorStore } from '@wordpress/editor';
-import { store as coreStore } from '@wordpress/core-data';
-import { initializeEditor } from '@wordpress/edit-post';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 import PropTypes from 'prop-types';
 import { palettePropTypes } from '@components/prop-types';
-import { toCssVars, toWpEditorSettings } from '@features/theme';
-import {
-  applyHostBootstrap,
-  buildHostBootstrapContract,
-  toWpNumericId
-} from '../gutenberg-host.js';
+import { toCssVars } from '@features/theme';
+import { EditorSurface, EditorSurfaceInspector } from './EditorSurface.jsx';
 import './canvas.web.css';
-import '@wp-styles/edit-post';
-import '@wp-styles/editor';
 import '@wp-styles/block-editor';
 import '@wp-styles/components';
 import '@wp-styles/interface';
-
-const SUPPORTED_BLOCK_TYPES = [
-  'core/paragraph',
-  'core/heading',
-  'core/image',
-  'core/embed',
-  'core/group',
-  'core/columns',
-  'core/column',
-  'core/quote',
-  'core/separator',
-  'core/spacer'
-];
 
 const DEFAULT_PALETTE = {
   accent: '#2271b1',
@@ -47,185 +20,10 @@ const DEFAULT_PALETTE = {
   onAccent: '#ffffff'
 };
 
-function EditorStateBridge({ setBlocks, onTitleChange }) {
-  const content = useSelect((select) => select(editorStore).getEditedPostAttribute('content'), []);
-  const title = useSelect((select) => select(editorStore).getEditedPostAttribute('title'), []);
-  const lastSerializedRef = useRef(null);
-  const lastTitleRef = useRef(null);
-
-  useEffect(() => {
-    const serialized = String(content || '');
-    if (lastSerializedRef.current === serialized) return;
-    lastSerializedRef.current = serialized;
-    try {
-      const parsedBlocks = parse(serialized);
-      setBlocks(Array.isArray(parsedBlocks) ? parsedBlocks : []);
-    } catch {
-      setBlocks([]);
-    }
-  }, [content, setBlocks]);
-
-  useEffect(() => {
-    const nextTitle = String(title || '');
-    if (lastTitleRef.current === nextTitle) return;
-    lastTitleRef.current = nextTitle;
-    onTitleChange?.(nextTitle);
-  }, [title, onTitleChange]);
-
-  return null;
-}
-
-function EditorReadyGate({ expectedPostType, expectedPostId, children }) {
-  const currentPostType = useSelect((select) => select(editorStore).getCurrentPostType(), []);
-  const currentPostId = useSelect((select) => select(editorStore).getCurrentPostId(), []);
-  if (currentPostType !== expectedPostType || String(currentPostId || '') !== String(expectedPostId || '')) {
-    return null;
-  }
-  return children;
-}
-
-export function EditorWorkspaceProvider({
-  blocks,
-  setBlocks,
-  palette,
-  theme,
-  siteTheme,
-  title,
-  onTitleChange,
-  postId,
-  postType,
-  children
-}) {
-  const { addEntities } = useDispatch(coreStore);
-  const { receiveEntityRecords, editEntityRecord } = useDispatch(coreStore);
-  const [entitiesReady, setEntitiesReady] = useState(false);
-  const [recordsReady, setRecordsReady] = useState(false);
+function toWpAdminVars(palette, adminThemeVars = {}) {
   const p = palette || DEFAULT_PALETTE;
-  const adminThemeVars = useMemo(() => toCssVars(theme || {}, { prefix: '--ep-admin' }), [theme]);
-  const contentThemeVars = useMemo(() => toCssVars(siteTheme || theme || {}, { prefix: '--ep-site' }), [siteTheme, theme]);
-  const wpVars = useMemo(() => toWpThemeVars(p, adminThemeVars, contentThemeVars), [p, adminThemeVars, contentThemeVars]);
-  const editorSettings = useMemo(
-    () => toWpEditorSettings(siteTheme || theme || {}, { allowedBlockTypes: SUPPORTED_BLOCK_TYPES }),
-    [siteTheme, theme]
-  );
-  const initialContentRef = useRef({ key: null, value: '' });
-  const editorIdentityKey = `${String(postType || 'post')}:${String(postId || 'editor-local')}`;
-  if (initialContentRef.current.key !== editorIdentityKey) {
-    initialContentRef.current = {
-      key: editorIdentityKey,
-      value: String(serialize(Array.isArray(blocks) ? blocks : []))
-    };
-  }
-  const initialSerializedContent = initialContentRef.current.value;
-  const hostContract = useMemo(
-    () => buildHostBootstrapContract({
-      postId,
-      postType,
-      title,
-      serializedContent: initialSerializedContent
-    }),
-    [postId, postType, title, initialSerializedContent]
-  );
-  const post = useMemo(() => ({
-    id: hostContract.postId,
-    type: hostContract.postType,
-    title: { raw: String(title || '') },
-    content: { raw: initialSerializedContent },
-    status: 'draft'
-  }), [hostContract.postId, hostContract.postType, title, initialSerializedContent]);
-
-  useLayoutEffect(() => {
-    addEntities(hostContract.entities);
-    setEntitiesReady(true);
-  }, [addEntities, hostContract.postId, hostContract.postType, hostContract.entities]);
-
-  useLayoutEffect(() => {
-    if (!entitiesReady) return;
-    applyHostBootstrap({
-      coreDispatch: { receiveEntityRecords, editEntityRecord },
-      contract: hostContract
-    });
-    setRecordsReady(true);
-  }, [
-    entitiesReady,
-    receiveEntityRecords,
-    editEntityRecord,
-    hostContract,
-    hostContract.postId,
-    hostContract.postType
-  ]);
-
-  if (!entitiesReady || !recordsReady) {
-    return null;
-  }
-
-  return (
-    <SlotFillProvider>
-      <EditorProvider post={post} settings={editorSettings}>
-        <EditorReadyGate expectedPostType={hostContract.postType} expectedPostId={hostContract.postId}>
-          <EditorStateBridge setBlocks={setBlocks} onTitleChange={onTitleChange} />
-          {children}
-          <div id="ep-editor-popovers" style={wpVars}>
-            <Popover.Slot />
-          </div>
-        </EditorReadyGate>
-      </EditorProvider>
-    </SlotFillProvider>
-  );
-}
-
-function WpEditorHost({ postType, postId, title, content, settings }) {
-  const wpPostId = useMemo(() => toWpNumericId(postId || 'editor-local'), [postId]);
-  const hostId = useMemo(
-    () => `ep-wp-editor-${String(postType || 'post')}-${String(wpPostId)}`,
-    [postType, wpPostId]
-  );
-  const rootRef = useRef(null);
-  const initialEditsRef = useRef({
-    title: String(title || ''),
-    content: String(content || '')
-  });
-
-  useEffect(() => {
-    const host = globalThis.document?.getElementById(hostId);
-    if (!host) {
-      return undefined;
-    }
-    host.replaceChildren();
-    rootRef.current = initializeEditor(
-      hostId,
-      postType,
-      wpPostId,
-      settings,
-      initialEditsRef.current
-    );
-
-    return () => {
-      const rootToUnmount = rootRef.current;
-      rootRef.current = null;
-      try {
-        rootToUnmount?.unmount?.();
-      } catch {
-        // Ignore teardown issues from Gutenberg internals.
-      }
-    };
-  }, [hostId, postType, wpPostId, settings]);
-
-  return <div id={hostId} className="ep-editor-wp-host" style={{ minHeight: 680, width: '100%' }} />;
-}
-
-function toWpThemeVars(palette, adminThemeVars = {}, contentThemeVars = {}) {
-  const p = palette || DEFAULT_PALETTE;
-  // Canvas uses light theme colors to simulate a typical light-themed site.
-  // Admin theme (sidebar, header, inspector) uses the palette mode.
-  const canvasBg = contentThemeVars['--ep-site-color-surface'] || contentThemeVars['--ep-site-color-background'] || DEFAULT_PALETTE.surfaceMuted;
-  const canvasText = contentThemeVars['--ep-site-color-text'] || DEFAULT_PALETTE.text;
-  const canvasMuted = contentThemeVars['--ep-site-color-textMuted'] || DEFAULT_PALETTE.textMuted;
-  const canvasBorder = contentThemeVars['--ep-site-color-border'] || DEFAULT_PALETTE.border;
-
   return {
     ...adminThemeVars,
-    ...contentThemeVars,
     '--wp-admin-theme-color': p.accent,
     '--wp-admin-theme-color-darker-10': p.accent,
     '--wp-admin-theme-color-darker-20': p.accent,
@@ -236,13 +34,26 @@ function toWpThemeVars(palette, adminThemeVars = {}, contentThemeVars = {}) {
     '--wp-components-color-gray-700': p.textMuted,
     '--wp-components-color-gray-300': p.border,
     '--wp-components-color-gray-100': p.surfaceMuted,
-    '--wp-components-color-border': p.border,
+    '--wp-components-color-border': p.border
+  };
+}
+
+function toWpSiteVars(contentThemeVars = {}) {
+  const canvasBg = contentThemeVars['--ep-site-color-surface']
+    || contentThemeVars['--ep-site-color-background']
+    || DEFAULT_PALETTE.surfaceMuted;
+  const canvasText = contentThemeVars['--ep-site-color-text'] || DEFAULT_PALETTE.text;
+  const canvasMuted = contentThemeVars['--ep-site-color-textMuted'] || DEFAULT_PALETTE.textMuted;
+  const canvasBorder = contentThemeVars['--ep-site-color-border'] || DEFAULT_PALETTE.border;
+
+  return {
+    ...contentThemeVars,
     '--ep-site-canvas-bg': canvasBg,
     '--ep-site-canvas-text': canvasText,
     '--ep-site-canvas-muted': canvasMuted,
     '--ep-site-canvas-border': canvasBorder,
-    '--ep-site-title-size': contentThemeVars['--ep-site-typography-display-size'] || 'clamp(3.2rem, 6vw, 5.2rem)',
-    '--ep-site-body-size': contentThemeVars['--ep-site-typography-body-size'] || 'clamp(1.1rem, 2.2vw, 1.9rem)'
+    '--ep-site-title-size': contentThemeVars['--ep-site-typography-display-size'] || 'clamp(2.25rem, 4vw, 3.5rem)',
+    '--ep-site-body-size': contentThemeVars['--ep-site-typography-body-size'] || '1.125rem'
   };
 }
 
@@ -282,7 +93,7 @@ function FallbackEditor({ blocks, setBlocks, palette }) {
   }, []);
 
   return (
-    <View style={[styles.fallbackWrap, { borderColor: palette?.border || '#d5dbe8' }]}>
+    <View style={[styles.fallbackWrap, { borderColor: palette?.border || '#d5dbe8' }]}> 
       <Text style={{ color: palette?.textMuted || '#475569', marginBottom: 8 }}>
         Rich block canvas unavailable. Editing source HTML fallback.
       </Text>
@@ -339,37 +150,46 @@ class CanvasErrorBoundary extends Component {
   }
 }
 
-export function EditorCanvas({ blocks, setBlocks, palette, theme, siteTheme, title, onTitleChange: _onTitleChange, postId, postType }) {
+export function EditorCanvas({
+  blocks,
+  setBlocks,
+  palette,
+  theme,
+  siteTheme,
+  title,
+  onTitleChange,
+  postId,
+  postType
+}) {
   const [visualFailed, setVisualFailed] = useState(false);
   const p = palette || DEFAULT_PALETTE;
+
+  const adminThemeVars = useMemo(() => toCssVars(theme || {}, { prefix: '--ep-admin' }), [theme]);
   const contentThemeVars = useMemo(() => toCssVars(siteTheme || theme || {}, { prefix: '--ep-site' }), [siteTheme, theme]);
-  const canvasThemeVars = useMemo(() => toWpThemeVars(p, {}, contentThemeVars), [p, contentThemeVars]);
-  const editorSettings = useMemo(
-    () => toWpEditorSettings(siteTheme || theme || {}, { allowedBlockTypes: SUPPORTED_BLOCK_TYPES }),
-    [siteTheme, theme]
-  );
+  const adminVars = useMemo(() => toWpAdminVars(p, adminThemeVars), [p, adminThemeVars]);
+  const contentVars = useMemo(() => toWpSiteVars(contentThemeVars), [contentThemeVars]);
 
   return (
     <View style={styles.container}>
-      <View style={[styles.canvasContainer, { backgroundColor: p.surfaceMuted }]}>
+      <View style={[styles.canvasContainer, { backgroundColor: p.surfaceMuted }]}> 
         <CanvasErrorBoundary
-          onError={() => {
-            setVisualFailed(true);
-          }}
-          fallback={
-            <FallbackEditor blocks={blocks} setBlocks={setBlocks} palette={p} />
-          }
+          onError={() => setVisualFailed(true)}
+          fallback={<FallbackEditor blocks={blocks} setBlocks={setBlocks} palette={p} />}
         >
-          <View style={[styles.paperSheet, { backgroundColor: p.surfaceMuted, shadowColor: p.text, borderColor: p.border }]}>
-            <div className="ep-editor-canvas-root" style={canvasThemeVars}>
-              <WpEditorHost
-                postType={postType === 'page' ? 'page' : 'post'}
-                postId={postId || 'editor-local'}
-                title={title}
-                content={String(serialize(Array.isArray(blocks) ? blocks : []))}
-                settings={editorSettings}
-              />
-            </div>
+          <View style={[styles.paperSheet, { backgroundColor: p.surfaceMuted, borderColor: p.border }]}> 
+            <EditorSurface
+              blocks={blocks}
+              setBlocks={setBlocks}
+              title={title}
+              onTitleChange={onTitleChange}
+              postId={postId || 'editor-local'}
+              postType={postType === 'page' ? 'page' : 'post'}
+              theme={theme}
+              siteTheme={siteTheme}
+              adminVars={adminVars}
+              contentVars={contentVars}
+              palette={p}
+            />
           </View>
         </CanvasErrorBoundary>
       </View>
@@ -385,46 +205,10 @@ export function EditorCanvas({ blocks, setBlocks, palette, theme, siteTheme, tit
 
 export function BlockInspectorPanel({ palette }) {
   const p = palette || DEFAULT_PALETTE;
-  return (
-    <div className="ep-editor-inspector-panel" style={toWpThemeVars(p)} aria-label="Block settings">
-      <BlockInspector />
-    </div>
-  );
+  return <EditorSurfaceInspector palette={p} styleVars={toWpAdminVars(p)} />;
 }
 
 const BORDER_RADIUS = 4;
-
-EditorStateBridge.propTypes = {
-  setBlocks: PropTypes.func.isRequired,
-  onTitleChange: PropTypes.func
-};
-
-EditorReadyGate.propTypes = {
-  expectedPostType: PropTypes.string,
-  expectedPostId: PropTypes.string,
-  children: PropTypes.node.isRequired
-};
-
-EditorWorkspaceProvider.propTypes = {
-  blocks: PropTypes.array.isRequired,
-  setBlocks: PropTypes.func.isRequired,
-  palette: PropTypes.shape(palettePropTypes),
-  theme: PropTypes.object,
-  siteTheme: PropTypes.object,
-  title: PropTypes.string,
-  onTitleChange: PropTypes.func,
-  postId: PropTypes.string,
-  postType: PropTypes.string,
-  children: PropTypes.node.isRequired
-};
-
-WpEditorHost.propTypes = {
-  postType: PropTypes.string,
-  postId: PropTypes.string,
-  title: PropTypes.string,
-  content: PropTypes.string,
-  settings: PropTypes.object.isRequired
-};
 
 FallbackEditor.propTypes = {
   blocks: PropTypes.array.isRequired,
@@ -468,10 +252,6 @@ const styles = StyleSheet.create({
     minHeight: 680,
     padding: 0,
     borderRadius: 0,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0,
-    shadowRadius: 4,
-    elevation: 0,
     borderWidth: 0
   },
   fallbackWrap: {
