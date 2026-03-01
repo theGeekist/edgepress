@@ -16,8 +16,8 @@ Primary documents:
 
 Source file references:
 
-- `/Users/jasonnathan/Repos/gcms/docs/internal/edgepress-content-extensibility-spec.md`
-- `/Users/jasonnathan/Repos/gcms/PLANNING.md`
-- `/Users/jasonnathan/Repos/gcms/docs/internal/phase12c-branch-salvage-plan-2026-03-01.md`
-- `/Users/jasonnathan/Repos/gcms/docs/internal/content-model-v2.md`
-- `/Users/jasonnathan/Repos/gcms/idea.md`
+- `docs/internal/edgepress-content-extensibility-spec.md`
+- `PLANNING.md`
+- `docs/internal/phase12c-branch-salvage-plan-2026-03-01.md`
+- `docs/internal/content-model-v2.md`
+- `idea.md`

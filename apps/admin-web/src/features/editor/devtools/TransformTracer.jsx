@@ -93,7 +93,16 @@ export function TransformTracer({
     );
   }
 
-  const { steps } = tracerData;
+  const steps = Array.isArray(tracerData.steps) ? tracerData.steps : [];
+  if (steps.length === 0) {
+    return (
+      <View style={styles.emptyState}>
+        <Text style={{ color: palette.textMuted }}>
+          Trace data has no steps to display
+        </Text>
+      </View>
+    );
+  }
   const currentStep = steps[tracerStep] || steps[0];
 
   return (
@@ -101,7 +110,7 @@ export function TransformTracer({
       <View style={[styles.stepsRow, { borderColor: palette.border }]}>
         {steps.map((step, index) => (
           <StepButton
-            key={step.label}
+            key={`${step.label}-${index}`}
             label={step.label}
             stepIndex={index}
             isActive={tracerStep === index}
@@ -162,7 +171,7 @@ TransformTracer.propTypes = {
     steps: PropTypes.arrayOf(PropTypes.shape({
       label: PropTypes.string.isRequired,
       data: PropTypes.any
-    }))
+    })).isRequired
   }),
   tracerStep: PropTypes.number.isRequired,
   onStepChange: PropTypes.func.isRequired,

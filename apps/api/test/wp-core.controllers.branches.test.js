@@ -183,4 +183,22 @@ test('wp-core meta routes: ancillary endpoints return expected shapes', async ()
   const lookupBody = await lookup.json();
   assert.equal(lookupBody.slug, 'my-template');
   assert.equal(lookupBody.type, 'template');
+
+  const lookupMissing = await routes.get('GET', '/templates/lookup')(
+    new Request('http://test.local/wp/v2/templates/lookup')
+  );
+  assert.equal(lookupMissing.status, 400);
+  const lookupMissingBody = await lookupMissing.json();
+  assert.equal(lookupMissingBody.code, 'rest_missing_callback_param');
+  assert.equal(Array.isArray(lookupMissingBody?.data?.params), true);
+  assert.equal(lookupMissingBody.data.params.includes('slug'), true);
+
+  const lookupBlank = await routes.get('GET', '/templates/lookup')(
+    new Request('http://test.local/wp/v2/templates/lookup?slug=')
+  );
+  assert.equal(lookupBlank.status, 400);
+  const lookupBlankBody = await lookupBlank.json();
+  assert.equal(lookupBlankBody.code, 'rest_missing_callback_param');
+  assert.equal(Array.isArray(lookupBlankBody?.data?.params), true);
+  assert.equal(lookupBlankBody.data.params.includes('slug'), true);
 });

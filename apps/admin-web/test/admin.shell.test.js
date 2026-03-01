@@ -158,4 +158,8 @@ test('admin shell persists featured image id on document update', async () => {
   });
 
   assert.equal(updated.document.featuredImageId, 'med_featured_1');
+  const listed = await shell.listDocuments({ page: 1, pageSize: 50, status: 'all' });
+  const reloaded = listed.items.find((item) => item.id === documentId);
+  assert.ok(reloaded);
+  assert.equal(reloaded.featuredImageId, 'med_featured_1');
 });

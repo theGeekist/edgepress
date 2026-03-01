@@ -1,5 +1,6 @@
 import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native';
 import PropTypes from 'prop-types';
+import { useMemo, useState } from 'react';
 import { palettePropTypes } from '@components/prop-types';
 import { useEditorBlocks } from './useDevToolsState.js';
 
@@ -25,15 +26,18 @@ function BlockNode({
   wpBlock,
   canonicalNode,
   depth,
-  index,
+  path,
   isExpanded,
   isSelected,
   onToggleExpand,
   onSelect,
+  expandedNodes,
+  selectedPath,
   palette
 }) {
   const hasChildren = Array.isArray(wpBlock?.innerBlocks) && wpBlock.innerBlocks.length > 0;
-  const nodeId = canonicalNode?.id || `block-${index}`;
+  const nodeId = canonicalNode?.id || `block-${path}`;
+  const topLevelIndex = Number.parseInt(String(path).split('.')[0] || '0', 10);
 
   return (
     <View style={styles.nodeContainer}>
@@ -43,7 +47,7 @@ function BlockNode({
           { paddingLeft: 12 + depth * 16 },
           isSelected && { backgroundColor: palette.accent + '20' }
         ]}
-        onPress={() => onSelect(index)}
+        onPress={() => onSelect(path, topLevelIndex)}
       >
         {hasChildren ? (
           <Pressable onPress={() => onToggleExpand(nodeId)} style={styles.expandButton}>
@@ -70,20 +74,27 @@ function BlockNode({
 
       {hasChildren && isExpanded && (
         <View style={styles.childrenContainer}>
-          {wpBlock.innerBlocks.map((child, childIndex) => (
-            <BlockNode
-              key={child.clientId || `${nodeId}-${childIndex}`}
-              wpBlock={child}
-              canonicalNode={canonicalNode?.children?.[childIndex]}
-              depth={depth + 1}
-              index={`${index}.${childIndex}`}
-              isExpanded={false}
-              isSelected={false}
-              onToggleExpand={onToggleExpand}
-              onSelect={onSelect}
-              palette={palette}
-            />
-          ))}
+          {wpBlock.innerBlocks.map((child, childIndex) => {
+            const childPath = `${path}.${childIndex}`;
+            const childNode = canonicalNode?.children?.[childIndex];
+            const childNodeId = childNode?.id || `block-${childPath}`;
+            return (
+              <BlockNode
+                key={child.clientId || childNodeId}
+                wpBlock={child}
+                canonicalNode={childNode}
+                depth={depth + 1}
+                path={childPath}
+                isExpanded={expandedNodes.has(childNodeId)}
+                isSelected={selectedPath === childPath}
+                onToggleExpand={onToggleExpand}
+                onSelect={onSelect}
+                expandedNodes={expandedNodes}
+                selectedPath={selectedPath}
+                palette={palette}
+              />
+            );
+          })}
         </View>
       )}
     </View>
@@ -94,11 +105,13 @@ BlockNode.propTypes = {
   wpBlock: PropTypes.object,
   canonicalNode: PropTypes.object,
   depth: PropTypes.number.isRequired,
-  index: PropTypes.oneOfType([PropTypes.number, PropTypes.string]).isRequired,
+  path: PropTypes.string.isRequired,
   isExpanded: PropTypes.bool,
   isSelected: PropTypes.bool,
   onToggleExpand: PropTypes.func.isRequired,
   onSelect: PropTypes.func.isRequired,
+  expandedNodes: PropTypes.instanceOf(Set).isRequired,
+  selectedPath: PropTypes.string,
   palette: PropTypes.shape(palettePropTypes).isRequired
 };
 
@@ -166,10 +179,25 @@ export function BlockTreeInspector(props) {
     palette
   } = props;
 
+  const [selectedPath, setSelectedPath] = useState(null);
   const blocks = useEditorBlocks(props);
-  const selectedCanonical = typeof selectedBlockIndex === 'number'
-    ? canonicalNodes[selectedBlockIndex]
-    : null;
+  const selectedCanonical = useMemo(() => {
+    if (typeof selectedPath === 'string' && selectedPath.length > 0) {
+      const segments = selectedPath
+        .split('.')
+        .map((part) => Number.parseInt(part, 10))
+        .filter((part) => Number.isFinite(part));
+      let cursor = canonicalNodes;
+      let node = null;
+      for (const segment of segments) {
+        if (!Array.isArray(cursor) || segment < 0 || segment >= cursor.length) return null;
+        node = cursor[segment] || null;
+        cursor = node?.children;
+      }
+      return node;
+    }
+    return typeof selectedBlockIndex === 'number' ? canonicalNodes[selectedBlockIndex] : null;
+  }, [canonicalNodes, selectedBlockIndex, selectedPath]);
 
   const blockCount = blocks.length;
 
@@ -192,20 +220,29 @@ export function BlockTreeInspector(props) {
           </Text>
         </View>
         <ScrollView style={styles.treeScroll}>
-          {blocks.map((block, index) => (
-            <BlockNode
-              key={block.clientId || index}
-              wpBlock={block}
-              canonicalNode={canonicalNodes[index]}
-              depth={0}
-              index={index}
-              isExpanded={expandedNodes.has(canonicalNodes[index]?.id)}
-              isSelected={selectedBlockIndex === index}
-              onToggleExpand={onToggleExpand}
-              onSelect={onSelectBlock}
-              palette={palette}
-            />
-          ))}
+          {blocks.map((block, index) => {
+            const path = String(index);
+            const nodeId = canonicalNodes[index]?.id || `block-${path}`;
+            return (
+              <BlockNode
+                key={block.clientId || nodeId}
+                wpBlock={block}
+                canonicalNode={canonicalNodes[index]}
+                depth={0}
+                path={path}
+                isExpanded={expandedNodes.has(nodeId)}
+                isSelected={selectedPath === path}
+                onToggleExpand={onToggleExpand}
+                onSelect={(nextPath, topLevelIndex) => {
+                  setSelectedPath(nextPath);
+                  onSelectBlock(topLevelIndex);
+                }}
+                expandedNodes={expandedNodes}
+                selectedPath={selectedPath}
+                palette={palette}
+              />
+            );
+          })}
         </ScrollView>
       </View>
       <DetailsPanel canonicalNode={selectedCanonical} palette={palette} />

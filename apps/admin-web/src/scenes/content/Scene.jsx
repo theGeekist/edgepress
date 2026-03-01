@@ -48,16 +48,17 @@ export function ContentScene({
     themeTokens
   });
   const hasLoadedEditorMediaRef = useRef(false);
+  const refreshMedia = media?.refresh;
 
   useEffect(() => {
-    if (!isAuthenticated || !isEditorView || !media?.refresh || hasLoadedEditorMediaRef.current) {
+    if (!isAuthenticated || !isEditorView || !refreshMedia || hasLoadedEditorMediaRef.current) {
       return;
     }
     hasLoadedEditorMediaRef.current = true;
-    media.refresh().catch((error) => {
+    refreshMedia().catch((error) => {
       actions.onSceneError?.(error instanceof Error ? error.message : String(error));
     });
-  }, [actions, isAuthenticated, isEditorView, media]);
+  }, [actions, isAuthenticated, isEditorView, refreshMedia]);
 
   if (!isEditorView) {
     return (

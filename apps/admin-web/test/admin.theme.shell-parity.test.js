@@ -17,21 +17,18 @@ function buildPublishShell(theme, cssVars, options = {}) {
 function extractCssVars(html) {
   const vars = {};
   const source = String(html || '');
-  let cursor = 0;
+  for (const chunk of source.split(';')) {
+    const colonIndex = chunk.indexOf(':');
+    if (colonIndex <= 0) continue;
 
-  while (cursor < source.length) {
-    const nameStart = source.indexOf('--', cursor);
-    if (nameStart === -1) break;
-    const colonIndex = source.indexOf(':', nameStart);
-    const semiIndex = source.indexOf(';', colonIndex + 1);
-    if (colonIndex === -1 || semiIndex === -1) break;
+    const rawName = chunk.slice(0, colonIndex).trim();
+    const lastBrace = Math.max(rawName.lastIndexOf('{'), rawName.lastIndexOf('}'));
+    const candidateName = rawName.slice(lastBrace + 1).trim();
+    if (!/^--[a-z0-9-_]+$/i.test(candidateName)) continue;
 
-    const name = source.slice(nameStart, colonIndex).trim();
-    const value = source.slice(colonIndex + 1, semiIndex).trim();
-    if (name.startsWith('--') && name.length > 2) {
-      vars[name] = value;
-    }
-    cursor = semiIndex + 1;
+    const rawValue = chunk.slice(colonIndex + 1).trim();
+    if (!rawValue) continue;
+    vars[candidateName] = rawValue;
   }
   return vars;
 }
@@ -53,7 +50,10 @@ function normalizeThemeScope(vars) {
 }
 
 function select(vars, keys) {
-  return Object.fromEntries(keys.map((key) => [key, vars[key]]));
+  return Object.fromEntries(keys.map((key) => {
+    assert.ok(Object.prototype.hasOwnProperty.call(vars, key), `Missing key ${key}`);
+    return [key, vars[key]];
+  }));
 }
 
 describe('Theme shell parity', () => {

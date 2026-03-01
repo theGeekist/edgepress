@@ -3,7 +3,7 @@ import { SOURCE_REVISION_SET_SCHEMA_VERSION } from '@geekist/edgepress/domain/en
 import { normalizeBlocksInput } from '@geekist/edgepress/domain/blocks.js';
 import { toErrorMessage } from '@geekist/edgepress/domain/errors.js';
 import { normalizePublishProvenanceInput } from '@geekist/edgepress/domain/provenance.js';
-import { buildShell } from '../../../../packages/content/src/renderShell.js';
+import { buildSiteShell } from '../../../../packages/content/src/renderShell.js';
 import { serialize } from '@wordpress/blocks';
 
 // Non-cryptographic hash for deterministic testable fingerprints only.
@@ -26,14 +26,6 @@ function escapeHtml(input) {
     .replaceAll("'", '&#39;');
 }
 
-function buildSiteShell(theme, cssVars, options = {}) {
-  return buildShell(theme, cssVars, {
-    ...options,
-    prefix: '--ep-site-',
-    classes: 'ep-shell-site'
-  });
-}
-
 function resolvePublishThemeVars(sourceRevisionSet) {
   const menus = Array.isArray(sourceRevisionSet?.menus) ? sourceRevisionSet.menus : [];
   const theme = {};
@@ -50,11 +42,22 @@ function resolvePublishThemeVars(sourceRevisionSet) {
 function assignStringEntries(target, source) {
   const sourceObject = source && typeof source === 'object' ? source : {};
   for (const [key, value] of Object.entries(sourceObject)) {
-    const name = String(key || '').trim();
-    const cssValue = String(value || '').trim();
+    const name = String(key ?? '').trim();
+    const cssValue = value == null ? '' : String(value).trim();
     if (!name || !cssValue) continue;
     target[name] = cssValue;
   }
+}
+
+function extractRevisionIds(sourceRevisionSet) {
+  if (Array.isArray(sourceRevisionSet)) {
+    return sourceRevisionSet.map((entry) => String(entry || '').trim()).filter(Boolean);
+  }
+  if (sourceRevisionSet && typeof sourceRevisionSet === 'object') {
+    const revisions = Array.isArray(sourceRevisionSet.revisions) ? sourceRevisionSet.revisions : [];
+    return revisions.map((entry) => String(entry || '').trim()).filter(Boolean);
+  }
+  return [];
 }
 
 export function resolveImageBlocks(blocks, mediaById) {
@@ -230,10 +233,11 @@ export async function createRelease({ runtime, store, releaseStore, sourceRevisi
   const createdAt = runtime.now().toISOString();
   const releaseId = `rel_${runtime.uuid()}`;
   const provenance = normalizePublishProvenanceInput({ sourceRevisionId, sourceRevisionSet });
+  const revisionIds = extractRevisionIds(provenance.sourceRevisionSet);
   const sourceRevisionSetSnapshot = menus.length > 0
     ? {
       schemaVersion: SOURCE_REVISION_SET_SCHEMA_VERSION,
-      revisions: Array.isArray(provenance.sourceRevisionSet) ? provenance.sourceRevisionSet : [],
+      revisions: revisionIds,
       menus
     }
     : provenance.sourceRevisionSet;

@@ -46,7 +46,7 @@ MediaOption.propTypes = {
   palette: PropTypes.shape(palettePropTypes).isRequired
 };
 
-export function MediaPicker({ palette, value, items, disabled, onChange, onRefresh, onUpload, isUploading }) {
+export function MediaPicker({ palette, value, items, disabled, onChange, onRefresh, onUpload, isUploading, maxVisible = 8 }) {
   const mediaItems = Array.isArray(items) ? items : [];
   const selected = mediaItems.find((item) => item.id === value) || null;
   const [isDragging, setIsDragging] = useState(false);
@@ -134,7 +134,7 @@ export function MediaPicker({ palette, value, items, disabled, onChange, onRefre
           </View>
         ) : (
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-            {mediaItems.slice(0, 8).map((item) => (
+            {mediaItems.slice(0, Math.max(1, maxVisible)).map((item) => (
               <MediaOption
                 key={item.id}
                 item={item}
@@ -162,5 +162,8 @@ MediaPicker.propTypes = {
   onChange: PropTypes.func.isRequired,
   onRefresh: PropTypes.func,
   onUpload: PropTypes.func,
-  isUploading: PropTypes.bool
+  isUploading: PropTypes.bool,
+  maxVisible: PropTypes.number
 };
+
+export const mediaPickerPropTypes = MediaPicker.propTypes;

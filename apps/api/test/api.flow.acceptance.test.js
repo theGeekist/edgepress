@@ -94,6 +94,7 @@ describe('Navigation block parity acceptance test', () => {
     });
     assert.equal(snapshotDoc.res.status, 201);
 
+    // This scenario intentionally exercises the HTML content rendering path; snapshotDoc above covers block snapshot behavior.
     const previewSourceHtml = `<nav class="wp-block-navigation ep-navigation is-horizontal"><ul><li><a href="/home">Home</a></li><li><a href="https://docs.example.com" target="_blank" rel="noopener">Docs</a></li></ul></nav>`;
     const renderDoc = await requestJson(handler, 'POST', '/v1/documents', {
       token: accessToken,
@@ -106,6 +107,7 @@ describe('Navigation block parity acceptance test', () => {
       }
     });
     assert.equal(renderDoc.res.status, 201);
+    assert.equal(renderDoc.json.document.content, previewSourceHtml);
 
     const documentId = renderDoc.json.document.id;
     const routeSlug = renderDoc.json.document.slug;

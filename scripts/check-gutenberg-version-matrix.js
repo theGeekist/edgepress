@@ -27,11 +27,12 @@ for (const [name, expected] of Object.entries(EXPECTED)) {
     failures.push(`${name}: missing (expected ${expected})`);
     continue;
   }
-  if (actual !== expected) {
-    failures.push(`${name}: found ${actual}, expected ${expected}`);
-  }
   if (actual.startsWith('^') || actual.startsWith('~')) {
     failures.push(`${name}: floating range ${actual} is not allowed`);
+    continue;
+  }
+  if (actual !== expected) {
+    failures.push(`${name}: found ${actual}, expected ${expected}`);
   }
 }
 

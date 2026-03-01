@@ -5,20 +5,11 @@ import PropTypes from 'prop-types';
 import { palettePropTypes } from '@components/prop-types';
 import { toCssVars } from '@features/theme';
 import { EditorSurface, EditorSurfaceInspector } from './EditorSurface.jsx';
+import { DEFAULT_PALETTE } from '../constants.js';
 import './canvas.web.css';
 import '@wp-styles/block-editor';
 import '@wp-styles/components';
 import '@wp-styles/interface';
-
-const DEFAULT_PALETTE = {
-  accent: '#2271b1',
-  border: '#d5dbe8',
-  surface: '#ffffff',
-  surfaceMuted: '#f7fafc',
-  text: '#0f172a',
-  textMuted: '#475569',
-  onAccent: '#ffffff'
-};
 
 function toWpAdminVars(palette, adminThemeVars = {}) {
   const p = palette || DEFAULT_PALETTE;

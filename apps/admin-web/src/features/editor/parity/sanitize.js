@@ -1,33 +1,37 @@
+import sanitizeHtml from 'sanitize-html';
+
 export const SANITIZE_POLICY_SCHEMA_VERSION = 1;
 
-function normalizeHtml(input) {
-  return String(input ?? '');
-}
-
-function removeScriptLikeTags(html) {
-  return html.replace(/<\s*(script|style)[^>]*>[\s\S]*?<\s*\/\s*\1\s*>/gi, '');
-}
-
-function removeEventHandlerAttributes(html) {
-  return html
-    .replace(/\son[a-z]+\s*=\s*"[^"]*"/gi, '')
-    .replace(/\son[a-z]+\s*=\s*'[^']*'/gi, '')
-    .replace(/\son[a-z]+\s*=\s*[^\s>]+/gi, '');
-}
-
-function removeUnsafeProtocolAttributes(html) {
-  return html
-    .replace(/\s(href|src)\s*=\s*"\s*(javascript:|data:text\/html)[^"]*"/gi, '')
-    .replace(/\s(href|src)\s*=\s*'\s*(javascript:|data:text\/html)[^']*'/gi, '')
-    .replace(/\s(href|src)\s*=\s*(javascript:|data:text\/html)[^\s>]*/gi, '');
-}
+const SANITIZE_CONFIG = {
+  allowedTags: [
+    'p', 'br', 'strong', 'em', 'b', 'i', 'u', 's', 'sup', 'sub',
+    'ul', 'ol', 'li', 'blockquote', 'cite',
+    'a', 'img',
+    'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+    'figure', 'figcaption',
+    'code', 'pre',
+    'span', 'div'
+  ],
+  allowedAttributes: {
+    a: ['href', 'target', 'rel', 'title'],
+    img: ['src', 'alt', 'title', 'width', 'height'],
+    '*': ['class']
+  },
+  allowedSchemes: ['http', 'https', 'mailto', 'tel'],
+  allowedSchemesByTag: {
+    img: ['http', 'https', 'data']
+  },
+  allowedSchemesAppliedToAttributes: ['href', 'src'],
+  allowProtocolRelative: false,
+  disallowedTagsMode: 'discard',
+  parser: {
+    lowerCaseAttributeNames: true
+  }
+};
 
 export function sanitizeRichTextHtml(input) {
-  const before = normalizeHtml(input);
-  let after = before;
-  after = removeScriptLikeTags(after);
-  after = removeEventHandlerAttributes(after);
-  after = removeUnsafeProtocolAttributes(after);
+  const before = String(input ?? '');
+  const after = sanitizeHtml(before, SANITIZE_CONFIG);
   return {
     html: after,
     changed: before !== after,

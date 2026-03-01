@@ -48,9 +48,8 @@ function buildPostTypeRecord(postType) {
 export function registerBootstrapPreload({ postType, postId, title, content }) {
   const type = normalizePostType(postType);
   const numericId = toWpNumericId(postId || 'editor-local');
-  const key = `${type}:${numericId}:${String(title || '')}:${String(content || '')}`;
-
-  if (apiFetch.__epBootstrapPreloadKey === key) {
+  const key = `${type}:${numericId}`;
+  if (apiFetch.__epBootstrapPreloadKey === key && apiFetch.__epBootstrapPreload) {
     return apiFetch.__epBootstrapPreload;
   }
 
@@ -86,8 +85,35 @@ export function registerBootstrapPreload({ postType, postId, title, content }) {
     }
   };
 
-  apiFetch.use(apiFetch.createPreloadingMiddleware(preload));
+  if (!apiFetch.__epBootstrapPreloadRegistered) {
+    apiFetch.use((options, next) => {
+      const path = resolveRequestPath(options);
+      const preloaded = apiFetch.__epBootstrapPreload;
+      if (path && preloaded && Object.prototype.hasOwnProperty.call(preloaded, path)) {
+        const payload = preloaded[path];
+        return Promise.resolve(payload?.body);
+      }
+      return next(options);
+    });
+    apiFetch.__epBootstrapPreloadRegistered = true;
+  }
+
   apiFetch.__epBootstrapPreloadKey = key;
   apiFetch.__epBootstrapPreload = preload;
   return preload;
+}
+
+function resolveRequestPath(options) {
+  if (typeof options === 'string') return options;
+  if (typeof options?.path === 'string') return options.path;
+
+  const urlValue = typeof options?.url === 'string' ? options.url : '';
+  if (!urlValue) return '';
+
+  try {
+    const parsed = new URL(urlValue, globalThis.location?.origin || 'http://localhost');
+    return `${parsed.pathname}${parsed.search || ''}`;
+  } catch {
+    return '';
+  }
 }

@@ -17,8 +17,8 @@ Phase 12C focuses on Product Parity Completion - closing the gap between transit
 | 1 | [Block Hardening](#slice-1-block-hardening) | [x] Complete | 2026-02-17 | 2026-02-17 |
 | 2 | [Featured Image/Media Parity](#slice-2-featured-imagemedia-parity) | [x] Complete | 2026-02-17 | 2026-02-17 |
 | 3 | [Navigation Block Parity](#slice-3-navigation-block-parity) | [x] Complete | 2026-02-17 | 2026-02-17 |
-| 4 | [Theme Parity Completion](#slice-5-theme-parity-completion) | [ ] Pending | | |
-| 5 | [Templates/Patterns Lifecycle](#slice-4-templatespatterns-lifecycle) | [ ] Pending | | |
+| 4 | [Templates/Patterns Lifecycle](#slice-4-templatespatterns-lifecycle) | [ ] Pending | | |
+| 5 | [Theme Parity Completion](#slice-5-theme-parity-completion) | [ ] Pending | | |
 | 6 | [Parity Gap Closeout](#slice-6-parity-gap-closeout) | [ ] Pending | | |
 
 ---
@@ -277,7 +277,7 @@ The facade serves compatibility. The model serves EP. Don't let WP's implementat
 
 ### Token Isolation
 
-```
+```text
 Admin Chrome:    --ep-admin-*
 Site Rendering:  --ep-site-*
 ```

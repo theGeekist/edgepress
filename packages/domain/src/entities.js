@@ -75,10 +75,14 @@ function normalizeSourceRevisionSetMenu(value) {
   };
 }
 
-function normalizeSourceRevisionSet(value) {
+export function normalizeSourceRevisionSetInput(value) {
   if (value == null) return null;
   if (Array.isArray(value)) {
-    return normalizeStringArray(value);
+    return {
+      schemaVersion: SOURCE_REVISION_SET_SCHEMA_VERSION,
+      revisions: normalizeStringArray(value),
+      menus: []
+    };
   }
   if (typeof value !== 'object') return null;
 
@@ -266,7 +270,7 @@ export function createPublishJob({ id, requestedBy, sourceRevisionId = null, sou
     id,
     requestedBy,
     sourceRevisionId,
-    sourceRevisionSet: normalizeSourceRevisionSet(sourceRevisionSet),
+    sourceRevisionSet: normalizeSourceRevisionSetInput(sourceRevisionSet),
     status: 'running',
     releaseId: null,
     error: null,

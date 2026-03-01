@@ -35,6 +35,7 @@ async function listRegistryDocuments({ request, store, type }) {
   };
   const listed = await store.listDocuments(query);
   const items = Array.isArray(listed?.items) ? listed.items.slice() : [];
+  // Re-sort for deterministic tie-breaking when stores return same-timestamp rows in non-stable order.
   items.sort((a, b) => {
     const aUpdatedAt = String(a?.updatedAt || '');
     const bUpdatedAt = String(b?.updatedAt || '');
@@ -43,7 +44,7 @@ async function listRegistryDocuments({ request, store, type }) {
     }
     const aId = String(a?.id || '');
     const bId = String(b?.id || '');
-    return aId.localeCompare(bId);
+    return aId.localeCompare(bId, 'en', { numeric: true, sensitivity: 'base' });
   });
   return items;
 }

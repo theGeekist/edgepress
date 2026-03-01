@@ -7,6 +7,10 @@ function escapeHtml(input) {
     .replaceAll("'", '&#39;');
 }
 
+const CSS_VAR_NAME_RE = /^--[a-z0-9-_]+$/i;
+const UNSAFE_STYLE_VALUE_TOKEN_RE = /[<>{};]|\/\*|\*\/|url\(/i;
+const UNSAFE_VAR_NAME_TOKEN_RE = /[;:{}()'"\\`]/;
+
 function toKebabCase(input) {
   const value = String(input || '').trim();
   if (!value) return '';
@@ -28,10 +32,10 @@ function normalizeCssVars(cssVars) {
   if (!cssVars || typeof cssVars !== 'object' || Array.isArray(cssVars)) return {};
   const out = {};
   for (const [key, value] of Object.entries(cssVars)) {
-    const varName = String(key || '').trim();
-    const varValue = String(value || '').trim();
-    if (!varName.startsWith('--') || !varValue) continue;
-    if (varValue.includes('<') || varValue.includes('>') || varValue.toLowerCase().includes('</')) continue;
+    const varName = String(key ?? '').trim();
+    const varValue = value == null ? '' : String(value).trim();
+    if (!CSS_VAR_NAME_RE.test(varName) || !varValue) continue;
+    if (UNSAFE_VAR_NAME_TOKEN_RE.test(varName) || UNSAFE_STYLE_VALUE_TOKEN_RE.test(varValue)) continue;
     out[varName] = varValue;
   }
   return out;
@@ -42,16 +46,17 @@ function buildThemeVars(theme, prefix) {
   const safePrefix = String(prefix || '').trim();
   const out = {};
   for (const [key, value] of Object.entries(theme)) {
-    const rawName = String(key || '').trim();
+    const rawName = String(key ?? '').trim();
     const normalizedKey = rawName.startsWith('--')
       ? rawName.slice(2)
       : toKebabCase(rawName);
-    const varValue = String(value || '').trim();
+    const varValue = value == null ? '' : String(value).trim();
     if (!normalizedKey || !varValue) continue;
-    if (varValue.includes('<') || varValue.includes('>') || varValue.toLowerCase().includes('</')) continue;
+    if (UNSAFE_STYLE_VALUE_TOKEN_RE.test(varValue)) continue;
     const fullVarName = safePrefix
       ? `${safePrefix}${normalizedKey}`
       : `--${normalizedKey}`;
+    if (!CSS_VAR_NAME_RE.test(fullVarName) || UNSAFE_VAR_NAME_TOKEN_RE.test(fullVarName)) continue;
     out[fullVarName] = varValue;
   }
   return out;

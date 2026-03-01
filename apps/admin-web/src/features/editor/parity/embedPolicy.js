@@ -16,6 +16,8 @@ function normalizeProviderSlug(value) {
   return String(value || '').trim().toLowerCase();
 }
 
+const SUPPORTED_PROVIDER_SLUGS = new Set(PROVIDER_HOST_PATTERNS.map((entry) => entry.slug));
+
 function detectProviderFromUrl(url) {
   try {
     const parsed = new URL(url);
@@ -76,8 +78,7 @@ export function evaluateEmbedPolicy({ url, providerNameSlug }) {
   }
 
   const detectedProvider = detectProviderFromUrl(normalizedUrl.url);
-  const provider = normalizeProviderSlug(normalizedProvider || detectedProvider);
-  if (!provider) {
+  if (!detectedProvider) {
     issues.push({
       status: 'partial',
       code: 'EMBED_PROVIDER_UNSUPPORTED',
@@ -92,9 +93,39 @@ export function evaluateEmbedPolicy({ url, providerNameSlug }) {
     };
   }
 
+  if (normalizedProvider && !SUPPORTED_PROVIDER_SLUGS.has(normalizedProvider)) {
+    issues.push({
+      status: 'partial',
+      code: 'EMBED_PROVIDER_UNSUPPORTED',
+      message: 'Embed provider is not supported by policy.'
+    });
+    return {
+      url: '',
+      providerNameSlug: '',
+      allowed: false,
+      issues,
+      policyVersion: EMBED_POLICY_SCHEMA_VERSION
+    };
+  }
+
+  if (normalizedProvider && normalizedProvider !== detectedProvider) {
+    issues.push({
+      status: 'partial',
+      code: 'EMBED_PROVIDER_MISMATCH',
+      message: 'Embed provider slug does not match URL host.'
+    });
+    return {
+      url: '',
+      providerNameSlug: '',
+      allowed: false,
+      issues,
+      policyVersion: EMBED_POLICY_SCHEMA_VERSION
+    };
+  }
+
   return {
     url: normalizedUrl.url,
-    providerNameSlug: provider,
+    providerNameSlug: detectedProvider,
     allowed: true,
     issues,
     policyVersion: EMBED_POLICY_SCHEMA_VERSION

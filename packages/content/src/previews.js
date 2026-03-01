@@ -1,5 +1,6 @@
 import { assertPreviewNotExpired } from '@geekist/edgepress/domain';
 import { normalizeBlocksInput } from '@geekist/edgepress/domain/blocks.js';
+import { normalizeSourceRevisionSetInput } from '@geekist/edgepress/domain/entities.js';
 import { serialize } from '@wordpress/blocks';
 import { parseTtlSeconds, signPreviewToken, verifyPreviewTokenSignature } from '@geekist/edgepress/api-core/runtime-utils.js';
 import { buildPreviewShell } from './renderShell.js';
@@ -52,67 +53,6 @@ function parseThemeVarsFromRequest(request) {
   }
 }
 
-function normalizeRevisionIdsInput(input) {
-  if (!Array.isArray(input)) return [];
-  const ids = [];
-  for (const entry of input) {
-    const normalized = String(entry || '').trim();
-    if (!normalized || ids.includes(normalized)) continue;
-    ids.push(normalized);
-  }
-  return ids;
-}
-
-function normalizeMenuSnapshotItem(item, index) {
-  const kind = item?.kind === 'external' ? 'external' : 'internal';
-  return {
-    id: String(item?.id || '').trim() || `nav_item_${index + 1}`,
-    label: String(item?.label || '').trim() || `Item ${index + 1}`,
-    kind,
-    route: kind === 'internal' ? String(item?.route || '').trim() : '',
-    documentId: kind === 'internal' ? String(item?.documentId || '').trim() : '',
-    externalUrl: kind === 'external' ? String(item?.externalUrl || '').trim() : '',
-    order: Number.isFinite(Number(item?.order)) ? Number(item.order) : index,
-    parentId: String(item?.parentId || '').trim() || null,
-    target: String(item?.target || '_self').trim() || '_self',
-    rel: String(item?.rel || '').trim()
-  };
-}
-
-function normalizeMenuSnapshot(menu, index) {
-  const key = String(menu?.key || '').trim() || `menu_${index + 1}`;
-  const id = String(menu?.id || '').trim() || `nav_${key}`;
-  const normalizedItems = (Array.isArray(menu?.items) ? menu.items : [])
-    .map((entry, itemIndex) => normalizeMenuSnapshotItem(entry, itemIndex))
-    .sort((a, b) => a.order - b.order || a.label.localeCompare(b.label))
-    .map((entry, itemIndex) => ({ ...entry, order: itemIndex }));
-  return {
-    id,
-    key,
-    title: String(menu?.title || key).trim() || key,
-    items: normalizedItems,
-    updatedAt: String(menu?.updatedAt || '')
-  };
-}
-
-function normalizePreviewSourceRevisionSet(input) {
-  if (Array.isArray(input)) {
-    return {
-      schemaVersion: 1,
-      revisions: normalizeRevisionIdsInput(input),
-      menus: []
-    };
-  }
-  if (!input || typeof input !== 'object') return null;
-  const revisions = normalizeRevisionIdsInput(input.revisions);
-  const menus = (Array.isArray(input.menus) ? input.menus : []).map((menu, index) => normalizeMenuSnapshot(menu, index));
-  return {
-    schemaVersion: Number.isFinite(Number(input.schemaVersion)) ? Number(input.schemaVersion) : 1,
-    revisions,
-    menus
-  };
-}
-
 function buildPreviewHtml(doc, themeVars, serializedBlocks, featuredImageMarkup) {
   const siteTheme = doc?.siteTheme ?? doc?.raw?.siteTheme ?? {};
   return buildPreviewShell(siteTheme, themeVars, {
@@ -141,7 +81,7 @@ export function createPreviewFeature({ runtime, store, previewStore, resolveImag
     let serializedBlocks;
     if (Array.isArray(doc.blocks) && doc.blocks.length > 0) {
       const canonicalBlocks = normalizeBlocksInput(doc.blocks);
-      const sourceRevisionSet = normalizePreviewSourceRevisionSet(doc?.sourceRevisionSet ?? doc?.raw?.sourceRevisionSet);
+      const sourceRevisionSet = normalizeSourceRevisionSetInput(doc?.sourceRevisionSet ?? doc?.raw?.sourceRevisionSet);
       const renderContext = sourceRevisionSet
         ? { sourceRevisionSet, menus: sourceRevisionSet.menus }
         : {};

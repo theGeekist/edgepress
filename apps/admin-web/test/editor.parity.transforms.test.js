@@ -287,7 +287,7 @@ test('image caption sanitization preserves safe markup and removes unsafe attrib
 
   assert.equal(nodes[0].lossiness, 'partial');
   assert.equal(nodes[0].props.caption, '<em>Cap</em>');
-  assert.equal(diagnostics.counts.partial >= 1, true);
+  assert.equal(diagnostics.counts.partial, 2);
 
   const rendered = renderCanonicalNodes({
     nodes,
@@ -325,7 +325,7 @@ test('embed mapping enforces provider policy and emits diagnostics for unsupport
   assert.equal(nodes[0].blockKind, 'ep/embed');
   assert.equal(nodes[0].lossiness, 'partial');
   assert.equal(nodes[0].props.url, '');
-  assert.equal(diagnostics.counts.partial >= 1, true);
+  assert.equal(diagnostics.counts.partial, 2);
   assert.equal(
     diagnostics.items.some((item) => item.code === 'EMBED_PROVIDER_UNSUPPORTED'),
     true

@@ -16,6 +16,7 @@ import { serialize } from '@wordpress/blocks';
 import { StyleSheet, TextInput, View } from 'react-native';
 import { toWpEditorSettings } from '@features/theme';
 import { palettePropTypes } from '@components/prop-types';
+import { DEFAULT_PALETTE } from '../constants.js';
 import { createEditorRegistry } from '../state/createEditorRegistry.js';
 import { storeHotSwapPlugin } from '../state/storeHotSwapPlugin.js';
 import { useEditorBootstrap } from '../hooks/useEditorBootstrap.js';
@@ -33,16 +34,6 @@ const SUPPORTED_BLOCK_TYPES = [
   'core/separator',
   'core/spacer'
 ];
-
-const DEFAULT_PALETTE = {
-  accent: '#2271b1',
-  border: '#d5dbe8',
-  surface: '#ffffff',
-  surfaceMuted: '#f7fafc',
-  text: '#0f172a',
-  textMuted: '#475569',
-  onAccent: '#ffffff'
-};
 
 function EditorSurfaceInner({
   blocks,
@@ -193,7 +184,7 @@ EditorSurface.propTypes = {
   palette: PropTypes.shape(palettePropTypes)
 };
 
-export function EditorSurfaceInspector({ palette: _palette, styleVars = {} }) {
+export function EditorSurfaceInspector({ styleVars = {} }) {
   return (
     <div className="ep-editor-inspector-panel" style={styleVars} aria-label="Block settings">
       <BlockInspector />
@@ -202,7 +193,6 @@ export function EditorSurfaceInspector({ palette: _palette, styleVars = {} }) {
 }
 
 EditorSurfaceInspector.propTypes = {
-  palette: PropTypes.shape(palettePropTypes),
   styleVars: PropTypes.object
 };
 
