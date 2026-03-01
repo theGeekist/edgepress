@@ -201,10 +201,9 @@ export function BlockTreeInspector(props) {
 
   const selectedCanonical = useMemo(() => {
     if (typeof selectedPath === 'string' && selectedPath.length > 0) {
-      const segments = selectedPath
-        .split('.')
-        .map((part) => Number.parseInt(part, 10))
-        .filter((part) => Number.isFinite(part));
+      const parts = selectedPath.split('.');
+      if (parts.some((part) => !/^\d+$/.test(part))) return null;
+      const segments = parts.map((part) => Number.parseInt(part, 10));
       let cursor = canonicalNodes;
       let node = null;
       for (const segment of segments) {

@@ -19,7 +19,7 @@ Phase 12C focuses on Product Parity Completion - closing the gap between transit
 | 3 | [Navigation Block Parity](#slice-3-navigation-block-parity) | [x] Complete | 2026-02-17 | 2026-02-17 |
 | 4 | [Templates/Patterns Lifecycle](#slice-4-templatespatterns-lifecycle) | [x] Complete | 2026-02-17 | 2026-02-17 |
 | 5 | [Theme Parity Completion](#slice-5-theme-parity-completion) | [x] Complete | 2026-02-17 | 2026-02-17 |
-| 6 | [Parity Gap Closeout](#slice-6-parity-gap-closeout) | [ ] Pending | | |
+| 6 | [Parity Gap Closeout](#slice-6-parity-gap-closeout) | [x] Complete | 2026-02-17 | 2026-03-01 |
 
 ---
 
@@ -311,16 +311,16 @@ Site Rendering:  --ep-site-*
 ### Tasks
 
 - [x] 6.1 Create `scripts/parity-audit.js` - Run diagnostics on sample WP exports
-- [ ] 6.2 Update `docs/reference/wp-compatibility-profile.md` with findings
-- [ ] 6.3 Add mappings for identified high-priority blocks
-- [ ] 6.4 Add tests for each new mapping
+- [x] 6.2 Update `docs/reference/wp-compatibility-profile.md` with findings
+- [x] 6.3 Add mappings for identified high-priority blocks
+- [x] 6.4 Add tests for each new mapping
 
 ### Audit Checklist
 
-- [ ] All core WP blocks have either transform or documented exclusion
-- [ ] All `partial` lossiness cases have documented reason
-- [ ] All `fallback` cases preserve sufficient data for future recovery
-- [ ] Diagnostics capture actionable information
+- [x] All core WP blocks have either transform or documented exclusion
+- [x] All `partial` lossiness cases have documented reason
+- [x] All `fallback` cases preserve sufficient data for future recovery
+- [x] Diagnostics capture actionable information
 
 ### Files
 
@@ -403,6 +403,7 @@ bun run check:boundaries    # No CF imports outside adapters
 | 2026-02-17 | 3 | Landed navigation block parity with menu snapshot resolution in preview/publish and deterministic release behavior | |
 | 2026-02-17 | 4 | Added document-backed pattern/template lifecycle and wired wp-core facade endpoints + tests | |
 | 2026-02-17 | 5 | Unified theme shell/token contract across editor, preview, and publish targets with parity tests | |
+| 2026-03-01 | 6 | Closed parity-gap audit loop: refreshed compatibility profile, completed high-priority mapping/tests, and finalized audit checklist | 65cfcfc |
 
 ---
 
