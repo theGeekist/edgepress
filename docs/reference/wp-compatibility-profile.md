@@ -32,7 +32,7 @@ The following behaviors are guaranteed to match WordPress REST API semantics.
 | `/wp/v2/pages/:id` | GET, POST | ✅ Full | Read and update pages |
 | `/wp/v2/patterns` | GET | ✅ Full | Returns registered block patterns |
 | `/wp/v2/templates` | GET | ✅ Full | Returns registered templates |
-| `/wp/v2/templates/lookup?slug={slug}` | GET | ✅ Full | Resolves template by slug |
+| `/wp/v2/templates/lookup` | GET | ✅ Full | Query parameter: `slug` (string, required) - resolves template by slug |
 | `/v1/wp/v2/*` | * | ✅ Full | Prefixed variant of all above endpoints |
 
 ### Authentication
@@ -248,7 +248,11 @@ Posts and pages can be filtered by:
 
 WordPress REST API supports `?context=embed/view/edit` for different response shapes. EdgePress does not support this parameter and always returns the full response.
 
-### Patterns and Templates (Guaranteed Endpoint Support)
+### Patterns and Templates
+
+**Endpoint Support**: Guaranteed (see endpoint table above)
+**Implementation Details**: Partial/derived
+
 Compatibility behavior:
 
 - Patterns and templates are backed by EdgePress `Document` entities with `type='pattern'` and `type='template'`.

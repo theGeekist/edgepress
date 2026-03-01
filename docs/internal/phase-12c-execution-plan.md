@@ -409,7 +409,7 @@ bun run check:boundaries    # No CF imports outside adapters
 
 ## References
 
-- `PLANNING.md` (repository root) - Master phase tracker
+- [Master Phase Tracker](/appendix/planning)
 - [Block Content Model](/reference/content-model-v2)
 - [WP Compatibility Profile](/reference/wp-compatibility-profile)
 - [Frontend Slice Architecture](/architecture/frontend-slice-structure)

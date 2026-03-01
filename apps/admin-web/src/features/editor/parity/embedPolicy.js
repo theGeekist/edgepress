@@ -62,6 +62,16 @@ function normalizeUrl(input) {
   }
 }
 
+function denyPolicy(issues, providerNameSlug = '') {
+  return {
+    url: '',
+    providerNameSlug,
+    allowed: false,
+    issues,
+    policyVersion: EMBED_POLICY_SCHEMA_VERSION
+  };
+}
+
 export function evaluateEmbedPolicy({ url, providerNameSlug }) {
   const normalizedProvider = normalizeProviderSlug(providerNameSlug);
   const normalizedUrl = normalizeUrl(url);
@@ -73,13 +83,7 @@ export function evaluateEmbedPolicy({ url, providerNameSlug }) {
       code: normalizedUrl.code,
       message: normalizedUrl.message
     });
-    return {
-      url: '',
-      providerNameSlug: normalizedProvider,
-      allowed: false,
-      issues,
-      policyVersion: EMBED_POLICY_SCHEMA_VERSION
-    };
+    return denyPolicy(issues, normalizedProvider);
   }
 
   const detectedProvider = detectProviderFromUrl(normalizedUrl.url);
@@ -89,13 +93,7 @@ export function evaluateEmbedPolicy({ url, providerNameSlug }) {
       code: 'EMBED_PROVIDER_UNSUPPORTED',
       message: 'Embed provider is not supported by policy.'
     });
-    return {
-      url: '',
-      providerNameSlug: '',
-      allowed: false,
-      issues,
-      policyVersion: EMBED_POLICY_SCHEMA_VERSION
-    };
+    return denyPolicy(issues);
   }
 
   if (normalizedProvider && !SUPPORTED_PROVIDER_SLUGS.has(normalizedProvider)) {
@@ -104,13 +102,7 @@ export function evaluateEmbedPolicy({ url, providerNameSlug }) {
       code: 'EMBED_PROVIDER_UNSUPPORTED',
       message: 'Embed provider is not supported by policy.'
     });
-    return {
-      url: '',
-      providerNameSlug: '',
-      allowed: false,
-      issues,
-      policyVersion: EMBED_POLICY_SCHEMA_VERSION
-    };
+    return denyPolicy(issues);
   }
 
   if (normalizedProvider && normalizedProvider !== detectedProvider) {
@@ -119,13 +111,7 @@ export function evaluateEmbedPolicy({ url, providerNameSlug }) {
       code: 'EMBED_PROVIDER_MISMATCH',
       message: 'Embed provider slug does not match URL host.'
     });
-    return {
-      url: '',
-      providerNameSlug: '',
-      allowed: false,
-      issues,
-      policyVersion: EMBED_POLICY_SCHEMA_VERSION
-    };
+    return denyPolicy(issues);
   }
 
   return {
