@@ -234,13 +234,11 @@ export async function createRelease({ runtime, store, releaseStore, sourceRevisi
   const releaseId = `rel_${runtime.uuid()}`;
   const provenance = normalizePublishProvenanceInput({ sourceRevisionId, sourceRevisionSet });
   const revisionIds = extractRevisionIds(provenance.sourceRevisionSet);
-  const sourceRevisionSetSnapshot = menus.length > 0
-    ? {
-      schemaVersion: SOURCE_REVISION_SET_SCHEMA_VERSION,
-      revisions: revisionIds,
-      menus
-    }
-    : provenance.sourceRevisionSet;
+  const sourceRevisionSetSnapshot = {
+    schemaVersion: SOURCE_REVISION_SET_SCHEMA_VERSION,
+    revisions: revisionIds,
+    menus
+  };
 
   const artifacts = [];
   if (typeof releaseStore.writeArtifact !== 'function') {

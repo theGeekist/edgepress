@@ -49,7 +49,11 @@ test('createRelease writes artifacts via releaseStore.writeArtifact when availab
   assert.equal(manifest.artifacts[0].path, 'rel_fixeduuid0001/doc_1.html');
   assert.equal(manifest.schemaVersion, 2);
   assert.equal(manifest.sourceRevisionId, 'rev_1');
-  assert.deepEqual(manifest.sourceRevisionSet, ['rev_1', 'rev_2']);
+  assert.deepEqual(manifest.sourceRevisionSet, {
+    schemaVersion: 1,
+    revisions: ['rev_1', 'rev_2'],
+    menus: []
+  });
   assert.ok(Array.isArray(manifest.artifactHashes));
   assert.equal(manifest.artifactHashes.length, 1);
   assert.ok(Array.isArray(manifest.blockHashes));
@@ -84,7 +88,11 @@ test('createRelease canonicalizes sourceRevisionId from sourceRevisionSet when i
   });
 
   assert.equal(manifest.sourceRevisionId, 'rev_only');
-  assert.deepEqual(manifest.sourceRevisionSet, ['rev_only']);
+  assert.deepEqual(manifest.sourceRevisionSet, {
+    schemaVersion: 1,
+    revisions: ['rev_only'],
+    menus: []
+  });
 });
 
 test('createRelease throws when releaseStore.writeArtifact is missing', async () => {

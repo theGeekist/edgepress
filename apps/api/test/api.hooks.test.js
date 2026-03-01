@@ -73,11 +73,19 @@ test('beforePublish hook can transform provenance before publish', async () => {
   });
   assert.equal(publish.res.status, 201);
   assert.equal(publish.json.job.sourceRevisionId, 'rev_hook_override');
-  assert.deepEqual(publish.json.job.sourceRevisionSet, ['rev_hook_override', 'rev_from_request']);
+  assert.deepEqual(publish.json.job.sourceRevisionSet, {
+    schemaVersion: 1,
+    revisions: ['rev_hook_override', 'rev_from_request'],
+    menus: []
+  });
 
   const manifest = await platform.releaseStore.getManifest(publish.json.job.releaseId);
   assert.equal(manifest.sourceRevisionId, 'rev_hook_override');
-  assert.deepEqual(manifest.sourceRevisionSet, ['rev_hook_override', 'rev_from_request']);
+  assert.deepEqual(manifest.sourceRevisionSet, {
+    schemaVersion: 1,
+    revisions: ['rev_hook_override', 'rev_from_request'],
+    menus: []
+  });
 });
 
 test('async hooks run for document/revision/publish/activate lifecycle', async () => {

@@ -49,7 +49,11 @@ test('server hook registrar can register filters via addFilter/applyFilters cont
   });
   assert.equal(publish.res.status, 201);
   assert.equal(publish.json.job.sourceRevisionId, 'rev_bootstrap_override');
-  assert.deepEqual(publish.json.job.sourceRevisionSet, ['rev_bootstrap_override', 'rev_client_input']);
+  assert.deepEqual(publish.json.job.sourceRevisionSet, {
+    schemaVersion: 1,
+    revisions: ['rev_bootstrap_override', 'rev_client_input'],
+    menus: []
+  });
 });
 
 test('server hook registrar can register actions via addAction/doAction contract', async () => {

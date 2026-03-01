@@ -116,7 +116,11 @@ test('publish manifest captures provenance and release hash fields', async () =>
   const manifest = await platform.releaseStore.getManifest(releaseId);
   assert.equal(manifest.schemaVersion, 2);
   assert.equal(manifest.sourceRevisionId, 'rev_manual_a');
-  assert.deepEqual(manifest.sourceRevisionSet, ['rev_manual_a', 'rev_manual_b']);
+  assert.deepEqual(manifest.sourceRevisionSet, {
+    schemaVersion: 1,
+    revisions: ['rev_manual_a', 'rev_manual_b'],
+    menus: []
+  });
   assert.ok(Array.isArray(manifest.artifactHashes));
   assert.equal(manifest.artifactHashes.length, manifest.artifacts.length);
   assert.equal(typeof manifest.contentHash, 'string');

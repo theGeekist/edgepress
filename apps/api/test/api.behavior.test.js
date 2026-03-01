@@ -229,7 +229,11 @@ test('publish canonicalizes sourceRevisionId from sourceRevisionSet when omitted
   });
   assert.equal(publish.res.status, 201);
   assert.equal(publish.json.job.sourceRevisionId, 'rev_derived');
-  assert.deepEqual(publish.json.job.sourceRevisionSet, ['rev_derived']);
+  assert.deepEqual(publish.json.job.sourceRevisionSet, {
+    schemaVersion: 1,
+    revisions: ['rev_derived'],
+    menus: []
+  });
 });
 
 test('content model routes manage content types, taxonomies, and terms', async () => {
