@@ -3,8 +3,8 @@
 This guide defines the manual validation steps for Phase 12C (Product Parity) of the Geekist CMS.
 
 ## Prerequisites
-1.  **Dev Server Running**: `apps/admin-web` running (default: http://localhost:5173).
-2.  **API Running**: `apps/api` running (default: http://localhost:8787).
+1.  **Dev Server Running**: `apps/admin-web` running (default: `http://localhost:5173`).
+2.  **API Running**: `apps/api` running (default: `http://localhost:8787`).
 3.  **Authentication**: Logged in as an Admin user.
 
 ## Test Scripts

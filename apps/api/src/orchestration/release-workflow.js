@@ -40,24 +40,21 @@ function resolvePublishThemeVars(sourceRevisionSet) {
   const cssVars = {};
 
   for (const menu of menus) {
-    const themeSource = menu?.theme && typeof menu.theme === 'object' ? menu.theme : {};
-    for (const [key, value] of Object.entries(themeSource)) {
-      const name = String(key || '').trim();
-      const cssValue = String(value || '').trim();
-      if (!name || !cssValue) continue;
-      theme[name] = cssValue;
-    }
-
-    const cssSource = menu?.cssVars && typeof menu.cssVars === 'object' ? menu.cssVars : {};
-    for (const [key, value] of Object.entries(cssSource)) {
-      const name = String(key || '').trim();
-      const cssValue = String(value || '').trim();
-      if (!name || !cssValue) continue;
-      cssVars[name] = cssValue;
-    }
+    assignStringEntries(theme, menu?.theme);
+    assignStringEntries(cssVars, menu?.cssVars);
   }
 
   return { theme, cssVars };
+}
+
+function assignStringEntries(target, source) {
+  const sourceObject = source && typeof source === 'object' ? source : {};
+  for (const [key, value] of Object.entries(sourceObject)) {
+    const name = String(key || '').trim();
+    const cssValue = String(value || '').trim();
+    if (!name || !cssValue) continue;
+    target[name] = cssValue;
+  }
 }
 
 export function resolveImageBlocks(blocks, mediaById) {

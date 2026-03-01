@@ -16,9 +16,22 @@ function buildPublishShell(theme, cssVars, options = {}) {
 
 function extractCssVars(html) {
   const vars = {};
-  const matches = String(html || '').matchAll(/(--[a-z0-9-]+)\s*:\s*([^;]+);/gi);
-  for (const match of matches) {
-    vars[match[1]] = String(match[2] || '').trim();
+  const source = String(html || '');
+  let cursor = 0;
+
+  while (cursor < source.length) {
+    const nameStart = source.indexOf('--', cursor);
+    if (nameStart === -1) break;
+    const colonIndex = source.indexOf(':', nameStart);
+    const semiIndex = source.indexOf(';', colonIndex + 1);
+    if (colonIndex === -1 || semiIndex === -1) break;
+
+    const name = source.slice(nameStart, colonIndex).trim();
+    const value = source.slice(colonIndex + 1, semiIndex).trim();
+    if (name.startsWith('--') && name.length > 2) {
+      vars[name] = value;
+    }
+    cursor = semiIndex + 1;
   }
   return vars;
 }
