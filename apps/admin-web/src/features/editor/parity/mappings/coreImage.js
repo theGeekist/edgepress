@@ -1,4 +1,5 @@
 import { makeStyleRef, makeStyleValue, resolveEnumStyleValue, resolveSpacingStyleValue } from '../styleRefs.js';
+import { sanitizeRichTextHtml } from '../sanitize.js';
 
 function escapeHtml(input) {
   return String(input ?? '')
@@ -10,7 +11,7 @@ function escapeHtml(input) {
 }
 
 function normalizeRichTextHtml(input) {
-  return String(input ?? '');
+  return sanitizeRichTextHtml(input).html;
 }
 
 function resolveImageData(node, context = {}) {
@@ -87,6 +88,7 @@ export const imageImportTransform = {
   canHandle: () => true,
   toCanonical({ wpBlockName, node }) {
     const attrs = node?.attributes && typeof node.attributes === 'object' ? node.attributes : {};
+    const sanitizedCaption = sanitizeRichTextHtml(attrs.caption || '');
     const mediaId = attrs.id !== undefined && attrs.id !== null ? String(attrs.id) : String(attrs.mediaId || '');
     const url = String(attrs.url || '');
     const hasUnsupportedVisualAttrs = Boolean(
@@ -97,14 +99,15 @@ export const imageImportTransform = {
       attrs.sizeSlug && attrs.width && attrs.height
     );
     const hasSource = Boolean(mediaId || url);
-    const lossiness = hasSource && !hasUnsupportedVisualAttrs ? 'none' : 'partial';
+    const hasSanitizedCaption = sanitizedCaption.changed;
+    const lossiness = hasSource && !hasUnsupportedVisualAttrs && !hasSanitizedCaption ? 'none' : 'partial';
     return {
       blockKind: 'ep/image',
       props: {
         mediaId: mediaId.trim(),
         url,
         alt: String(attrs.alt || ''),
-        caption: String(attrs.caption || ''),
+        caption: sanitizedCaption.html,
         href: String(attrs.href || ''),
         rel: String(attrs.rel || ''),
         linkClass: String(attrs.linkClass || ''),
@@ -127,6 +130,9 @@ export const imageImportTransform = {
         attrs,
         innerHTML: typeof node?.innerHTML === 'string' ? node.innerHTML : ''
       },
+      importIssues: hasSanitizedCaption
+        ? [{ status: 'partial', code: 'IMAGE_CAPTION_SANITIZED', message: 'Image caption HTML was sanitized.' }]
+        : [],
       lossiness,
       children: []
     };

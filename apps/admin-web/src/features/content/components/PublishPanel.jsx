@@ -51,7 +51,7 @@ PublishPanel.propTypes = {
   palette: PropTypes.shape(palettePropTypes).isRequired,
   hasSelection: PropTypes.bool.isRequired,
   loop: PropTypes.shape({
-    activeRelease: PropTypes.object
+    activeRelease: PropTypes.oneOfType([PropTypes.object, PropTypes.string])
   }),
   previewLink: PropTypes.shape({
     url: PropTypes.string

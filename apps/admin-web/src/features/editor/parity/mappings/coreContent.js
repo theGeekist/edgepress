@@ -5,6 +5,8 @@ import {
   resolveEnumStyleValue,
   resolveSpacingStyleValue
 } from '../styleRefs.js';
+import { sanitizeRichTextHtml } from '../sanitize.js';
+import { evaluateEmbedPolicy } from '../embedPolicy.js';
 
 function escapeHtml(input) {
   return String(input ?? '')
@@ -20,7 +22,7 @@ function classList(values) {
 }
 
 function normalizeRichTextHtml(input) {
-  return String(input ?? '');
+  return sanitizeRichTextHtml(input).html;
 }
 
 function toPresetSlug(value) {
@@ -54,24 +56,31 @@ function importSpacerBlock(wpBlockName, attrs) {
 }
 
 function importHeadingBlock(wpBlockName, attrs) {
+  const sanitizedContent = sanitizeRichTextHtml(attrs.content || '');
   return {
     blockKind: 'ep/heading',
     props: {
-      content: String(attrs.content || ''),
+      content: sanitizedContent.html,
       level: Number.isFinite(Number(attrs.level)) ? Number(attrs.level) : 2
     },
     origin: { wpBlockName, attrs },
-    lossiness: 'none',
+    lossiness: sanitizedContent.changed ? 'partial' : 'none',
+    importIssues: sanitizedContent.changed
+      ? [{ status: 'partial', code: 'RICH_TEXT_SANITIZED', message: 'Heading HTML was sanitized.' }]
+      : [],
     children: []
   };
 }
 
 function importQuoteBlock(wpBlockName, attrs) {
+  const sanitizedValue = sanitizeRichTextHtml(attrs.value || '');
+  const sanitizedCitation = sanitizeRichTextHtml(attrs.citation || '');
+  const hasSanitizedContent = sanitizedValue.changed || sanitizedCitation.changed;
   return {
     blockKind: 'ep/quote',
     props: {
-      value: String(attrs.value || ''),
-      citation: String(attrs.citation || ''),
+      value: sanitizedValue.html,
+      citation: sanitizedCitation.html,
       style: {
         typography: {
           textAlign: attrs.textAlign ? makeStyleRef(`typography.textAlign.${String(attrs.textAlign)}`) : null
@@ -79,7 +88,10 @@ function importQuoteBlock(wpBlockName, attrs) {
       }
     },
     origin: { wpBlockName, attrs },
-    lossiness: 'none',
+    lossiness: hasSanitizedContent ? 'partial' : 'none',
+    importIssues: hasSanitizedContent
+      ? [{ status: 'partial', code: 'RICH_TEXT_SANITIZED', message: 'Quote HTML was sanitized.' }]
+      : [],
     children: []
   };
 }
@@ -110,16 +122,31 @@ function importSeparatorBlock(wpBlockName, attrs) {
 }
 
 function importEmbedBlock(wpBlockName, attrs) {
+  const caption = sanitizeRichTextHtml(attrs.caption || '');
+  const policyResult = evaluateEmbedPolicy({
+    url: attrs.url,
+    providerNameSlug: attrs.providerNameSlug
+  });
+  const issues = [...policyResult.issues];
+  if (caption.changed) {
+    issues.push({
+      status: 'partial',
+      code: 'EMBED_CAPTION_SANITIZED',
+      message: 'Embed caption HTML was sanitized.'
+    });
+  }
+  const hasPartial = !policyResult.allowed || caption.changed;
   return {
     blockKind: 'ep/embed',
     props: {
-      url: String(attrs.url || ''),
-      caption: String(attrs.caption || ''),
+      url: policyResult.url,
+      caption: caption.html,
       type: String(attrs.type || ''),
-      providerNameSlug: String(attrs.providerNameSlug || '')
+      providerNameSlug: policyResult.providerNameSlug
     },
     origin: { wpBlockName, attrs },
-    lossiness: attrs.url ? 'none' : 'partial',
+    lossiness: hasPartial ? 'partial' : 'none',
+    importIssues: issues,
     children: []
   };
 }

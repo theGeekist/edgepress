@@ -6,6 +6,95 @@ export const ROLE_CAPABILITIES = {
   viewer: ['document:read']
 };
 
+export const SOURCE_REVISION_SET_SCHEMA_VERSION = 1;
+
+/**
+ * Canonical document types used by the document-backed registry.
+ *
+ * `page` and `post` remain the default content primitives.
+ * `pattern` and `template` support WP-compatible facade endpoints while
+ * keeping the core domain model document-based and revisioned.
+ */
+export const VALID_DOCUMENT_TYPES = new Set(['page', 'post', 'pattern', 'template']);
+
+export function isValidDocumentType(type) {
+  return VALID_DOCUMENT_TYPES.has(String(type || '').trim());
+}
+
+/**
+ * @typedef {object} SourceRevisionSetMenuItemSnapshot
+ * @property {string} id
+ * @property {string} label
+ * @property {'internal' | 'external'} kind
+ * @property {string} route
+ * @property {string} documentId
+ * @property {string} externalUrl
+ * @property {number} order
+ * @property {string | null} parentId
+ * @property {string} target
+ * @property {string} rel
+ */
+
+/**
+ * @typedef {object} SourceRevisionSetMenuSnapshot
+ * @property {string} id
+ * @property {string} key
+ * @property {string} title
+ * @property {SourceRevisionSetMenuItemSnapshot[]} items
+ * @property {string} updatedAt
+ */
+
+function normalizeSourceRevisionSetMenuItem(value, index) {
+  const kind = value?.kind === 'external' ? 'external' : 'internal';
+  return {
+    id: String(value?.id || '').trim(),
+    label: String(value?.label || '').trim(),
+    kind,
+    route: kind === 'internal' ? String(value?.route || '').trim() : '',
+    documentId: kind === 'internal' ? String(value?.documentId || '').trim() : '',
+    externalUrl: kind === 'external' ? String(value?.externalUrl || '').trim() : '',
+    order: Number.isFinite(Number(value?.order)) ? Number(value.order) : index,
+    parentId: String(value?.parentId || '').trim() || null,
+    target: String(value?.target || '_self').trim() || '_self',
+    rel: String(value?.rel || '').trim()
+  };
+}
+
+function normalizeSourceRevisionSetMenu(value) {
+  const itemsInput = Array.isArray(value?.items) ? value.items : [];
+  const normalizedItems = itemsInput
+    .map((entry, index) => normalizeSourceRevisionSetMenuItem(entry, index))
+    .sort((a, b) => a.order - b.order || a.label.localeCompare(b.label))
+    .map((entry, index) => ({ ...entry, order: index }));
+  return {
+    id: String(value?.id || '').trim(),
+    key: String(value?.key || '').trim(),
+    title: String(value?.title || '').trim(),
+    items: normalizedItems,
+    updatedAt: String(value?.updatedAt || '').trim()
+  };
+}
+
+function normalizeSourceRevisionSet(value) {
+  if (value == null) return null;
+  if (Array.isArray(value)) {
+    return normalizeStringArray(value);
+  }
+  if (typeof value !== 'object') return null;
+
+  const revisions = normalizeStringArray(value.revisions);
+  const menusInput = Array.isArray(value.menus) ? value.menus : [];
+  const schemaVersion = Number.isFinite(Number(value.schemaVersion)) && Number(value.schemaVersion) > 0
+    ? Number(value.schemaVersion)
+    : SOURCE_REVISION_SET_SCHEMA_VERSION;
+
+  return {
+    schemaVersion,
+    revisions,
+    menus: menusInput.map((entry) => normalizeSourceRevisionSetMenu(entry))
+  };
+}
+
 function normalizeObject(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
   return value;
@@ -177,7 +266,7 @@ export function createPublishJob({ id, requestedBy, sourceRevisionId = null, sou
     id,
     requestedBy,
     sourceRevisionId,
-    sourceRevisionSet,
+    sourceRevisionSet: normalizeSourceRevisionSet(sourceRevisionSet),
     status: 'running',
     releaseId: null,
     error: null,

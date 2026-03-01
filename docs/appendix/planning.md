@@ -4,4 +4,4 @@ title: Planning (raw)
 
 # Planning (raw)
 
-<!--@include: ../../PLANNING.md-->
+Canonical tracker lives at `PLANNING.md` in the repository root.

@@ -2,6 +2,7 @@ import { paragraphImportTransform, paragraphRenderers } from '../mappings/corePa
 import { imageImportTransform, imageRenderers } from '../mappings/coreImage.js';
 import { layoutImportTransform, layoutRenderers } from '../mappings/coreLayout.js';
 import { contentImportTransform, contentRenderers } from '../mappings/coreContent.js';
+import { navigationImportTransform, navigationRenderers } from '../mappings/coreNavigation.js';
 
 export const corePackManifest = {
   name: 'ep-core',
@@ -17,7 +18,8 @@ export const corePackManifest = {
     'core/heading',
     'core/quote',
     'core/separator',
-    'core/embed'
+    'core/embed',
+    'core/navigation'
   ],
   supportedSchemaVersions: [1]
 };
@@ -26,11 +28,13 @@ export const corePackImportTransforms = [
   paragraphImportTransform,
   imageImportTransform,
   layoutImportTransform,
-  contentImportTransform
+  contentImportTransform,
+  navigationImportTransform
 ];
 export const corePackRenderers = [
   ...paragraphRenderers,
   ...imageRenderers,
   ...layoutRenderers,
-  ...contentRenderers
+  ...contentRenderers,
+  ...navigationRenderers
 ];
