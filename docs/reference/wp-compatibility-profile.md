@@ -2,7 +2,7 @@
 
 **Version**: 1.0.0
 **Schema Version**: 1
-**Last Updated**: 2026-02-11
+**Last Updated**: 2026-03-01
 
 This document describes the compatibility level between EdgePress and the WordPress REST API (WP v2). It is intended for developers integrating WordPress clients or plugins with EdgePress.
 
@@ -30,6 +30,9 @@ The following behaviors are guaranteed to match WordPress REST API semantics.
 | `/wp/v2/posts/:id` | GET, POST | ✅ Full | Read and update posts |
 | `/wp/v2/pages` | GET, POST | ✅ Full | List and create pages |
 | `/wp/v2/pages/:id` | GET, POST | ✅ Full | Read and update pages |
+| `/wp/v2/patterns` | GET | ✅ Full | Returns registered block patterns |
+| `/wp/v2/templates` | GET | ✅ Full | Returns registered templates |
+| `/wp/v2/templates/lookup` | GET | ✅ Full | Query parameter: `slug` (string, required) - resolves template by slug |
 | `/v1/wp/v2/*` | * | ✅ Full | Prefixed variant of all above endpoints |
 
 ### Authentication
@@ -170,6 +173,40 @@ The façade accepts content in multiple formats:
 
 ---
 
+## Parity Audit Results
+
+**Last Audit Run**: 2026-02-17
+
+A parity audit is performed periodically against representative WordPress export files to measure the fidelity of the EdgePress compatibility layer.
+
+### Block Coverage Statistics
+
+| Metric | Value |
+|--------|-------|
+| Total Blocks Scanned | 19 |
+| Unique Block Types | 13 |
+| Mapping Coverage | 84.62% |
+| Mapped Block Types | 11 |
+| Missing Block Types | 2 |
+| Partial Support (Lossy) | 2 |
+| Fallback (Unsupported) | 2 |
+
+### Identified Gaps
+
+The following block types were identified as missing explicit import transforms:
+
+- `core/missing-transform`
+- `core/unsupported-block`
+
+### Recommendations
+
+- **Prioritize Missing Transforms**: Implement import transforms for the most frequently occurring unmapped blocks to increase coverage.
+- **Lossiness Documentation**: Document specific `partial` lossiness diagnostic codes (e.g., `RICH_TEXT_SANITIZED`) to clarify expected data trade-offs.
+- **Fallback Review**: Periodically review fallback nodes to ensure the `origin` payload preserves enough data for future recovery when transforms are added.
+- **Navigation Normalization**: Ensure navigation intent is explicit in exports to improve `core/navigation` mapping accuracy.
+
+---
+
 ## Partial Support
 
 The following features have partial support with noted caveats.
@@ -210,6 +247,17 @@ Posts and pages can be filtered by:
 ### Context Parameter
 
 WordPress REST API supports `?context=embed/view/edit` for different response shapes. EdgePress does not support this parameter and always returns the full response.
+
+### Patterns and Templates
+
+**Endpoint Support**: Guaranteed (see endpoint table above)
+**Implementation Details**: Partial/derived
+
+Compatibility behavior:
+
+- Patterns and templates are backed by EdgePress `Document` entities with `type='pattern'` and `type='template'`.
+- Pattern and template content is canonical EdgePress block JSON (`blocks[]`), with rendered HTML treated as derived output.
+- The façade endpoint shape follows WordPress expectations, while the underlying storage and revision model follows EdgePress domain semantics.
 
 ---
 

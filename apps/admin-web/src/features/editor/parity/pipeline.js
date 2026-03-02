@@ -50,6 +50,21 @@ function importOne({ node, importRegistry, context, path, report }) {
     status
   });
 
+  const importIssues = normalized?.origin?.unknownFields?.importIssues;
+  if (Array.isArray(importIssues)) {
+    for (const issue of importIssues) {
+      addDiagnostic(report, {
+        nodePath: [normalized.id],
+        originWpBlockName: wpNode.name,
+        transformId: result.transformId,
+        lossiness: normalized.lossiness,
+        status: issue?.status || status,
+        code: issue?.code || 'IMPORT_ISSUE',
+        message: issue?.message || ''
+      });
+    }
+  }
+
   return normalized;
 }
 

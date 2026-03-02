@@ -14,3 +14,8 @@ coverage/
 **/.eslintcache
 .wrangler/
 ./gutenberg/
+
+# Local UI debugging screenshots (generated during editor investigations)
+scenario-*.png
+title-focus-*.png
+block-area-*.png

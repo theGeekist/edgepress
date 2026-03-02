@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { parse, serialize } from '@wordpress/blocks';
 
+const STARTER_PARAGRAPH_MARKUP = '<!-- wp:paragraph --><p></p><!-- /wp:paragraph -->';
+
 function toBlocks(content) {
   if (!content) return [];
   try {
@@ -12,7 +14,7 @@ function toBlocks(content) {
 
 function withStarterBlock(blocks) {
   if (Array.isArray(blocks) && blocks.length > 0) return blocks;
-  return [];
+  return toBlocks(STARTER_PARAGRAPH_MARKUP);
 }
 
 function isObject(value) {

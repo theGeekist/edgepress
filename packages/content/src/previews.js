@@ -1,7 +1,9 @@
 import { assertPreviewNotExpired } from '@geekist/edgepress/domain';
 import { normalizeBlocksInput } from '@geekist/edgepress/domain/blocks.js';
+import { normalizeSourceRevisionSetInput } from '@geekist/edgepress/domain/entities.js';
 import { serialize } from '@wordpress/blocks';
 import { parseTtlSeconds, signPreviewToken, verifyPreviewTokenSignature } from '@geekist/edgepress/api-core/runtime-utils.js';
+import { buildPreviewShell } from './renderShell.js';
 
 function collectMediaIds(blocks, featuredImageId) {
   const ids = new Set();
@@ -51,54 +53,12 @@ function parseThemeVarsFromRequest(request) {
   }
 }
 
-function toCssVarBlock(themeVars) {
-  const entries = Object.entries(themeVars || {});
-  if (entries.length === 0) return '';
-  return entries
-    .filter(([, value]) => {
-      const v = String(value || '');
-      return !v.includes('<') && !v.includes('>') && !v.toLowerCase().includes('</');
-    })
-    .map(([key, value]) => `${key}: ${value};`)
-    .join('\n');
-}
-
 function buildPreviewHtml(doc, themeVars, serializedBlocks, featuredImageMarkup) {
-  const cssVarBlock = toCssVarBlock(themeVars);
-  return `<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>${escapeHtml(doc.title || 'Preview')}</title>
-    <style>
-      :root {
-        ${cssVarBlock}
-      }
-      * { box-sizing: border-box; }
-      html, body { margin: 0; padding: 0; }
-      body {
-        background: var(--ep-surface-page, #f0f0f1);
-        color: var(--ep-color-text, #1d2327);
-        font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-      }
-      .ep-preview-wrap {
-        max-width: 860px;
-        margin: 24px auto;
-        padding: 24px;
-        background: var(--ep-surface-surface, #fff);
-        border: 1px solid var(--ep-color-border, #dcdcde);
-      }
-      h1 { margin-top: 0; margin-bottom: 1rem; }
-      a { color: var(--ep-color-accent, #2271b1); }
-    </style>
-  </head>
-  <body>
-    <main class="ep-preview-wrap">
-      <article>${featuredImageMarkup}<h1>${escapeHtml(doc.title)}</h1>${serializedBlocks}</article>
-    </main>
-  </body>
-</html>`;
+  const siteTheme = doc?.siteTheme ?? doc?.raw?.siteTheme ?? {};
+  return buildPreviewShell(siteTheme, themeVars, {
+    title: doc.title || 'Preview',
+    content: `<article>${featuredImageMarkup}<h1>${escapeHtml(doc.title)}</h1>${serializedBlocks}</article>`
+  });
 }
 
 export function createPreviewFeature({ runtime, store, previewStore, resolveImageBlocks }) {
@@ -121,7 +81,11 @@ export function createPreviewFeature({ runtime, store, previewStore, resolveImag
     let serializedBlocks;
     if (Array.isArray(doc.blocks) && doc.blocks.length > 0) {
       const canonicalBlocks = normalizeBlocksInput(doc.blocks);
-      const resolvedBlocks = resolveImageBlocks(canonicalBlocks, mediaById);
+      const sourceRevisionSet = normalizeSourceRevisionSetInput(doc?.sourceRevisionSet ?? doc?.raw?.sourceRevisionSet);
+      const renderContext = sourceRevisionSet
+        ? { sourceRevisionSet, menus: sourceRevisionSet.menus }
+        : {};
+      const resolvedBlocks = resolveImageBlocks(canonicalBlocks, mediaById, renderContext);
       serializedBlocks = serialize(resolvedBlocks);
     } else {
       serializedBlocks = doc.content || doc.legacyHtml || '';

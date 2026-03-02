@@ -138,3 +138,28 @@ test('admin shell can load and save navigation menus', async () => {
   assert.equal(listed.items.length, 1);
   assert.equal(listed.items[0].key, 'primary');
 });
+
+test('admin shell persists featured image id on document update', async () => {
+  const platform = createInMemoryPlatform();
+  const handler = createHandler(platform);
+  const shell = createAdminShell({
+    baseUrl: 'http://api.local',
+    fetchImpl: createLocalFetch(handler)
+  });
+
+  await shell.login('admin', 'admin');
+  const created = await shell.createDocument({ title: 'Featured', content: '<p>Body</p>' });
+  const documentId = created.document.id;
+
+  const updated = await shell.updateDocument(documentId, {
+    title: 'Featured',
+    content: '<p>Body</p>',
+    featuredImageId: 'med_featured_1'
+  });
+
+  assert.equal(updated.document.featuredImageId, 'med_featured_1');
+  const listed = await shell.listDocuments({ page: 1, pageSize: 50, status: 'all' });
+  const reloaded = listed.items.find((item) => item.id === documentId);
+  assert.ok(reloaded);
+  assert.equal(reloaded.featuredImageId, 'med_featured_1');
+});

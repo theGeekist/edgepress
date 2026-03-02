@@ -142,7 +142,14 @@ test('wp-core meta routes: ancillary endpoints return expected shapes', async ()
   registerWpCoreMetaRoutes({
     add: routes.add,
     runtime: { env: () => null },
-    store: {},
+    store: {
+      async listDocuments({ slug }) {
+        if (slug) {
+          return { items: [{ id: 'tpl_1', slug, title: 'Template', type: 'template' }] };
+        }
+        return { items: [] };
+      }
+    },
     authzErrorResponse: (e) => json({ code: e.code || 'AUTH' }, e.status || 401),
     requireCapability: async () => ({ id: 'u_admin' }),
     json
@@ -170,8 +177,28 @@ test('wp-core meta routes: ancillary endpoints return expected shapes', async ()
   assert.equal(globalStylesBody.stylesheet, 'my-theme');
 
   const lookup = await routes.get('GET', '/templates/lookup')(
-    new Request('http://test.local/wp/v2/templates/lookup')
+    new Request('http://test.local/wp/v2/templates/lookup?slug=my-template')
   );
   assert.equal(lookup.status, 200);
-  assert.equal(await lookup.json(), null);
+  const lookupBody = await lookup.json();
+  assert.equal(lookupBody.slug, 'my-template');
+  assert.equal(lookupBody.type, 'template');
+
+  const lookupMissing = await routes.get('GET', '/templates/lookup')(
+    new Request('http://test.local/wp/v2/templates/lookup')
+  );
+  assert.equal(lookupMissing.status, 400);
+  const lookupMissingBody = await lookupMissing.json();
+  assert.equal(lookupMissingBody.code, 'rest_missing_callback_param');
+  assert.equal(Array.isArray(lookupMissingBody?.data?.params), true);
+  assert.equal(lookupMissingBody.data.params.includes('slug'), true);
+
+  const lookupBlank = await routes.get('GET', '/templates/lookup')(
+    new Request('http://test.local/wp/v2/templates/lookup?slug=')
+  );
+  assert.equal(lookupBlank.status, 400);
+  const lookupBlankBody = await lookupBlank.json();
+  assert.equal(lookupBlankBody.code, 'rest_missing_callback_param');
+  assert.equal(Array.isArray(lookupBlankBody?.data?.params), true);
+  assert.equal(lookupBlankBody.data.params.includes('slug'), true);
 });
