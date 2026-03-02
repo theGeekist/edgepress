@@ -202,3 +202,34 @@ test('wp-core meta routes: ancillary endpoints return expected shapes', async ()
   assert.equal(Array.isArray(lookupBlankBody?.data?.params), true);
   assert.equal(lookupBlankBody.data.params.includes('slug'), true);
 });
+
+test('wp-core meta routes: /patterns returns deterministic order for ties', async () => {
+  const routes = createCollector();
+
+  registerWpCoreMetaRoutes({
+    add: routes.add,
+    runtime: { env: () => null },
+    store: {
+      async listDocuments() {
+        return {
+          items: [
+            { id: 'pat_b', slug: 'beta', updatedAt: '2026-03-01T10:00:00.000Z', type: 'pattern' },
+            { id: 'pat_a', slug: 'alpha', updatedAt: '2026-03-01T10:00:00.000Z', type: 'pattern' },
+            { id: 'pat_z', slug: 'zeta', updatedAt: '2026-03-01T11:00:00.000Z', type: 'pattern' }
+          ]
+        };
+      }
+    },
+    authzErrorResponse: (e) => json({ code: e.code || 'AUTH' }, e.status || 401),
+    requireCapability: async () => ({ id: 'u_admin' }),
+    json
+  });
+
+  const patterns = await routes.get('GET', '/patterns')(
+    new Request('http://test.local/wp/v2/patterns')
+  );
+  assert.equal(patterns.status, 200);
+  const body = await patterns.json();
+  assert.equal(Array.isArray(body), true);
+  assert.deepEqual(body.map((entry) => entry.slug), ['zeta', 'alpha', 'beta']);
+});

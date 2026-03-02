@@ -36,7 +36,7 @@ export function RootScene({
         <ContentScene
           palette={palette}
           theme={theme}
-          siteTheme={settings?.siteTheme || theme}
+          siteTheme={settings?.siteTheme ?? theme}
           contentView={contentView}
           docs={docs}
           media={media}

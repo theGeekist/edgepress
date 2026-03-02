@@ -89,6 +89,7 @@ function EditorSurfaceInner({
     >
       <SlotFillProvider>
         <BlockEditorProvider
+          useSubRegistry={false}
           value={Array.isArray(blocks) ? blocks : []}
           onInput={setBlocks}
           onChange={setBlocks}
