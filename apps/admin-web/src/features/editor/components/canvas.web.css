@@ -8,6 +8,10 @@
   position: relative;
 }
 
+.ep-editor-canvas-root .ep-editor-surface-layout {
+  min-height: var(--ep-editor-min-height);
+}
+
 .ep-editor-canvas-root .interface-interface-skeleton,
 .ep-editor-canvas-root .interface-interface-skeleton__body,
 .ep-editor-canvas-root .interface-interface-skeleton__content,
@@ -40,8 +44,8 @@
 .ep-editor-canvas-root .interface-complementary-area svg,
 .ep-editor-canvas-root .components-panel svg {
   color: var(--wp-components-color-foreground, var(--ep-admin-color-text, #1f2937));
-  fill: currentColor;
-  stroke: currentColor;
+  fill: currentcolor;
+  stroke: currentcolor;
 }
 
 .ep-editor-canvas-root .components-button.is-primary,
@@ -52,7 +56,7 @@
 }
 
 .ep-editor-canvas-root .editor-post-title__input,
-.ep-editor-canvas-root input[placeholder='Add title'] {
+.ep-editor-canvas-root .ep-editor-title-input {
   color: var(--ep-site-canvas-text, #1f2937);
   font-size: var(--ep-site-title-size, clamp(2.25rem, 4vw, 3.5rem));
   line-height: 1.08;
@@ -67,9 +71,13 @@
 }
 
 .ep-editor-canvas-root .editor-post-title__input::placeholder,
-.ep-editor-canvas-root input[placeholder='Add title']::placeholder {
-  color: var(--ep-site-canvas-muted, #6b7280);
+.ep-editor-canvas-root .ep-editor-title-input::placeholder {
+  color: var(--ep-title-placeholder, var(--ep-site-canvas-muted, #6b7280));
   opacity: 1;
+}
+
+.ep-editor-canvas-root .ep-editor-title-input:focus {
+  outline: none;
 }
 
 .ep-editor-canvas-root .editor-styles-wrapper {
@@ -223,7 +231,7 @@
 .ep-editor-inspector-panel .components-button,
 .ep-editor-inspector-panel svg {
   color: var(--wp-components-color-foreground, var(--ep-admin-color-text, #1f2937)) !important;
-  fill: currentColor;
+  fill: currentcolor;
 }
 
 .ep-editor-inspector-panel .block-editor-block-inspector__no-blocks,

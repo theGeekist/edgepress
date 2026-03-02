@@ -91,7 +91,7 @@ Implemented in:
 - `apps/api/test/wp-core.controllers.branches.test.js`
 
 What changed:
-- Added coverage ensuring `/patterns` responses are deterministic under same-timestamp ties (updatedAt desc, id tie-break).
+- Added coverage ensuring `/wp/v2/patterns` responses are deterministic under same-timestamp ties (updatedAt desc, id tie-break).
 
 Why:
 - Hardens wp-core bootstrap parity assumptions and prevents nondeterministic ordering regressions.
@@ -121,9 +121,9 @@ Why:
 
 ## Done Definition for this phase
 This phase is complete when all are true:
-1. Isolated editor registry includes rich-text and keyboard/notices stores.
+1. Isolated editor registry includes the full editor store contract (preferences, interface, keyboard-shortcuts, notices, blocks, rich-text, block-editor, editor).
 2. Block editor runs on that registry (`useSubRegistry={false}`).
 3. Editor canvas renders without store-missing runtime crashes.
 4. Style scope is constrained to editor surface and popovers.
 5. Settings state can persist an explicit `siteTheme` without losing existing settings fields.
-6. Controller test coverage guards deterministic `/patterns` ordering.
+6. Controller test coverage guards deterministic `/wp/v2/patterns` ordering.

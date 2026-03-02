@@ -1,6 +1,6 @@
-import { useMemo, useRef } from 'react';
+import { useEffect, useMemo } from 'react';
 import PropTypes from 'prop-types';
-import { RegistryProvider, useRegistry } from '@wordpress/data';
+import { RegistryProvider } from '@wordpress/data';
 import {
   BlockEditorKeyboardShortcuts,
   BlockEditorProvider,
@@ -12,13 +12,11 @@ import {
   WritingFlow
 } from '@wordpress/block-editor';
 import { SlotFillProvider, Popover } from '@wordpress/components';
-import { serialize } from '@wordpress/blocks';
-import { StyleSheet, TextInput, View } from 'react-native';
+import { createBlock, serialize } from '@wordpress/blocks';
 import { toWpEditorSettings } from '@features/theme';
 import { palettePropTypes } from '@components/prop-types';
 import { DEFAULT_PALETTE } from '../constants.js';
 import { createEditorRegistry } from '../state/createEditorRegistry.js';
-import { storeHotSwapPlugin } from '../state/storeHotSwapPlugin.js';
 import { useEditorBootstrap } from '../hooks/useEditorBootstrap.js';
 
 const SUPPORTED_BLOCK_TYPES = [
@@ -42,15 +40,11 @@ function EditorSurfaceInner({
   onTitleChange,
   postId,
   postType,
-  theme,
   siteTheme,
   adminVars,
   contentVars,
   className
 }) {
-  const registry = useRegistry();
-  const rootRef = useRef(null);
-
   const content = useMemo(() => {
     try {
       return serialize(Array.isArray(blocks) ? blocks : []);
@@ -66,9 +60,60 @@ function EditorSurfaceInner({
     content
   });
 
+  useEffect(() => {
+    const doc = globalThis?.document;
+    const win = globalThis?.window;
+    if (!Array.isArray(blocks) || blocks.length > 0 || !doc || !win) {
+      return undefined;
+    }
+
+    const root = doc.querySelector('.ep-editor-canvas-root');
+    if (!root) return undefined;
+
+    const placeCaretAtEnd = (element) => {
+      if (!element) return;
+      const selection = win.getSelection?.();
+      if (!selection) return;
+      const range = doc.createRange();
+      range.selectNodeContents(element);
+      range.collapse(false);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    };
+
+    const focusFirstEditable = () => {
+      const editable = root.querySelector('.block-editor-rich-text__editable[contenteditable="true"]');
+      if (!editable || editable.nodeType !== 1 || typeof editable.focus !== 'function') return;
+      editable.focus();
+      placeCaretAtEnd(editable);
+    };
+
+    const onKeyDown = (event) => {
+      const target = event.target;
+      if (!target || target.nodeType !== 1) return;
+      if (!target.matches('.block-editor-default-block-appender__content[role="button"]')) return;
+      if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
+
+      const isPrintable = event.key.length === 1;
+      const isEnter = event.key === 'Enter';
+      if (!isPrintable && !isEnter) return;
+
+      event.preventDefault();
+      const initialText = isPrintable ? event.key : '';
+      const nextBlock = createBlock('core/paragraph', initialText ? { content: initialText } : {});
+      setBlocks([nextBlock]);
+      globalThis.requestAnimationFrame?.(focusFirstEditable);
+    };
+
+    root.addEventListener('keydown', onKeyDown, true);
+    return () => {
+      root.removeEventListener('keydown', onKeyDown, true);
+    };
+  }, [blocks, setBlocks]);
+
   const editorSettings = useMemo(
-    () => toWpEditorSettings(siteTheme || theme || {}, { allowedBlockTypes: SUPPORTED_BLOCK_TYPES }),
-    [siteTheme, theme]
+    () => toWpEditorSettings(siteTheme || {}, { allowedBlockTypes: SUPPORTED_BLOCK_TYPES }),
+    [siteTheme]
   );
   const siteTextColor = contentVars?.['--ep-site-canvas-text']
     || contentVars?.['--ep-site-color-text']
@@ -79,19 +124,8 @@ function EditorSurfaceInner({
 
   return (
     <div
-      ref={rootRef}
       className={className}
       style={{ ...adminVars, ...contentVars }}
-      onFocusCapture={() => {
-        storeHotSwapPlugin.setEditor(registry.select, registry.dispatch);
-      }}
-      onBlurCapture={(event) => {
-        const nextTarget = event.relatedTarget;
-        if (rootRef.current?.contains(nextTarget)) {
-          return;
-        }
-        storeHotSwapPlugin.resetEditor();
-      }}
     >
       <SlotFillProvider>
         <BlockEditorProvider
@@ -101,19 +135,20 @@ function EditorSurfaceInner({
           onChange={setBlocks}
           settings={editorSettings}
         >
-          <View style={styles.root}>
-            <View style={styles.titleWrap}>
-              <TextInput
+          <div className="ep-editor-surface-layout">
+            <div className="ep-editor-title-wrap">
+              <input
+                type="text"
                 value={title || ''}
-                onChangeText={onTitleChange}
+                onChange={(event) => onTitleChange?.(event.target.value)}
                 placeholder="Add title"
-                placeholderTextColor={siteMutedColor}
-                style={[
-                  styles.titleInput,
-                  { color: siteTextColor }
-                ]}
+                className="editor-post-title__input ep-editor-title-input"
+                style={{
+                  color: siteTextColor,
+                  '--ep-title-placeholder': siteMutedColor
+                }}
               />
-            </View>
+            </div>
             <div className="editor-styles-wrapper">
               <BlockEditorKeyboardShortcuts />
               <BlockTools>
@@ -124,7 +159,7 @@ function EditorSurfaceInner({
                 </WritingFlow>
               </BlockTools>
             </div>
-          </View>
+          </div>
           <div id="ep-editor-popovers" style={adminVars}>
             <Popover.Slot />
           </div>
@@ -141,7 +176,6 @@ EditorSurfaceInner.propTypes = {
   onTitleChange: PropTypes.func,
   postId: PropTypes.string,
   postType: PropTypes.string,
-  theme: PropTypes.object,
   siteTheme: PropTypes.object,
   adminVars: PropTypes.object,
   contentVars: PropTypes.object,
@@ -205,17 +239,3 @@ export function EditorSurfaceInspector({ styleVars = {} }) {
 EditorSurfaceInspector.propTypes = {
   styleVars: PropTypes.object
 };
-
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    minHeight: 680
-  },
-  titleWrap: {
-    paddingHorizontal: 32,
-    paddingTop: 16
-  },
-  titleInput: {
-    width: '100%'
-  }
-});

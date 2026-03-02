@@ -23,7 +23,9 @@ function readStoredSettings() {
     return {
       siteTitle: typeof parsed?.siteTitle === 'string' ? parsed.siteTitle : DEFAULT_SETTINGS.siteTitle,
       tagline: typeof parsed?.tagline === 'string' ? parsed.tagline : DEFAULT_SETTINGS.tagline,
-      permalinkStructure: parsed?.permalinkStructure === 'plain' || parsed?.permalinkStructure === 'day'
+      permalinkStructure: parsed?.permalinkStructure === 'plain'
+        || parsed?.permalinkStructure === 'day'
+        || parsed?.permalinkStructure === 'name'
         ? parsed.permalinkStructure
         : DEFAULT_SETTINGS.permalinkStructure,
       siteTheme: normalizeSiteTheme(parsed?.siteTheme)
