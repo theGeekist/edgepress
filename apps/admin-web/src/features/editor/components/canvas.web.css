@@ -116,7 +116,16 @@
 .ep-editor-canvas-root .block-editor-default-block-appender {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  flex-wrap: nowrap;
   gap: 8px;
+  width: 100%;
+}
+
+.ep-editor-canvas-root .block-editor-default-block-appender__content {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
 }
 
 .ep-editor-canvas-root .block-editor-rich-text__editable,
