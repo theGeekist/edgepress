@@ -51,11 +51,13 @@
   color: var(--ep-admin-color-onAccent, #ffffff);
 }
 
-.ep-editor-canvas-root .editor-post-title__input {
+.ep-editor-canvas-root .editor-post-title__input,
+.ep-editor-canvas-root input[placeholder='Add title'] {
   color: var(--ep-site-canvas-text, #1f2937);
   font-size: var(--ep-site-title-size, clamp(2.25rem, 4vw, 3.5rem));
   line-height: 1.08;
   font-weight: 650;
+  font-family: inherit;
   margin: 0;
   padding: 0;
   width: 100%;
@@ -64,7 +66,8 @@
   overflow-wrap: anywhere;
 }
 
-.ep-editor-canvas-root .editor-post-title__input::placeholder {
+.ep-editor-canvas-root .editor-post-title__input::placeholder,
+.ep-editor-canvas-root input[placeholder='Add title']::placeholder {
   color: var(--ep-site-canvas-muted, #6b7280);
   opacity: 1;
 }

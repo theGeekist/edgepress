@@ -70,6 +70,12 @@ function EditorSurfaceInner({
     () => toWpEditorSettings(siteTheme || theme || {}, { allowedBlockTypes: SUPPORTED_BLOCK_TYPES }),
     [siteTheme, theme]
   );
+  const siteTextColor = contentVars?.['--ep-site-canvas-text']
+    || contentVars?.['--ep-site-color-text']
+    || DEFAULT_PALETTE.text;
+  const siteMutedColor = contentVars?.['--ep-site-canvas-muted']
+    || contentVars?.['--ep-site-color-textMuted']
+    || DEFAULT_PALETTE.textMuted;
 
   return (
     <div
@@ -101,8 +107,11 @@ function EditorSurfaceInner({
                 value={title || ''}
                 onChangeText={onTitleChange}
                 placeholder="Add title"
-                className="editor-post-title__input"
-                style={styles.titleInput}
+                placeholderTextColor={siteMutedColor}
+                style={[
+                  styles.titleInput,
+                  { color: siteTextColor }
+                ]}
               />
             </View>
             <div className="editor-styles-wrapper">
