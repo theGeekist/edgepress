@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { RegistryProvider } from '@wordpress/data';
 import {
@@ -45,6 +45,7 @@ function EditorSurfaceInner({
   contentVars,
   className
 }) {
+  const rootRef = useRef(null);
   const content = useMemo(() => {
     try {
       return serialize(Array.isArray(blocks) ? blocks : []);
@@ -67,7 +68,7 @@ function EditorSurfaceInner({
       return undefined;
     }
 
-    const root = doc.querySelector('.ep-editor-canvas-root');
+    const root = rootRef.current;
     if (!root) return undefined;
 
     const placeCaretAtEnd = (element) => {
@@ -88,6 +89,20 @@ function EditorSurfaceInner({
       placeCaretAtEnd(editable);
     };
 
+    const insertParagraphFromAppender = (initialText = '') => {
+      const nextBlock = createBlock('core/paragraph', initialText ? { content: initialText } : {});
+      setBlocks([nextBlock]);
+      globalThis.requestAnimationFrame?.(focusFirstEditable);
+    };
+
+    const onClick = (event) => {
+      const target = event.target;
+      if (!target || target.nodeType !== 1) return;
+      if (!target.matches('.block-editor-default-block-appender__content[role="button"]')) return;
+      event.preventDefault();
+      insertParagraphFromAppender('');
+    };
+
     const onKeyDown = (event) => {
       const target = event.target;
       if (!target || target.nodeType !== 1) return;
@@ -100,13 +115,13 @@ function EditorSurfaceInner({
 
       event.preventDefault();
       const initialText = isPrintable ? event.key : '';
-      const nextBlock = createBlock('core/paragraph', initialText ? { content: initialText } : {});
-      setBlocks([nextBlock]);
-      globalThis.requestAnimationFrame?.(focusFirstEditable);
+      insertParagraphFromAppender(initialText);
     };
 
+    root.addEventListener('click', onClick, true);
     root.addEventListener('keydown', onKeyDown, true);
     return () => {
+      root.removeEventListener('click', onClick, true);
       root.removeEventListener('keydown', onKeyDown, true);
     };
   }, [blocks, setBlocks]);
@@ -124,6 +139,7 @@ function EditorSurfaceInner({
 
   return (
     <div
+      ref={rootRef}
       className={className}
       style={{ ...adminVars, ...contentVars }}
     >
