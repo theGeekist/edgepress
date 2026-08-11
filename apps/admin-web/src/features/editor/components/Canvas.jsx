@@ -156,7 +156,7 @@ export function EditorCanvas({
   const p = palette || DEFAULT_PALETTE;
 
   const adminThemeVars = useMemo(() => toCssVars(theme || {}, { prefix: '--ep-admin' }), [theme]);
-  const contentThemeVars = useMemo(() => toCssVars(siteTheme || theme || {}, { prefix: '--ep-site' }), [siteTheme, theme]);
+  const contentThemeVars = useMemo(() => toCssVars(siteTheme || {}, { prefix: '--ep-site' }), [siteTheme]);
   const adminVars = useMemo(() => toWpAdminVars(p, adminThemeVars), [p, adminThemeVars]);
   const contentVars = useMemo(() => toWpSiteVars(contentThemeVars), [contentThemeVars]);
 

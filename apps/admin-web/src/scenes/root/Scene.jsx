@@ -1,6 +1,7 @@
 import { View } from 'react-native';
 import { Sidebar } from '@components/ui/Sidebar.jsx';
 import { layoutStyles } from '@components/styles.js';
+import { defaultLightTheme } from '@features/theme';
 import { ContentScene } from '../content/Scene.jsx';
 import { MediaScene } from '../media/Scene.jsx';
 import { SettingsScene } from '../settings/Scene.jsx';
@@ -36,7 +37,7 @@ export function RootScene({
         <ContentScene
           palette={palette}
           theme={theme}
-          siteTheme={settings?.siteTheme || theme}
+          siteTheme={settings?.siteTheme ?? defaultLightTheme}
           contentView={contentView}
           docs={docs}
           media={media}

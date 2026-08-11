@@ -1,8 +1,6 @@
 import { useState } from 'react';
 import { parse, serialize } from '@wordpress/blocks';
 
-const STARTER_PARAGRAPH_MARKUP = '<!-- wp:paragraph --><p></p><!-- /wp:paragraph -->';
-
 function toBlocks(content) {
   if (!content) return [];
   try {
@@ -10,11 +8,6 @@ function toBlocks(content) {
   } catch {
     return [];
   }
-}
-
-function withStarterBlock(blocks) {
-  if (Array.isArray(blocks) && blocks.length > 0) return blocks;
-  return toBlocks(STARTER_PARAGRAPH_MARKUP);
 }
 
 function isObject(value) {
@@ -70,11 +63,11 @@ export function useEditorState(shell) {
     if (Array.isArray(doc.blocks)) {
       const normalized = normalizeBlocksForEditor(doc.blocks);
       if (normalized) {
-        setBlocks(withStarterBlock(normalized));
+        setBlocks(normalized);
         return;
       }
     }
-    const parsed = withStarterBlock(toBlocks(doc.content));
+    const parsed = toBlocks(doc.content);
     if (Array.isArray(parsed) && parsed.length > 0) {
       setBlocks(parsed);
       return;

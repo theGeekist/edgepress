@@ -3,7 +3,7 @@ import { View } from 'react-native';
 
 import { ContentListTable, ContentSettingsPanel, PublishPanel } from '@features/content';
 import { DevToolsPanel, EditorCanvas, useDevToolsState } from '@features/editor';
-import { toCssVars } from '@features/theme';
+import { defaultLightTheme, toCssVars } from '@features/theme';
 import { layoutStyles } from '@components/styles.js';
 import { useContentSceneController } from './useSceneController.js';
 
@@ -27,6 +27,7 @@ export function ContentScene({
   });
 
   const isEditorView = contentView === 'editor';
+  const effectiveSiteTheme = siteTheme || defaultLightTheme;
   const selectedDocType = docs?.getSelectedDocType?.();
   let selectedType = 'post';
   if (selectedDocType === 'post' || selectedDocType === 'page') {
@@ -38,9 +39,9 @@ export function ContentScene({
   const themeTokens = useMemo(
     () => ({
       ...toCssVars(theme || {}, { prefix: '--ep-admin' }),
-      ...toCssVars(siteTheme || theme || {}, { prefix: '--ep-site' })
+      ...toCssVars(effectiveSiteTheme, { prefix: '--ep-site' })
     }),
-    [theme, siteTheme]
+    [theme, effectiveSiteTheme]
   );
 
   const devTools = useDevToolsState({
@@ -134,7 +135,7 @@ export function ContentScene({
             setBlocks={editor.setBlocks}
             palette={palette}
             theme={theme}
-            siteTheme={siteTheme}
+            siteTheme={effectiveSiteTheme}
             title={docs.title}
             onTitleChange={docs.setTitle}
             postId={docs.selectedId}
@@ -189,7 +190,7 @@ export function ContentScene({
           actions={{
             onPublish: actions.onPublish,
             onSave: actions.onSave,
-            onPreview: () => actions.onPreview?.(siteTheme || theme)
+            onPreview: () => actions.onPreview?.(effectiveSiteTheme)
           }}
         />
       </View>

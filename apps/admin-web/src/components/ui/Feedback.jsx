@@ -43,7 +43,7 @@ Feedback.propTypes = {
     PropTypes.shape({
       key: PropTypes.string,
       text: PropTypes.string.isRequired,
-      tone: PropTypes.oneOf(['error', 'link', 'default']),
+      tone: PropTypes.oneOf(['error', 'link', 'default', 'muted']),
       onPress: PropTypes.func
     })
   )
